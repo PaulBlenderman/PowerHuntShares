@@ -5,49 +5,56 @@
 # Author: Scott Sutherland, 2024 NetSPI
 # License: 3-clause BSD
 # Version: v2.1
-# References: This script includes custom code and code taken and modified from the open source projects PowerView, Invoke-Ping, and Invoke-Parrell. 
+# MODIFICATIONS BY Paul Blenderman, Secorvo Security Consulting GmbH
+# References: This script includes custom code and code taken and modified from the open source projects PowerView, Invoke-Ping, and Invoke-Parrell.
 function Invoke-HuntSMBShares
-{    
+{
 	<#
             .SYNOPSIS
-            This function can be used to inventory to SMB shares on the current Active Directory domain and identify potentially high risk exposures.  
+            This function can be used to inventory to SMB shares on the current Active Directory domain and identify potentially high risk exposures.
 			It will automatically generate csv files and html summary report.
             .PARAMETER Threads
             Number of concurrent tasks to run at once.
             .PARAMETER Output Directory
             File path where all csv and html report will be exported.
+           .PARAMETER OSLanguage
+            Operating system Language of the computers to be scanned. ISO 639-1 two-letter code.
+            Used to support localised names of identities like "Everyone". EN by default.
+            .PARAMETER ADLanguage
+            Installation language of the Active Directory domain to be scanned. ISO 639-1 two-letter code.
+            Used to support localised names of identities like "Domain Users". EN by default.
             .EXAMPLE
 	        PS C:\temp\test> Invoke-HuntSMBShares -Threads 20 -OutputDirectory c:\temp\test -DomainController 10.1.1.1 -ExportFindings -Username domain\user -Password password
-            .EXAMPLE   
+            .EXAMPLE
             C:\temp\test> runas /netonly /user:domain\user PowerShell.exe
             PS C:\temp\test> Import-Module Invoke-HuntSMBShares.ps1
-            PS C:\temp\test> Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -ExportFindings -Username domain\user -Password password        
+            PS C:\temp\test> Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -ExportFindings -Username domain\user -Password password
             .EXAMPLE
 			PS C:\temp\test> Invoke-HuntSMBShares -Threads 20 -ExportFindings -OutputDirectory c:\temp\test
 
              ---------------------------------------------------------------
-             INVOKE-HUNTSMBSHARES                                        
+             INVOKE-HUNTSMBSHARES
              ---------------------------------------------------------------
-              This function automates the following tasks:                  
-                                                                
-              o Determine current computer's domain                         
-              o Enumerate domain computers                                  
-              o Check if computers respond to ping requests         
-              o Filter for computers that have TCP 445 open and accessible  
-              o Enumerate SMB shares                                        
-              o Enumerate SMB share permissions                             
-              o Identify shares with potentially excessive privileges      
-              o Identify shares that provide read or write access           
-              o Identify shares thare are high risk                         
-              o Identify common share owners, names, & directory listings   
-              o Generate last written & last accessed timelines             
-              o Generate html summary report and detailed csv files         
+              This function automates the following tasks:
 
-              Note: This can take hours to run in large environments.       
+              o Determine current computer's domain
+              o Enumerate domain computers
+              o Check if computers respond to ping requests
+              o Filter for computers that have TCP 445 open and accessible
+              o Enumerate SMB shares
+              o Enumerate SMB share permissions
+              o Identify shares with potentially excessive privileges
+              o Identify shares that provide read or write access
+              o Identify shares thare are high risk
+              o Identify common share owners, names, & directory listings
+              o Generate last written & last accessed timelines
+              o Generate html summary report and detailed csv files
+
+              Note: This can take hours to run in large environments.
              ---------------------------------------------------------------
              |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
              ---------------------------------------------------------------
-             SHARE DISCOVERY      
+             SHARE DISCOVERY
              ---------------------------------------------------------------
              [*][03/01/2021 09:35] Scan Start
              [*][03/01/2021 09:35] Output Directory: c:\temp\smbshares\SmbShareHunt-03012021093504
@@ -69,7 +76,7 @@ function Invoke-HuntSMBShares
              [*][03/01/2021 09:37] - 33 potentially excessive privileges were found across 12 systems..
              [*][03/01/2021 09:37] Scan Complete
              ---------------------------------------------------------------
-             SHARE ANALYSIS      
+             SHARE ANALYSIS
              ---------------------------------------------------------------
              [*][03/01/2021 09:37] Analysis Start
              [*][03/01/2021 09:37] - 14 shares can be read across 12 systems.
@@ -84,13 +91,13 @@ function Invoke-HuntSMBShares
              [*][03/01/2021 09:37] - Identified shares modified in last 90 days.
              [*][03/01/2021 09:37] Analysis Complete
              ---------------------------------------------------------------
-             SHARE REPORT SUMMARY      
+             SHARE REPORT SUMMARY
              ---------------------------------------------------------------
              [*][03/01/2021 09:37] Domain: demo.local
              [*][03/01/2021 09:37] Start time: 03/01/2021 09:35:04
              [*][03/01/2021 09:37] End time: 03/01/2021 09:37:27
              [*][03/01/2021 09:37] Run time: 00:02:23.2759086
-             [*][03/01/2021 09:37] 
+             [*][03/01/2021 09:37]
              [*][03/01/2021 09:37] COMPUTER SUMMARY
              [*][03/01/2021 09:37] - 245 domain computers found.
              [*][03/01/2021 09:37] - 55 (22.45%) domain computers responded to ping.
@@ -100,7 +107,7 @@ function Invoke-HuntSMBShares
              [*][03/01/2021 09:37] - 12 (4.90%) domain computers had shares that allowed READ access.
              [*][03/01/2021 09:37] - 1 (0.41%) domain computers had shares that allowed WRITE access.
              [*][03/01/2021 09:37] - 0 (0.00%) domain computers had shares that are HIGH RISK.
-             [*][03/01/2021 09:37] 
+             [*][03/01/2021 09:37]
              [*][03/01/2021 09:37] SHARE SUMMARY
              [*][03/01/2021 09:37] - 217 shares were found. We expect a minimum of 98 shares
              [*][03/01/2021 09:37]   because 49 systems had open ports and there are typically two default shares.
@@ -109,7 +116,7 @@ function Invoke-HuntSMBShares
              [*][03/01/2021 09:37] - 14 (6.45%) shares across 12 systems allowed READ access.
              [*][03/01/2021 09:37] - 1 (0.46%) shares across 1 systems allowed WRITE access.
              [*][03/01/2021 09:37] - 0 (0.00%) shares across 0 systems are considered HIGH RISK.
-             [*][03/01/2021 09:37] 
+             [*][03/01/2021 09:37]
              [*][03/01/2021 09:37] SHARE ACL SUMMARY
              [*][03/01/2021 09:37] - 374 ACLs were found.
              [*][03/01/2021 09:37] - 374 (100.00%) ACLs were associated with non-default shares.
@@ -117,7 +124,7 @@ function Invoke-HuntSMBShares
              [*][03/01/2021 09:37] - 32 (8.56%) ACLs were found that allowed READ access.
              [*][03/01/2021 09:37] - 1 (0.27%) ACLs were found that allowed WRITE access.
              [*][03/01/2021 09:37] - 0 (0.00%) ACLs were found that are associated with HIGH RISK share names.
-             [*][03/01/2021 09:37] 
+             [*][03/01/2021 09:37]
              [*][03/01/2021 09:37] - The 5 most common share names are:
              [*][03/01/2021 09:37] - 9 of 14 (64.29%) discovered shares are associated with the top 5 share names.
              [*][03/01/2021 09:37]   - 4 backup
@@ -146,7 +153,7 @@ function Invoke-HuntSMBShares
         [Parameter(Mandatory = $false,
         HelpMessage = 'Domain controller for Domain and Site that you want to query against. For computer lookup.')]
         [string]$DomainController,
-        
+
         [Parameter(Mandatory = $false,
         HelpMessage = 'Number of threads to process at once.')]
         [int]$Threads = 20,
@@ -213,15 +220,18 @@ function Invoke-HuntSMBShares
 
         [Parameter(Mandatory = $false,
         HelpMessage = 'API endpoint for LLM query. Azure ChatGPT 4o and 4o-mini have been tested.')]
-        [string] $Endpoint      
+        [string] $Endpoint,
+
+        [ValidateSet('DE', 'EN')][String] $OSLanguage = 'EN',
+        [ValidateSet('DE', 'EN')][String] $ADLanguage = 'EN'
     )
-	
-    
+
+
     Begin
     {
-        Write-Output " ===============================================================" 
+        Write-Output " ==============================================================="
         Write-Output " INVOKE-HUNTSMBSHARES                                           "
-        Write-Output " ==============================================================="         
+        Write-Output " ==============================================================="
         Write-Output "  This function automates the following tasks:                  "
         Write-Output "                                                                "
         Write-Output "  o Determine current computer's domain                         "
@@ -231,16 +241,16 @@ function Invoke-HuntSMBShares
         Write-Output "  o Enumerate SMB shares                                        "
         Write-Output "  o Enumerate SMB share permissions                             "
         Write-Output "  o Identify shares with potentially excessive privileges       "
-        Write-Output "  o Identify shares that provide read or write access           "                     
+        Write-Output "  o Identify shares that provide read or write access           "
         Write-Output "  o Identify shares thare are high risk                         "
         Write-Output "  o Identify common share owners, names, & directory listings   "
         Write-Output "  o Generate last written & last accessed timelines             "
-        Write-Output "  o Generate html summary report and detailed csv files         " 
-        Write-Output ""         
-        Write-Output "  Note: This can take hours to run in large environments.       "              
-        Write-Output " ---------------------------------------------------------------"  
+        Write-Output "  o Generate html summary report and detailed csv files         "
+        Write-Output ""
+        Write-Output "  Note: This can take hours to run in large environments.       "
+        Write-Output " ---------------------------------------------------------------"
         Write-Output " |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
-        Write-Output " ---------------------------------------------------------------"  
+        Write-Output " ---------------------------------------------------------------"
         Write-Output " SHARE DISCOVERY      "
         Write-Output " ---------------------------------------------------------------"
 
@@ -250,6 +260,16 @@ function Invoke-HuntSMBShares
         $StopWatch =  [system.diagnostics.stopwatch]::StartNew()
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
 
+        # Get names of well-known identities
+        $IdentityNames = New-IdentityNames
+        $UsersGroup = $IdentityNames.$OSLanguage.Users
+        # Surprisingly, BUILTIN is not localised
+        $BuiltinUsers = "BUILTIN\$UsersGroup"
+        $GuestsGroup = $IdentityNames.$OSLanguage.Guests
+        $AuthenticatedUsers = $IdentityNames.$OSLanguage.AuthenticatedUsers
+        $Everyone = $IdentityNames.$OSLanguage.Everyone
+        $DomainUsers = $IdentityNames.$ADLanguage.DomainUsers
+        $DomainComputersGroup = $IdentityNames.$ADLanguage.DomainComputers
 
         # Check if there is connectivity to the api for llm calls
         if($ApiKey -and $Endpoint){
@@ -273,19 +293,19 @@ function Invoke-HuntSMBShares
         }else{
             $rMasterFindingId = "MasterFindingSourceIdentifier"
             $rFindingName = "InstanceName"
-            $rAssetName = "AssetName" # R7 only has one option. 
-        }  
-        
+            $rAssetName = "AssetName" # R7 only has one option.
+        }
+
 
         # ----------------------------------------------------------------------
         # Create output directory
         # ----------------------------------------------------------------------
-        if(Test-Path $OutputDirectory){                                
+        if(Test-Path $OutputDirectory){
 
             # Verify output directory path
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
             $FolderDateTime =  Get-Date -Format "MMddyyyyHHmmss"
-            $OutputDirectoryBase = "$OutputDirectory\SmbShareHunt-$FolderDateTime"                                        
+            $OutputDirectoryBase = "$OutputDirectory\SmbShareHunt-$FolderDateTime"
 
             #  Create sub directories
             mkdir $OutputDirectoryBase | Out-Null
@@ -299,10 +319,10 @@ function Invoke-HuntSMBShares
             break
         }
 
-        # Check for keyword file path 
+        # Check for keyword file path
         If($FileKeywordsPath){
 
-            if(Test-Path $FileKeywordsPath){ 
+            if(Test-Path $FileKeywordsPath){
                 #Write-Output " [x]The target directory exists."
             }else{
                 Write-Output " [x] The $FileKeywordsPath did not exist."
@@ -312,10 +332,10 @@ function Invoke-HuntSMBShares
         }
 
         # ----------------------------------------------------------------------
-        # Import computers from file 
+        # Import computers from file
         # ----------------------------------------------------------------------
         if($HostList){
-            
+
             if(test-path $HostList){
                 $Time =  Get-Date -UFormat "%m/%d/%Y %R"
                 Write-Output " [*][$Time] Importing computer targets from $HostList"
@@ -324,10 +344,10 @@ function Invoke-HuntSMBShares
                 foreach {
                     $object = New-Object psobject
                     $Object | Add-Member Noteproperty ComputerName $_
-                    $Object  
+                    $Object
                 }
                 $TargetDomain = "SmbHunt"
-                $ComputerCount = $DomainComputers | measure | select count -ExpandProperty count            
+                $ComputerCount = $DomainComputers | measure | select count -ExpandProperty count
                 $Time =  Get-Date -UFormat "%m/%d/%Y %R"
                 Write-Output " [*][$Time] $ComputerCount systems will be targeted"
             }else{
@@ -335,12 +355,12 @@ function Invoke-HuntSMBShares
                 break
             }
         }
-        
+
         # Set variables
         $GlobalThreadCount = $Threads
 
         # ----------------------------------------------------------------------
-        # Enumerate domain computers 
+        # Enumerate domain computers
         # ----------------------------------------------------------------------
 
         if(-not $HostList){
@@ -352,40 +372,40 @@ function Invoke-HuntSMBShares
                 $Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList ($Username, $secpass)
             }
 
-            # Set target domain        
+            # Set target domain
             $DCRecord = Get-LdapQuery -LdapFilter "(&(objectCategory=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))" -DomainController $DomainController -Credential $Credential | select -first 1 | select properties -expand properties -ErrorAction SilentlyContinue
             [string]$DCHostname = $DCRecord.dnshostname
             [string]$DCCn = $DCRecord.cn
-            [string]$TargetDomain = $DCHostname -replace ("$DCCn\.","") 
-            
-            $Time =  Get-Date -UFormat "%m/%d/%Y %R"    
+            [string]$TargetDomain = $DCHostname -replace ("$DCCn\.","")
+
+            $Time =  Get-Date -UFormat "%m/%d/%Y %R"
             if($DCHostname)
             {
-                Write-Output " [*][$Time] Successful connection to domain controller: $DCHostname"             
+                Write-Output " [*][$Time] Successful connection to domain controller: $DCHostname"
             }else{
                 Write-Output " [*][$Time] There appears to have been an error connecting to the domain controller."
                 Write-Output " [*][$Time] Aborting."
                 break
-            }           
+            }
 
             # Status user
             Write-Output " [*][$Time] Performing LDAP query for computers associated with the $TargetDomain domain"
 
-            # Get domain computers        
+            # Get domain computers
             $DomainComputersRecord = Get-LdapQuery -LdapFilter "(objectCategory=Computer)" -DomainController $DomainController -Credential $Credential
-            $DomainComputers = $DomainComputersRecord | 
+            $DomainComputers = $DomainComputersRecord |
             foreach{
-                
+
                 $DnsHostName     = [string]$_.Properties['dnshostname']
-                $DnsHostNameOS   = [string]$_.Properties['OperatingSystem'] 
-                $DnsHostNameOSSP = [string]$_.Properties['OperatingSystemServicePack'] 
+                $DnsHostNameOS   = [string]$_.Properties['OperatingSystem']
+                $DnsHostNameOSSP = [string]$_.Properties['OperatingSystemServicePack']
 
                 if($DnsHostName -notlike ""){
                     $object = New-Object psobject
                     $Object | Add-Member Noteproperty ComputerName    $DnsHostName
                     $Object | Add-Member Noteproperty OperatingSystem $DnsHostNameOS
                     $Object | Add-Member Noteproperty ServicePack     $DnsHostNameOSSP
-                    $Object      
+                    $Object
                 }
             }
 
@@ -433,7 +453,7 @@ function Invoke-HuntSMBShares
                 $computername = $_.address
                 $status = $_.status
                 if($status -like "Responding"){
-                    $object = new-object psobject            
+                    $object = new-object psobject
                     $Object | add-member Noteproperty ComputerName $computername
                     $Object | add-member Noteproperty status $status
                     $Object
@@ -443,7 +463,7 @@ function Invoke-HuntSMBShares
             # Status user
             $ComputerPingableCount = $ComputersPingable.count
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-            Write-Output " [*][$Time] - $ComputerPingableCount computers responded to ping requests."        
+            Write-Output " [*][$Time] - $ComputerPingableCount computers responded to ping requests."
 
             # Save results
             # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Domain-Computers-Pingable.csv"
@@ -466,32 +486,32 @@ function Invoke-HuntSMBShares
         # Create script block to port scan tcp 445
         $MyScriptBlock = {
                 $ComputerName = $_.ComputerName
-                try{                      
+                try{
                     $Socket = New-Object System.Net.Sockets.TcpClient($ComputerName,"445")
-                    
+
                     if($Socket.Connected)
                     {
-                        $Status = "Open"             
+                        $Status = "Open"
                         $Socket.Close()
                     }
-                    else 
+                    else
                     {
-                        $Status = "Closed"    
+                        $Status = "Closed"
                     }
                 }
                 catch{
                     $Status = "Closed"
-                }   
+                }
 
                 if($Status -eq "Open")
-                {            
-                    $object = new-object psobject            
+                {
+                    $object = new-object psobject
                     $Object | add-member Noteproperty ComputerName $computername
                     $Object | add-member Noteproperty 445status $status
-                    $Object                            
+                    $Object
                 }
         }
-           
+
         # Perform port scan of tcp 445 threaded
         $Computers445Open = $DomainComputers | Invoke-Parallel -ScriptBlock $MyScriptBlock -ImportSessionFunctions -ImportVariables -Throttle $GlobalThreadCount -RunspaceTimeout $RunSpaceTimeOut -ErrorAction SilentlyContinue
 
@@ -499,8 +519,8 @@ function Invoke-HuntSMBShares
         $Computers445OpenCount = $Computers445Open | measure | select count -ExpandProperty count
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - $Computers445OpenCount computers have TCP port 445 open."
-        
-         
+
+
         # Stop if no ports are accessible
         If ($Computers445OpenCount -eq 0)
         {
@@ -510,7 +530,7 @@ function Invoke-HuntSMBShares
         }
 
         # Save results
-        # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Domain-Computers-Open445.csv"                
+        # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Domain-Computers-Open445.csv"
         if($Computers445Open){
             $Computers445Open | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Domain-Computers-Open445.csv"
             #$null = Convert-DataTableToHtmlTable -DataTable $Computers445Open -Outfile "$OutputDirectory\$TargetDomain-Domain-Computers-Open445.html" -Title "Domain Computers: Port 445 Open" -Description "This page shows the domain computers for the $TargetDomain Active Directory domain with port 445 open."
@@ -527,7 +547,7 @@ function Invoke-HuntSMBShares
         Write-Output " [*][$Time] Getting a list of SMB shares from $Computers445OpenCount computers"
 
         # Create script block to query for SMB shares
-        $MyScriptBlock = { 
+        $MyScriptBlock = {
             Get-MySMBShare -ComputerName $_.ComputerName
         }
 
@@ -542,7 +562,7 @@ function Invoke-HuntSMBShares
         $AllSMBSharesCount = $AllSMBShares.count
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - $AllSMBSharesCount SMB shares were found."
-        
+
         # Stop if no shares
         If ($AllSMBSharesCount -eq 0)
         {
@@ -559,7 +579,7 @@ function Invoke-HuntSMBShares
         $AllSMBSharesFileH = "$TargetDomain-Shares-Inventory-All.html"
 
         # ----------------------------------------------------------------------
-        # Enumerate computer SMB share permissions 
+        # Enumerate computer SMB share permissions
         # ----------------------------------------------------------------------
 
         # Status user
@@ -567,17 +587,17 @@ function Invoke-HuntSMBShares
         Write-Output " [*][$Time] Getting share permissions from $AllSMBSharesCount SMB shares"
 
         # Create script block to query for SMB permissions
-        $MyScriptBlock = {     
+        $MyScriptBlock = {
 
             $CurrentShareName = $_.ShareName
             $CurrentComputerName = $_.ComputerName
-            $CurrentIP = $_.IpAddress 
+            $CurrentIP = $_.IpAddress
             $ShareDescription = $_.ShareDesc
             $Sharetype = $_.sharetype
             $Shareaccess = $_.shareaccess
-            
+
              if($CurrentComputerName -eq ""){
-                 $TargetAsset = $CurrentIP    
+                 $TargetAsset = $CurrentIP
              }else{
                  $TargetAsset = $CurrentComputerName
              }
@@ -585,12 +605,12 @@ function Invoke-HuntSMBShares
              $currentaacl = Get-PathAcl "\\$TargetAsset\$CurrentShareName" -ErrorAction SilentlyContinue
              $currentaacl |
                 foreach{
-                        
+
                       # Get file listing
                       $FullFileList = Get-ChildItem -Path "\\$TargetAsset\$CurrentShareName"
 
                       # Get file count
-                      $FileCount = $FullFileList.Count 
+                      $FileCount = $FullFileList.Count
 
                       # Get top 5 files list
                       $FileList = $FullFileList | Select-Object Name -ExpandProperty Name | Out-String
@@ -619,7 +639,7 @@ function Invoke-HuntSMBShares
                       $LastAccessDate = $LastAccessDateObject.LastAccessTime.ToString()
                       $LastAccessDateYear = $LastAccessDate.split(' ')[0].split('/')[2]
 
-                      $aclObject = new-object psobject            
+                      $aclObject = new-object psobject
                       $aclObject | add-member  Noteproperty ComputerName         $CurrentComputerName
                       $aclObject | add-member  Noteproperty IpAddress            $CurrentIP
                       $aclObject | add-member  Noteproperty ShareName            $CurrentShareName
@@ -636,15 +656,15 @@ function Invoke-HuntSMBShares
                       $aclObject | add-member  Noteproperty CreationDateYear     $CreationdDateYear
                       $aclObject | add-member  Noteproperty LastModifiedDate     $LastModifiedDate
                       $aclObject | add-member  Noteproperty LastModifiedDateYear $LastModifiedDateYear
-                      $aclObject | add-member  Noteproperty LastAccessDate       $LastAccessDate                                           
+                      $aclObject | add-member  Noteproperty LastAccessDate       $LastAccessDate
                       $aclObject | add-member  Noteproperty LastAccessDateYear   $LastAccessDateYear
                       $aclObject | add-member  Noteproperty FileCount            $FileCount
                       $aclObject | add-member  Noteproperty FileList             $FileList
                       $aclObject | add-member  Noteproperty FileListGroup        $FileListGroup
                       $aclObject | add-member  Noteproperty AuditSettings        $AuditSettings
-                      $aclObject                             
+                      $aclObject
                 }
-         }   
+         }
 
         # Get SMB permissions threaded
         $ShareACLs = $AllSMBShares | Invoke-Parallel -ScriptBlock $MyScriptBlock -ImportSessionFunctions -ImportVariables -Throttle $GlobalThreadCount -RunspaceTimeout $RunSpaceTimeOut -ErrorAction SilentlyContinue  -WarningAction SilentlyContinue | where ShareName -notlike ""
@@ -652,8 +672,8 @@ function Invoke-HuntSMBShares
         # Status user
         $ShareACLsCount = $ShareACLs | measure | select count -ExpandProperty count
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-        Write-Output " [*][$Time] - $ShareACLsCount share permissions were enumerated."       
-        
+        Write-Output " [*][$Time] - $ShareACLsCount share permissions were enumerated."
+
         # Stop if no shares ACLs were enumerated
         If ($ShareACLsCount -eq 0)
         {
@@ -664,14 +684,14 @@ function Invoke-HuntSMBShares
 
         # Save results
         # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-All-ACL.csv"
-        $ShareACLs | where ShareName -notlike "" | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-All-ACL.csv"                
+        $ShareACLs | where ShareName -notlike "" | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-All-ACL.csv"
         # $null = Convert-DataTableToHtmlTable -DataTable $ShareACLs -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-All-ACL.html" -Title "Domain Shares: All ACL Entries" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain."
         $ShareACLsFile = "$TargetDomain-Shares-Inventory-All-ACL.csv"
         $ShareACLsFileH = "$TargetDomain-Shares-Inventory-All-ACL.html"
 
 
         # ----------------------------------------------------------------------
-        # Get potentially excessive share permissions 
+        # Get potentially excessive share permissions
         # ----------------------------------------------------------------------
 
         # Status user
@@ -680,19 +700,19 @@ function Invoke-HuntSMBShares
 
         # Check for share that provide read/write access to common user groups
         $ExcessiveSharePrivs = foreach ($line in $ShareACLs){
-            
+
             # Filter for basic user ACLs
-            if (($line.IdentityReference -eq "Everyone") -or ($line.IdentityReference -eq "BUILTIN\Users") -or ($line.IdentityReference -eq "Authenticated Users") -or ($line.IdentityReference -like "*Domain Users*") ){
-                
+            if (($line.IdentityReference -eq $Everyone) -or ($line.IdentityReference -eq $BuiltinUsers) -or ($line.IdentityReference -eq $AuthenticatedUsers) -or ($line.IdentityReference -like "*$DomainUsers*") ){
+
                 if($line.ShareAccess -like "Yes"){
 
                     if(($line.ShareName -notlike "print$") -and ($line.ShareName -notlike "prnproc$") -and ($line.ShareName -notlike "*printer*") -and ($line.ShareName -notlike "sysvol") -and ($line.ShareName -notlike "netlogon"))
                     {
-                        $line                        
+                        $line
                     }
                 }
             }
-        } 
+        }
 
         # Status user
         $ExcessiveAclCount = $ExcessiveSharePrivs.count
@@ -705,11 +725,11 @@ function Invoke-HuntSMBShares
 
         # Save results
         if($ExcessiveSharesCount -ne 0){
-            # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.csv"            
+            # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.csv"
             # $ExcessiveSharePrivs | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.csv"
             # $null = Convert-DataTableToHtmlTable -DataTable $ExcessiveSharePrivs -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.html" -Title "Domain Shares: ACL Entries - Excessive Privileges" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain that appear to be configured with excessive privileges."
             $ShareACLsExFile = "$TargetDomain-Shares-Inventory-Excessive-Privileges.csv"
-            $ShareACLsExFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges.html"                          
+            $ShareACLsExFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges.html"
         }else{
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
             Write-Output " [!][$Time] 0 excessive privileges found."
@@ -730,31 +750,31 @@ function Invoke-HuntSMBShares
         Write-Output " [*][$Time] - Targeting up to $DirLevel nested directory levels"
 
         # Create script block to query for directory listing
-        $MyScriptBlock = {     
+        $MyScriptBlock = {
 
-            # Get share context            
+            # Get share context
             $CurrentComputerName = $_.ComputerName
-            $CurrentIP = $_.IpAddress 
+            $CurrentIP = $_.IpAddress
             $ShareDescription = $_.ShareDesc
             $CurrentShareName = $_.ShareName
             $SharePath = $_.SharePath
-            
+
             # Get file listing from non system directories
-            #$FullFileList = Get-ChildItem -Path $SharePath -Exclude "c:\windows" | Select FullName   
-            $FullFileList = Get-ChildItem -Depth $DirLevel -Path "$SharePath" | select fullname | where {$_.fullname -NotLike "$SharePath\Windows*" -and $_.fullname -notlike "$SharePath\WINNT"}                 
-            
-            $FullFileList | 
+            #$FullFileList = Get-ChildItem -Path $SharePath -Exclude "c:\windows" | Select FullName
+            $FullFileList = Get-ChildItem -Depth $DirLevel -Path "$SharePath" | select fullname | where {$_.fullname -NotLike "$SharePath\Windows*" -and $_.fullname -notlike "$SharePath\WINNT"}
+
+            $FullFileList |
             Foreach{
-                $aclObject = new-object psobject            
+                $aclObject = new-object psobject
                 $aclObject | add-member  Noteproperty ComputerName         $CurrentComputerName
                 $aclObject | add-member  Noteproperty IpAddress            $CurrentIP
                 $aclObject | add-member  Noteproperty ShareName            $CurrentShareName
                 $aclObject | add-member  Noteproperty SharePath            $SharePath
                 $aclObject | add-member  Noteproperty ShareDescription     $ShareDescription
                 $aclObject | add-member  Noteproperty FilePath             $_.fullname
-                $aclObject  
-            }     
-        }            
+                $aclObject
+            }
+        }
 
         # Get SMB directory listing threaded
         $ShareDirListing = $ExcessiveSharePrivs | select computername,ipaddress,sharedesc,sharename,sharepath -Unique | Invoke-Parallel -ScriptBlock $MyScriptBlock -ImportSessionFunctions -ImportVariables -Throttle $GlobalThreadCount -RunspaceTimeout $RunSpaceTimeOut -ErrorAction SilentlyContinue  -WarningAction SilentlyContinue | where ShareName -notlike "" #| select * -Unique
@@ -763,12 +783,12 @@ function Invoke-HuntSMBShares
         $ShareDirListingCount = $ShareDirListing | measure | select count -ExpandProperty count
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - $ShareDirListingCount files and folders were enumerated."
-        
+
         # Write output
-        # Write-Output " [*] Saving results to $OutputDirectory\$TargetDomain-Shares-Directory-Listings-Depth-$DirLevel.csv" 
+        # Write-Output " [*] Saving results to $OutputDirectory\$TargetDomain-Shares-Directory-Listings-Depth-$DirLevel.csv"
         $ShareDirListing | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Directory-Listings-Depth-$DirLevel.csv"
-               
-        
+
+
         # ----------------------------------------------------------------------
         # Get File Listings from Shares
         # ----------------------------------------------------------------------
@@ -784,7 +804,7 @@ function Invoke-HuntSMBShares
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] Scan Complete"
 
-        Write-Output " ---------------------------------------------------------------"  
+        Write-Output " ---------------------------------------------------------------"
         Write-Output " SHARE ANALYSIS      "
         Write-Output " ---------------------------------------------------------------"
         Write-Output " [*][$Time] Analysis Start"
@@ -794,7 +814,7 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
 
         # Get shares that provide read access
-        $SharesWithread = $ExcessiveSharePrivs | 
+        $SharesWithread = $ExcessiveSharePrivs |
         Foreach {
 
             if(($_.FileSystemRights -like "*read*"))
@@ -802,7 +822,7 @@ function Invoke-HuntSMBShares
                 $_ # out to file
             }
         }
-                
+
         # Status user
         $AclWithReadCount = $SharesWithread.count
         $SharesWithReadCount = $SharesWithread | Select-Object SharePath -Unique | Measure-Object | select count -ExpandProperty count
@@ -813,7 +833,7 @@ function Invoke-HuntSMBShares
         # Save results
         if($SharesWithReadCount -ne 0){
             #Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.csv"
-            $SharesWithRead | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.csv"               
+            $SharesWithRead | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.csv"
             # $null = Convert-DataTableToHtmlTable -DataTable $SharesWithRead -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.html" -Title "Domain Shares: ACL Allow Read Entries" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain that are readable."
             $ShareACLsReadFile = "$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.csv"
             $ShareACLsReadFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-Read.html"
@@ -826,7 +846,7 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
 
         # Get shares that provide write access
-        $SharesWithWrite = $ExcessiveSharePrivs | 
+        $SharesWithWrite = $ExcessiveSharePrivs |
         Foreach {
 
             if(($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*"))
@@ -834,18 +854,18 @@ function Invoke-HuntSMBShares
                 $_ # out to file
             }
         }
-                
+
         # Status user
         $AclWithWriteCount = $SharesWithWrite | Measure-Object | select count -ExpandProperty count
         $SharesWithWriteCount = $SharesWithWrite | Select-Object SharePath -Unique | Measure-Object | select count -ExpandProperty count
         $ComputerWithWriteCount = $SharesWithWrite | Select-Object ComputerName -Unique | Measure-Object | select count -ExpandProperty count
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-        Write-Output " [*][$Time] - $SharesWithWriteCount shares can be written to across $ComputerWithWriteCount systems."          
+        Write-Output " [*][$Time] - $SharesWithWriteCount shares can be written to across $ComputerWithWriteCount systems."
 
         # Save results
         if($SharesWithWriteCount -ne 0){
             # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.csv"
-            $SharesWithWrite | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.csv"            
+            $SharesWithWrite | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.csv"
             # $null = Convert-DataTableToHtmlTable -DataTable $SharesWithWrite -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.html" -Title "Domain Shares: ACL Allow Write Entries" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain that are writable."
             $ShareACLsWriteFile = "$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.csv"
             $ShareACLsWriteFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-Write.html"
@@ -858,7 +878,7 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
 
         # Get high risk share access
-        $SharesNonDefault = $ShareACLs | 
+        $SharesNonDefault = $ShareACLs |
         Foreach {
 
             if(($_.ShareName -notlike 'admin$') -or ($_.ShareName -notlike 'c$') -or ($_.ShareName -notlike 'd$') -or ($_.ShareName -notlike 'e$') -or ($_.ShareName -notlike 'f$'))
@@ -877,10 +897,10 @@ function Invoke-HuntSMBShares
         # Save results
         if($SharesNonDefaultCount-ne 0){
             # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.csv"
-            $SharesNonDefault | where ShareName -notlike "" | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.csv"   
+            $SharesNonDefault | where ShareName -notlike "" | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.csv"
             # $null = Convert-DataTableToHtmlTable -DataTable $SharesNonDefault -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.html" -Title "Domain Shares: Non-Default" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain that are non-default."
             $ShareACLsNonDefaultFile = "$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.csv"
-            $ShareACLsNonDefaultFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.html"                    
+            $ShareACLsNonDefaultFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.html"
         }
 
         $SharesNonDefaultFile = "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-NonDefault.csv"
@@ -890,7 +910,7 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
 
         # Get high risk share access
-        $SharesHighRisk = $ExcessiveSharePrivs | 
+        $SharesHighRisk = $ExcessiveSharePrivs |
         Foreach {
 
             if(($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share'))
@@ -909,29 +929,29 @@ function Invoke-HuntSMBShares
         # Save results
         if($SharesHighRiskCount -ne 0){
             # Write-Output " [*] - Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"
-            $SharesHighRisk | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"   
+            $SharesHighRisk | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"
 			# $null = Convert-DataTableToHtmlTable -DataTable $SharesHighRisk -Outfile "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.html" -Title "Domain Shares: ACL High Risk Entries" -Description "This page shows all share ACL entries discovered on computers associated with the $TargetDomain Active Directory domain that are considered to be high risk."
             $ShareACLsHRFile = "$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"
-            $ShareACLsHRFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.html"                     
+            $ShareACLsHRFileH = "$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.html"
         }
 
-        $SharesHighRiskFile = "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"        
-       
-        
+        $SharesHighRiskFile = "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-HighRisk.csv"
+
+
         # ----------------------------------------------------------------------
         # Identify common excessive share owners
         # ----------------------------------------------------------------------
-        
+
         # Get share owner list
         $CommonShareOwners = $ExcessiveSharePrivs | Select SharePath,ShareOwner -Unique |
-        Select-Object ShareOwner | 
+        Select-Object ShareOwner |
         <#
         where ShareOwner -notlike "BUILTIN\Administrators" |
         where ShareOwner -notlike "NT AUTHORITY\SYSTEM" |
         where ShareOwner -notlike "NT SERVICE\TrustedInstaller" |
         #>
         Group-Object ShareOwner |
-        Sort-Object ShareOwner | 
+        Sort-Object ShareOwner |
         Select-Object count,name |
         Sort-Object Count -Descending
 
@@ -940,7 +960,7 @@ function Invoke-HuntSMBShares
         $CommonShareOwnersCount = $CommonShareOwners | measure | select count -ExpandProperty count
 
         # Get top  5
-        $CommonShareOwnersTop5 = $CommonShareOwners | Select-Object count,name -First $SampleSum 
+        $CommonShareOwnersTop5 = $CommonShareOwners | Select-Object count,name -First $SampleSum
 
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - Identified top $SampleSum owners of excessive shares."
@@ -948,20 +968,20 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
         # Identify common excessive share groups (group by file list)
         # ----------------------------------------------------------------------
-        
+
         # Get share owner list
-        $CommonShareFileGroup = $ExcessiveSharePrivs | 
-        Select-Object FileListGroup | 
-        Group-Object FileListGroup| 
+        $CommonShareFileGroup = $ExcessiveSharePrivs |
+        Select-Object FileListGroup |
+        Group-Object FileListGroup|
         Select-Object count,name |
         Sort-Object Count -Descending
 
         # Save list
         $CommonShareFileGroup | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Common-FileGroups.csv"
-        $CommonShareFileGroupCount = $CommonShareFileGroup.count 
+        $CommonShareFileGroupCount = $CommonShareFileGroup.count
 
         # Get top  5
-        $CommonShareFileGroupTop5 = $CommonShareFileGroup | Select-Object count,name,filecount -First $SampleSum 
+        $CommonShareFileGroupTop5 = $CommonShareFileGroup | Select-Object count,name,filecount -First $SampleSum
 
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - Identified top $SampleSum share groups."
@@ -969,35 +989,35 @@ function Invoke-HuntSMBShares
         # ----------------------------------------------------------------------
         # Identify common share names
         # ----------------------------------------------------------------------
-             
-        $CommonShareNames = $ExcessiveSharePrivs | Select-Object ComputerName,ShareName -Unique | Group-Object ShareName |Sort Count -Descending | select count,name | 
+
+        $CommonShareNames = $ExcessiveSharePrivs | Select-Object ComputerName,ShareName -Unique | Group-Object ShareName |Sort Count -Descending | select count,name |
         foreach{
             if( ($_.name -ne 'SYSVOL') -and ($_.name -ne 'NETLOGON'))
             {
-                $_                
+                $_
             }
-        }        
-       
+        }
+
         # Get percent of shared covered by top 5
         # If very weighted this indicates if the shares are part of a deployment process, image, or app
-        
+
         # Get top five share name
         $CommonShareNamesCount = $CommonShareNames.count
-        $CommonShareNamesTop5 = $CommonShareNames | Select-Object count,name -First $SampleSum 
-        
+        $CommonShareNamesTop5 = $CommonShareNames | Select-Object count,name -First $SampleSum
+
         # Get count of share name if in the top 5
         $Top5ShareCountTotal = 0
         $CommonShareNamesTop5 |
         foreach{
-            [int]$TopCount = $_.Count 
+            [int]$TopCount = $_.Count
             $Top5ShareCountTotal = $Top5ShareCountTotal + $TopCount
         }
-        
+
         # Get count of all accessible shares
         $AllAccessibleSharesCount = $ExcessiveSharePrivs | Select-Object ComputerName,ShareName -Unique | measure | select count -ExpandProperty count
 
         # Write output
-        #Write-Output " [*] Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Common-Names.csv" 
+        #Write-Output " [*] Saving results to $OutputDirectory\$TargetDomain-Shares-Inventory-Common-Names.csv"
         $CommonShareNames | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Common-Names.csv"
 
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
@@ -1009,7 +1029,7 @@ function Invoke-HuntSMBShares
 
         # Select shares from last n names
         $StartDateAccess = (get-date).AddDays(-$ShareCreationDays);
-        $EndDateAccess = Get-Date        
+        $EndDateAccess = Get-Date
         $ExPrivCreationLastn = $ExcessiveSharePrivs | Where-Object {([Datetime]$_.CreationDate.trim() -ge $StartDateAccess -and [Datetime]$_.CreationDate.trim() -le $EndDateAccess)}
         $ExPrivCreationLastnShare = $ExPrivCreationLastn | select SharePath -Unique
         $ExPrivCreationLastnShareCount = $ExPrivCreationLastnShare | Measure | select count -ExpandProperty count
@@ -1033,7 +1053,7 @@ function Invoke-HuntSMBShares
 
         # Select shares from last n names
         $StartDateAccess = (get-date).AddDays(-$LastAccessDays);
-        $EndDateAccess = Get-Date        
+        $EndDateAccess = Get-Date
         $ExPrivAccessLastn = $ExcessiveSharePrivs | Where-Object {([Datetime]$_.LastAccessDate.trim() -ge $StartDateAccess -and [Datetime]$_.LastAccessDate.trim() -le $EndDateAccess)}
         $ExPrivAccessLastnShare = $ExPrivAccessLastn | select SharePath -Unique
         $ExPrivAccessLastnShareCount = $ExPrivAccessLastnShare | Measure | select count -ExpandProperty count
@@ -1057,7 +1077,7 @@ function Invoke-HuntSMBShares
 
         # Select shares from last n names
         $StartDateModified = (get-date).AddDays(-$LastModDays);
-        $EndDateModified = Get-Date        
+        $EndDateModified = Get-Date
         $ExPrivModifiedLastn = $ExcessiveSharePrivs | Where-Object {([Datetime]$_.LastModifiedDate.trim() -ge $StartDateModified -and [Datetime]$_.LastModifiedDate.trim() -le $EndDateModified)}
         $ExPrivModifiedLastnShare = $ExPrivModifiedLastn | select SharePath -Unique
         $ExPrivModifiedLastnShareCount = $ExPrivModifiedLastnShare | Measure | select count -ExpandProperty count
@@ -1077,26 +1097,26 @@ function Invoke-HuntSMBShares
 
         # ----------------------------------------------------------------------
         # Identify affected subnets
-        # ----------------------------------------------------------------------        
+        # ----------------------------------------------------------------------
 
         # Get list of Subnets
         $Subnets = $ExcessiveSharePrivs | Select IPAddress -Unique |
-        Foreach{  
-    
+        Foreach{
+
             [int]$LastOctStart = (($_.IPAddress | Select-String '\.'  -AllMatches).Matches | select -last 1 | select index -ExpandProperty index)
             $Subnet = $_.IPAddress.substring(0,$LastOctStart)
-            $Subnet    
+            $Subnet
         } | select -Unique
 
         $SubnetsCount = $Subnets | measure | select count -ExpandProperty count
 
         # Get information for each subnet
-        $SubnetSummary = $Subnets | 
+        $SubnetSummary = $Subnets |
         foreach {
 
             $Subnet = $_
             $Subnetdisplay = $subnet + ".0"
-    
+
             # Acls - acl list exists
             $subnetacls = $ExcessiveSharePrivs | where ipaddress -like "$subnet*"
             $subnetaclsCount = $subnetacls | measure | select count -ExpandProperty count
@@ -1112,7 +1132,7 @@ function Invoke-HuntSMBShares
             # ACLs: Highrisk - acl highrisk exists
             $subnetaclx = $SharesHighRisk | where ipaddress -like "$subnet*"
             $subnetaclxCount = $subnetaclx | measure | select count -ExpandProperty count
-    
+
             # Shares
             $subnetshares = $subnetacls | select sharepath -Unique
             $subnetsharesCount = $subnetshares | measure | select count -ExpandProperty count
@@ -1124,11 +1144,11 @@ function Invoke-HuntSMBShares
             # Check for known subnet information
             if(-not $HostList){
                 if($DomainSubnets -ne 0){
-                    
+
                     $DomainSubnets |
                     foreach{
-                                                
-                        $SubnetFull = $_.Subnet                        
+
+                        $SubnetFull = $_.Subnet
 
                         if((checkSubnet $SubnetFull $Subnet).condition){
                             $SubnetDesc = $_.Description
@@ -1162,7 +1182,7 @@ function Invoke-HuntSMBShares
 
             # Return object
             if($Subnetdisplay -ne ".0"){
-                $Object 
+                $Object
             }
 
         } | sort Acls -Descending
@@ -1170,9 +1190,9 @@ function Invoke-HuntSMBShares
         # Status User
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] - Identified $SubnetsCount subnets hosting shares configured with excessive privileges."
-        $SubnetSummary | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Common-Subnets.csv"               
-        $SubnetFile = "$TargetDomain-Shares-Inventory-Common-Subnets.csv"  
-                                         
+        $SubnetSummary | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Common-Subnets.csv"
+        $SubnetFile = "$TargetDomain-Shares-Inventory-Common-Subnets.csv"
+
 
         # ----------------------------------------------------------------------
         # Calculate percentages
@@ -1180,10 +1200,10 @@ function Invoke-HuntSMBShares
 
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         #Write-Output " [*][$Time] Generating Report:"
-        
+
         # Set good/bad images
         $CheckBad  = '<img style="padding-top:5px;padding-left:20px;" src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAGPAAABjwEeLVWuAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAkVJREFUOI2FlLtLW3EUx78akiiCLuIgKBh1NzjEIQ4SRRShxRofiLOga/8FoakVxEUnFx91Egpurg6Kf0DS1lbULb6CV40PyKfD797eXO9Ne+As53fO597zlAIEKYI0gbSNlEO6tzVn28aRIkGxQbAPSL+QIBSCeBxGRox2dRmbBNIJ0ui/QCGkL0jQ1ATLy3B5iU/yeVhagsZGB7yIVB0ENLDBQbi99YPeytUVpFIONBOUJgwNwevr/2GOvLxAf78DfV/egBOam6FQcJ1PT2F11QsolSCT8WZwc2NKJP1GisjuJqytuU5nZ9DWZr68sODC5uaMLR6H62vXf2XF+cu0kL4SjcLdnXl8foaODsfBaCYDs7NeWyrlAgsFiERA2hTSD3p7vant7UE06gWUa0MDHB56Y3p6QMoJyWJ62l/wStAgGMD4OEiWmZ+qKv9gDg9LAwN++9SUlEj47aGQJJWE9J2+Pn835+crp+w0qlySSZCyQtqmthYeHirD6uogHK4MtSyoqQFpQ/aiw8aGeczn3ZFxanZ0BLu7XmgiYSYCYH3dsY8JKYz0k1gMikXjcH4O7e3+BjiN6u525/D+HlpbsQ9KxNmWUSRIp03KYIb7+Nhfq/19d6NKJZiYcP7u3dt9XkSCyUl4fPSD3kqxCDMzDuxT0LWpRvqMBJ2dsLPj1qhcnp5gawtisb+Xpvx8+QbQvhqLkjpUXy8lk1JLiwm9uJAODiTLkqQTSR+rpG/+ofRDw0hppE2kLJJla9a2jSGFg2L/AOl+fNdFEbGxAAAAAElFTkSuQmCC" />'
-        $CheckGood = '<img style="padding-top:5px;padding-left:20px;" src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAGPAAABjwEeLVWuAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAudJREFUOI2Nld1LU3EYxz/nnLVJpCMKQ6eTNESCDCy6MXoznEKglZIYddFNF91GFxF1KojyLYVuutKcFMyQ7Q8IFkWtsBDfIip68QWbwnzbi1vb08Xcam6W37tznvP9nOf3+/F9fgqZpGNE4SRCHVABFKxWJoH3gBNwohNea1XSYDc5jdACFGuKRvmOciw5ljhtcZKRnyNEJQrwBbiCzkDGpnCgodOGjuS25kqnp1Nm/bOyVl6/V9pftcv2lu2CjqDTio6aaZlt6IjNbhNf0JcGWqu5wJxUPapKQO+lL1NHavtqJRKN/BeWUDgaluO9xxPQ+vge6hiB8fzs/JLxS+OYTebMW7KOfCEfZQ/K8Pq9X4EyFYWTQMn1w9c3BFtYWeCC6wJzgTkAtmZt5dqhawA7UahTEepNmonmPc0bgtnsNrqHuqnqrUpCz+89j1EzglCnAvsOWA6Qbcz+J2w+NE+1vZo3U28AGP45TMfrDgDMJjMVeRUA+1Ugz2q2ppj9ET+2Phuuj65kZzV9Nbydepv8pmF3A7eO3ko+rzIsBgBFUVJgJx6fwP3Njfubm576Hro8XcnOErAnp59gUA3Jd5qiAcQMwPTU4lRpojA0M4Rn0gNAOBrm7MBZROSfMICJxQmAaRV455n0EIgEAKgsrMTV5CLLkAWwIdhyeJnB6UGAQRVwBn8FGfjwJ5LVJdXcPnY7xVRkLsoIA+gf7yf0KwTggodsQudTcVexBCPBlCTceXFH0JGCjoK0WkLL4WWx3rcKOl9WQwLonEJHGh2NEovFUgz2Yfu6sFgsJmf6z8Sjd5O61L7jU0OanjZJIBL4b46DkaCcGziXyPHd5GkngUd4Bmwe9Y5WOsYc5G7JpXRbKZqqpfx3JbqCY8xBQ38Dz78/B2gBruJGINOAjU+NVmBXjimHg9aDFOYUIggTCxO8/PGSpfASwGcULnMD19/2dCDED2qG+tUrYB+pV8A7wEkeLi4SWWv9DTik/yQF2VYdAAAAAElFTkSuQmCC" />'        
+        $CheckGood = '<img style="padding-top:5px;padding-left:20px;" src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAGPAAABjwEeLVWuAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAudJREFUOI2Nld1LU3EYxz/nnLVJpCMKQ6eTNESCDCy6MXoznEKglZIYddFNF91GFxF1KojyLYVuutKcFMyQ7Q8IFkWtsBDfIip68QWbwnzbi1vb08Xcam6W37tznvP9nOf3+/F9fgqZpGNE4SRCHVABFKxWJoH3gBNwohNea1XSYDc5jdACFGuKRvmOciw5ljhtcZKRnyNEJQrwBbiCzkDGpnCgodOGjuS25kqnp1Nm/bOyVl6/V9pftcv2lu2CjqDTio6aaZlt6IjNbhNf0JcGWqu5wJxUPapKQO+lL1NHavtqJRKN/BeWUDgaluO9xxPQ+vge6hiB8fzs/JLxS+OYTebMW7KOfCEfZQ/K8Pq9X4EyFYWTQMn1w9c3BFtYWeCC6wJzgTkAtmZt5dqhawA7UahTEepNmonmPc0bgtnsNrqHuqnqrUpCz+89j1EzglCnAvsOWA6Qbcz+J2w+NE+1vZo3U28AGP45TMfrDgDMJjMVeRUA+1Ugz2q2ppj9ET+2Phuuj65kZzV9Nbydepv8pmF3A7eO3ko+rzIsBgBFUVJgJx6fwP3Njfubm576Hro8XcnOErAnp59gUA3Jd5qiAcQMwPTU4lRpojA0M4Rn0gNAOBrm7MBZROSfMICJxQmAaRV455n0EIgEAKgsrMTV5CLLkAWwIdhyeJnB6UGAQRVwBn8FGfjwJ5LVJdXcPnY7xVRkLsoIA+gf7yf0KwTggodsQudTcVexBCPBlCTceXFH0JGCjoK0WkLL4WWx3rcKOl9WQwLonEJHGh2NEovFUgz2Yfu6sFgsJmf6z8Sjd5O61L7jU0OanjZJIBL4b46DkaCcGziXyPHd5GkngUd4Bmwe9Y5WOsYc5G7JpXRbKZqqpfx3JbqCY8xBQ38Dz78/B2gBruJGINOAjU+NVmBXjimHg9aDFOYUIggTCxO8/PGSpfASwGcULnMD19/2dCDED2qG+tUrYB+pV8A7wEkeLi4SWWv9DTik/yQF2VYdAAAAAElFTkSuQmCC" />'
 
         # top 5 shares
         $DupDec = $Top5ShareCountTotal / $AllAccessibleSharesCount
@@ -1192,32 +1212,32 @@ function Invoke-HuntSMBShares
         # Expected share count from know defaults
         $MinExpectedShareCount = $Computers445OpenCount * 2
 
-        # Computer ping                      
+        # Computer ping
         $PercentComputerPing = [math]::Round($ComputerPingableCount/$ComputerCount,4)
         $PercentComputerPingP = $PercentComputerPing.tostring("P") -replace(" ","")
         $PercentComputerPingBarVal = ($PercentComputerPing*2).tostring("P") -replace(" %","px")
 
-        # Computer port 445 open              
-        $PercentComputerPort = [math]::Round($Computers445OpenCount/$ComputerCount,4) 
+        # Computer port 445 open
+        $PercentComputerPort = [math]::Round($Computers445OpenCount/$ComputerCount,4)
         $PercentComputerPortP = $PercentComputerPort.tostring("P") -replace(" ","")
         $PercentComputerPortBarVal = ($PercentComputerPort*2).tostring("P") -replace(" %","")
 
-        # Computer with share        
+        # Computer with share
         $PercentComputerWitShare = [math]::Round($AllComputersWithSharesCount/$ComputerCount,4)
         $PercentComputerWitShareP = $PercentComputerWitShare.tostring("P") -replace(" ","")
         $PercentComputerWitShareBarVal = ($PercentComputerWitShare*2).tostring("P") -replace(" %","px")
 
-        # Computer with non default shares   
+        # Computer with non default shares
         $PercentComputerNonDefault = [math]::Round($ComputerwithNonDefaultCount/$ComputerCount,4)
         $PercentComputerNonDefaultP = $PercentComputerNonDefault.tostring("P") -replace(" ","")
         $PercentComputerNonDefaultBarVal = ($PercentComputerNonDefault*2).tostring("P") -replace(" %","px")
 
-        # Computer with excessive priv shares 
+        # Computer with excessive priv shares
         $PercentComputerExPriv = [math]::Round($ComputerWithExcessive/$ComputerCount,4)
         $PercentComputerExPrivP = $PercentComputerExPriv.tostring("P") -replace(" ","")
         $PercentComputerExPrivBarVal = ($PercentComputerExPriv*2).tostring("P") -replace(" %","px")
 
-        # Computer read share access       
+        # Computer read share access
         $PercentComputerRead = [math]::Round($ComputerWithReadCount/$ComputerCount,4)
         $PercentComputerReadP = $PercentComputerRead.tostring("P") -replace(" ","")
         $PercentComputerReadBarVal = ($PercentComputerRead*2).tostring("P") -replace(" %","px")
@@ -1227,7 +1247,7 @@ function Invoke-HuntSMBShares
             $CheckStatusComputerR = $CheckGood
         }
 
-        # Computer write share access         
+        # Computer write share access
         $PercentComputerWrite = [math]::Round($ComputerWithWriteCount/$ComputerCount,4)
         $PercentComputerWriteP = $PercentComputerWrite.tostring("P") -replace(" ","")
         $PercentComputerWriteBarVal = ($PercentComputerWrite*2).tostring("P") -replace(" %","px")
@@ -1237,7 +1257,7 @@ function Invoke-HuntSMBShares
             $CheckStatusComputerW = $CheckGood
         }
 
-        # Computer highrisk shares            
+        # Computer highrisk shares
         $PercentComputerHighRisk = [math]::Round($ComputerwithHighRisk/$ComputerCount,4)
         $PercentComputerHighRiskP = $PercentComputerHighRisk.tostring("P") -replace(" ","")
         $PercentComputerHighRiskBarVal = ($PercentComputerHighRisk*2).tostring("P") -replace(" %","px")
@@ -1247,17 +1267,17 @@ function Invoke-HuntSMBShares
             $CheckStatusComputerH = $CheckGood
         }
 
-        # Shares with non default names      
+        # Shares with non default names
         $PercentSharesNonDefault = [math]::Round($SharesNonDefaultCount/$AllSMBSharesCount,4)
         $PercentSharesNonDefaultP = $PercentSharesNonDefault.tostring("P") -replace(" ","")
         $PercentSharesNonDefaultBarVal = ($PercentSharesNonDefault*2).tostring("P") -replace(" %","px")
 
-        # Shares with excessive priv shares   
+        # Shares with excessive priv shares
         $PercentSharesExPriv = [math]::Round($ExcessiveSharesCount/$AllSMBSharesCount,4)
         $PercentSharesExPrivP = $PercentSharesExPriv.tostring("P") -replace(" ","")
         $PercentSharesExPrivBarVal = ($PercentSharesExPriv*2).tostring("P") -replace(" %","px")
 
-        # Shares with excessive read        
+        # Shares with excessive read
         $PercentSharesRead = [math]::Round($SharesWithReadCount/$AllSMBSharesCount,4)
         $PercentSharesReadP = $PercentSharesRead.tostring("P") -replace(" ","")
         $PercentSharesReadBarVal = ($PercentSharesRead*2).tostring("P") -replace(" %","px")
@@ -1267,8 +1287,8 @@ function Invoke-HuntSMBShares
             $CheckStatusShareR = $CheckGood
         }
 
-        # Shares with excessive write         
-        $PercentSharesWrite = [math]::Round($SharesWithWriteCount/$AllSMBSharesCount,4) 
+        # Shares with excessive write
+        $PercentSharesWrite = [math]::Round($SharesWithWriteCount/$AllSMBSharesCount,4)
         $PercentSharesWriteP = $PercentSharesWrite.tostring("P") -replace(" ","")
         $PercentSharesWriteBarVal = ($PercentSharesWrite*2).tostring("P") -replace(" %","px")
         if($PercentSharesWrite -ne 0){
@@ -1277,7 +1297,7 @@ function Invoke-HuntSMBShares
             $CheckStatusShareW = $CheckGood
         }
 
-        # Shares with excessive highrisk      
+        # Shares with excessive highrisk
         $PercentSharesHighRisk = [math]::Round($SharesHighRiskCount/$AllSMBSharesCount,4)
         $PercentSharesHighRiskP = $PercentSharesHighRisk.tostring("P") -replace(" ","")
         $PercentSharesHighRiskBarVal = ($PercentSharesHighRisk*2).tostring("P") -replace(" %","px")
@@ -1287,17 +1307,17 @@ function Invoke-HuntSMBShares
             $CheckStatusShareH = $CheckGood
         }
 
-        # ACL with non default names          
+        # ACL with non default names
         $PercentAclNonDefault = [math]::Round($AclNonDefaultCount/$ShareACLsCount,4)
         $PercentAclNonDefaultP = $PercentAclNonDefault.tostring("P") -replace(" ","")
         $PercentAclNonDefaultBarVal = ($PercentAclNonDefault*2).tostring("P") -replace(" %","px")
 
-        # ACL with excessive priv shares      
+        # ACL with excessive priv shares
         $PercentAclExPriv = [math]::Round($ExcessiveSharePrivsCount/$ShareACLsCount,4)
         $PercentAclExPrivP = $PercentAclExPriv.tostring("P") -replace(" ","")
         $PercentAclExPrivBarVal = ($PercentAclExPriv*2).tostring("P") -replace(" %","px")
 
-        # ACL with excessive read           
+        # ACL with excessive read
         $PercentAclRead = [math]::Round($AclWithReadCount/$ShareACLsCount,4)
         $PercentAclReadP = $PercentAclRead.tostring("P") -replace(" ","")
         $PercentAclReadBarVal = ($PercentAclRead *2).tostring("P") -replace(" %","px")
@@ -1307,7 +1327,7 @@ function Invoke-HuntSMBShares
             $CheckStatusAclR = $CheckGood
         }
 
-        # ACL with excessive write             
+        # ACL with excessive write
         $PercentAclWrite = [math]::Round($AclWithWriteCount/$ShareACLsCount,4)
         $PercentAclWriteP = $PercentAclWrite.tostring("P") -replace(" ","")
         $PercentAclWriteBarVal = ($PercentAclWrite *2).tostring("P") -replace(" %","px")
@@ -1326,127 +1346,127 @@ function Invoke-HuntSMBShares
         }else{
             $CheckStatusAclH = $CheckGood
         }
-        
+
         # ACE User: Everyone
-        $AceEveryone = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName "everyone"
-        $AceEveryoneAclCount = $AceEveryone.UserAclsCount 
-        $AceEveryoneShareCount = $AceEveryone.UserShareCount 
-        $AceEveryoneComputerCount = $AceEveryone.UserComputerCount 
+        $AceEveryone = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName $Everyone
+        $AceEveryoneAclCount = $AceEveryone.UserAclsCount
+        $AceEveryoneShareCount = $AceEveryone.UserShareCount
+        $AceEveryoneComputerCount = $AceEveryone.UserComputerCount
         $AceEveryoneAclReadCount = $AceEveryone.UserReadAclCount
         $AceEveryoneAclWriteCount = $AceEveryone.UserWriteAclCount
         $AceEveryoneAclHRCount = $AceEveryone.UserHighRiskAclCount
 
-	    $AceEveryoneAclP = Get-PercentDisplay -TargetCount $AceEveryoneComputerCount -FullCount $ComputerCount 
+	    $AceEveryoneAclP = Get-PercentDisplay -TargetCount $AceEveryoneComputerCount -FullCount $ComputerCount
         $AceEveryoneAclPS = $AceEveryoneAclP.PercentString
         $AceEveryoneAclPB = $AceEveryoneAclP.PercentBarVal
 
-        $AceEveryoneShareCountP = Get-PercentDisplay -TargetCount $AceEveryoneShareCount -FullCount $AllSMBSharesCount 
+        $AceEveryoneShareCountP = Get-PercentDisplay -TargetCount $AceEveryoneShareCount -FullCount $AllSMBSharesCount
         $AceEveryoneShareCountPS = $AceEveryoneShareCountP.PercentString
-        $AceEveryoneShareCountPB = $AceEveryoneShareCountP.PercentBarVal 
-    
+        $AceEveryoneShareCountPB = $AceEveryoneShareCountP.PercentBarVal
+
         $AceEveryoneComputerCountP = Get-PercentDisplay -TargetCount $AceEveryoneAclCount -FullCount $ShareACLsCount
         $AceEveryoneComputerCountPS = $AceEveryoneComputerCountP.PercentString
-        $AceEveryoneComputerCountPB = $AceEveryoneComputerCountP.PercentBarVal 
+        $AceEveryoneComputerCountPB = $AceEveryoneComputerCountP.PercentBarVal
 
         # ACE User: Users
-        $AceUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName "BUILTIN\Users"
-        $AceUsersAclCount = $AceUsers.UserAclsCount 
-        $AceUsersShareCount = $AceUsers.UserShareCount 
-        $AceUsersComputerCount = $AceUsers.UserComputerCount         
+        $AceUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName $BuiltinUsers
+        $AceUsersAclCount = $AceUsers.UserAclsCount
+        $AceUsersShareCount = $AceUsers.UserShareCount
+        $AceUsersComputerCount = $AceUsers.UserComputerCount
         $AceUsersAclReadCount = $AceUsers.UserReadAclCount
         $AceUsersAclWriteCount = $AceUsers.UserWriteACLCount
         $AceUsersAclHRCount = $AceUsers.UserHighRiskACLCount
 
-        $AceUsersAclP = Get-PercentDisplay -TargetCount $AceUsersComputerCount -FullCount $ComputerCount 
+        $AceUsersAclP = Get-PercentDisplay -TargetCount $AceUsersComputerCount -FullCount $ComputerCount
         $AceUsersAclPS = $AceUsersAclP.PercentString
         $AceUsersAclPB = $AceUsersAclP.PercentBarVal
 
-        $AceUsersShareCountP = Get-PercentDisplay -TargetCount $AceUsersShareCount -FullCount $AllSMBSharesCount 
+        $AceUsersShareCountP = Get-PercentDisplay -TargetCount $AceUsersShareCount -FullCount $AllSMBSharesCount
         $AceUsersShareCountPS = $AceUsersShareCountP.PercentString
-        $AceUsersShareCountPB = $AceUsersShareCountP.PercentBarVal 
-    
+        $AceUsersShareCountPB = $AceUsersShareCountP.PercentBarVal
+
         $AceUsersComputerCountP = Get-PercentDisplay -TargetCount $AceUsersAclCount -FullCount $ShareACLsCount
         $AceUsersComputerCountPS = $AceUsersComputerCountP.PercentString
-        $AceUsersComputerCountPB = $AceUsersComputerCountP.PercentBarVal 
+        $AceUsersComputerCountPB = $AceUsersComputerCountP.PercentBarVal
 
         # ACE User: Authenticated Users
-        $AceAuthenticatedUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName "Authenticated Users"        
-        $AceAuthenticatedUsersComputerCount = $AceAuthenticatedUsers.UserComputerCount 
-        $AceAuthenticatedUsersShareCount    = $AceAuthenticatedUsers.UserShareCount 
-        $AceAuthenticatedUsersAclCount      = $AceAuthenticatedUsers.UserAclsCount 
+        $AceAuthenticatedUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName $AuthenticatedUsers
+        $AceAuthenticatedUsersComputerCount = $AceAuthenticatedUsers.UserComputerCount
+        $AceAuthenticatedUsersShareCount    = $AceAuthenticatedUsers.UserShareCount
+        $AceAuthenticatedUsersAclCount      = $AceAuthenticatedUsers.UserAclsCount
         $AceAuthenticatedUsersAclReadCount  = $AceAuthenticatedUsers.UserReadAclCount
         $AceAuthenticatedUsersAclWriteCount = $AceAuthenticatedUsers.UserWriteACLCount
         $AceAuthenticatedUsersAclHRCount    = $AceAuthenticatedUsers.UserHighRiskACLCount
 
-        $AceAuthenticatedUsersAclP = Get-PercentDisplay -TargetCount $AceAuthenticatedUsersComputerCount -FullCount $ComputerCount 
+        $AceAuthenticatedUsersAclP = Get-PercentDisplay -TargetCount $AceAuthenticatedUsersComputerCount -FullCount $ComputerCount
         $AceAuthenticatedUsersAclPS = $AceAuthenticatedUsersAclP.PercentString
         $AceAuthenticatedUsersAclPB = $AceAuthenticatedUsersAclP.PercentBarVal
 
-        $AceAuthenticatedUsersShareCountP = Get-PercentDisplay -TargetCount $AceAuthenticatedUsersShareCount -FullCount $AllSMBSharesCount 
+        $AceAuthenticatedUsersShareCountP = Get-PercentDisplay -TargetCount $AceAuthenticatedUsersShareCount -FullCount $AllSMBSharesCount
         $AceAuthenticatedUsersShareCountPS = $AceAuthenticatedUsersShareCountP.PercentString
-        $AceAuthenticatedUsersShareCountPB = $AceAuthenticatedUsersShareCountP.PercentBarVal 
-            
+        $AceAuthenticatedUsersShareCountPB = $AceAuthenticatedUsersShareCountP.PercentBarVal
+
         $AceAuthenticatedUsersComputerCountP = Get-PercentDisplay -TargetCount $AceAuthenticatedUsersAclCount -FullCount $ShareACLsCount
         $AceAuthenticatedUsersComputerCountPS = $AceAuthenticatedUsersComputerCountP.PercentString
-        $AceAuthenticatedUsersComputerCountPB = $AceAuthenticatedUsersComputerCountP.PercentBarVal         
+        $AceAuthenticatedUsersComputerCountPB = $AceAuthenticatedUsersComputerCountP.PercentBarVal
 
         # ACE User: Domain Users
-        $AceDomainUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName "Domain Users"
-        $AceDomainUsersAclCount      = $AceDomainUsers.UserAclsCount 
-        $AceDomainUsersShareCount    = $AceDomainUsers.UserShareCount 
-        $AceDomainUsersComputerCount = $AceDomainUsers.UserComputerCount 
+        $AceDomainUsers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName $DomainUsers
+        $AceDomainUsersAclCount      = $AceDomainUsers.UserAclsCount
+        $AceDomainUsersShareCount    = $AceDomainUsers.UserShareCount
+        $AceDomainUsersComputerCount = $AceDomainUsers.UserComputerCount
         $AceDomainUsersAclReadCount  = $AceDomainUsers.UserReadAclCount
         $AceDomainUsersAclWriteCount = $AceDomainUsers.UserWriteACLCount
         $AceDomainUsersAclHRCount    = $AceDomainUsers.UserHighRiskACLCount
 
-	    $AceDomainUsersAclP = Get-PercentDisplay -TargetCount $AceDomainUsersComputerCount -FullCount $ComputerCount 
+	    $AceDomainUsersAclP = Get-PercentDisplay -TargetCount $AceDomainUsersComputerCount -FullCount $ComputerCount
         $AceDomainUsersAclPS = $AceDomainUsersAclP.PercentString
         $AceDomainUsersAclPB = $AceDomainUsersAclP.PercentBarVal
 
-        $AceDomainUsersShareCountP = Get-PercentDisplay -TargetCount $AceDomainUsersShareCount -FullCount $AllSMBSharesCount 
+        $AceDomainUsersShareCountP = Get-PercentDisplay -TargetCount $AceDomainUsersShareCount -FullCount $AllSMBSharesCount
         $AceDomainUsersShareCountPS = $AceDomainUsersShareCountP.PercentString
-        $AceDomainUsersShareCountPB = $AceDomainUsersShareCountP.PercentBarVal 
-    
+        $AceDomainUsersShareCountPB = $AceDomainUsersShareCountP.PercentBarVal
+
         $AceDomainUsersComputerCountP = Get-PercentDisplay -TargetCount $AceDomainUsersAclCount -FullCount $ShareACLsCount
         $AceDomainUsersComputerCountPS = $AceDomainUsersComputerCountP.PercentString
-        $AceDomainUsersComputerCountPB = $AceDomainUsersComputerCountP.PercentBarVal 
+        $AceDomainUsersComputerCountPB = $AceDomainUsersComputerCountP.PercentBarVal
 
         # ACE User: Domain Computers
-        $AceDomainComputers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName "Domain Computers"
-        $AceDomainComputersAclCount = $AceDomainComputers.UserAclsCount 
-        $AceDomainComputersShareCount = $AceDomainComputers.UserShareCount 
+        $AceDomainComputers = Get-UserAceCounts -DataTable $ExcessiveSharePrivs -UserName $DomainComputersGroup
+        $AceDomainComputersAclCount = $AceDomainComputers.UserAclsCount
+        $AceDomainComputersShareCount = $AceDomainComputers.UserShareCount
         $AceDomainComputersComputerCount = $AceDomainComputers.UserComputerCount
         $AceDomainComputersAclReadCount = $AceDomainComputers.UserReadAclCount
         $AceDomainComputersAclWriteCount = $AceDomainComputers.UserWriteACLCount
         $AceDomainComputersAclHRCount = $AceDomainComputers.UserHighRiskACLCount
-        
-	    $AceDomainComputersAclP = Get-PercentDisplay -TargetCount $AceDomainComputersComputerCount -FullCount $ComputerCount 
+
+	    $AceDomainComputersAclP = Get-PercentDisplay -TargetCount $AceDomainComputersComputerCount -FullCount $ComputerCount
         $AceDomainComputersAclPS = $AceDomainComputersAclP.PercentString
         $AceDomainComputersAclPB = $AceDomainComputersAclP.PercentBarVal
 
-        $AceDomainComputersShareCountP = Get-PercentDisplay -TargetCount $AceDomainComputersShareCount -FullCount $AllSMBSharesCount 
+        $AceDomainComputersShareCountP = Get-PercentDisplay -TargetCount $AceDomainComputersShareCount -FullCount $AllSMBSharesCount
         $AceDomainComputersShareCountPS = $AceDomainComputersShareCountP.PercentString
-        $AceDomainComputersShareCountPB = $AceDomainComputersShareCountP.PercentBarVal 
-    
+        $AceDomainComputersShareCountPB = $AceDomainComputersShareCountP.PercentBarVal
+
         $AceDomainComputersComputerCountP = Get-PercentDisplay -TargetCount $AceDomainComputersAclCount -FullCount $ShareACLsCount
         $AceDomainComputersComputerCountPS = $AceDomainComputersComputerCountP.PercentString
-        $AceDomainComputersComputerCountPB = $AceDomainComputersComputerCountP.PercentBarVal     
-        
+        $AceDomainComputersComputerCountPB = $AceDomainComputersComputerCountP.PercentBarVal
+
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-        #Write-Output " [*][$Time] - Summary report data generated."                     
+        #Write-Output " [*][$Time] - Summary report data generated."
         #Write-Output " [*][$Time] - $Top5ShareCountTotal of $AllAccessibleSharesCount ($DupPercent) shares are associated with the top $SampleSum share names."
 
         # ----------------------------------------------------------------------
         # Create Interesting Files Table
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
 
         Write-Output " [*][$Time] Finding interesting files..."
-               
+
         # Define common image and other formats to filter out later
         $ImageFormats = @("*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.ico", "*.svg", "*.webp", "*.mif", "*.heic", "*.msi")
 
         # Create data table to hold interesting file keywords
-        $FileNamePatternsAll =  New-Object system.data.datatable 
+        $FileNamePatternsAll =  New-Object system.data.datatable
         $FileNamePatternsAll.Columns.Add("Keyword")      | Out-Null # Keyword
         $FileNamePatternsAll.Columns.Add("Description")  | Out-Null # Summary of keyword.
         $FileNamePatternsAll.Columns.Add("Instructions") | Out-Null # Used to instruct testing how to attack match.
@@ -1465,12 +1485,12 @@ function Invoke-HuntSMBShares
         $FileNamePatternsAll.Rows.Add("Billing*","","None.","Sensitive","")                                   | Out-Null
         $FileNamePatternsAll.Rows.Add("*payment*","","None.","Sensitive","")                                  | Out-Null
         $FileNamePatternsAll.Rows.Add("patient*","","None.","Sensitive","")                                   | Out-Null
-        $FileNamePatternsAll.Rows.Add("HR*","","None.","Sensitive","")                                        | Out-Null        
+        $FileNamePatternsAll.Rows.Add("HR*","","None.","Sensitive","")                                        | Out-Null
         $FileNamePatternsAll.Rows.Add("*nessus*","This is a vulnerability scanner.","None.","Sensitive","")   | Out-Null
         $FileNamePatternsAll.Rows.Add("*nexpose*","This is a vulnerability scanner.","None.","Sensitive","")  | Out-Null
         $FileNamePatternsAll.Rows.Add("*qualys*","This is a vulnerability scanner.","None.","Sensitive","")   | Out-Null
         $FileNamePatternsAll.Rows.Add("*tripwire*","This is a vulnerability scanner.","None.","Sensitive","") | Out-Null
-       
+
         # Add rows to data table - Files containing passwords
         $FileNamePatternsAll.Rows.Add("Bootstrap.ini*","Used for Windows Deployment services (WDS) PXE installation and may contain credentials.","None.","Secret","Get-PwBootstrapConfig") | Out-Null
         $FileNamePatternsAll.Rows.Add("*.bcd","","None.","Secret","")                                        | Out-Null
@@ -1505,7 +1525,7 @@ function Invoke-HuntSMBShares
         $FileNamePatternsAll.Rows.Add("SAM","","None.","Secret","Get-PrivateKeyFilePath")                    | Out-Null
         $FileNamePatternsAll.Rows.Add("SAM-*","","None.","Secret","Get-PrivateKeyFilePath")                  | Out-Null
         $FileNamePatternsAll.Rows.Add("SAM_*","","None.","Secret","Get-PrivateKeyFilePath")                  | Out-Null
-        $FileNamePatternsAll.Rows.Add("SYSTEM","","None.","Secret","")                                       | Out-Null 
+        $FileNamePatternsAll.Rows.Add("SYSTEM","","None.","Secret","")                                       | Out-Null
         $FileNamePatternsAll.Rows.Add("server.xml*","","None.","Secret","Get-PwServerXml")                   | Out-Null
         $FileNamePatternsAll.Rows.Add("shadow*","","None.","Secret","Get-PwShadow")                          | Out-Null
         $FileNamePatternsAll.Rows.Add("standalone.xml*","","None.","Secret","Get-PwStandalone")              | Out-Null
@@ -1520,7 +1540,7 @@ function Invoke-HuntSMBShares
         $FileNamePatternsAll.Rows.Add("*.pvm*","","None.","Secret","Get-PrivateKeyFilePath")                 | Out-Null
         $FileNamePatternsAll.Rows.Add("*.pvs*","","None.","Secret","Get-PrivateKeyFilePath")                 | Out-Null
         $FileNamePatternsAll.Rows.Add("*.qcow*","","None.","Secret","Get-PrivateKeyFilePath")                | Out-Null
-        $FileNamePatternsAll.Rows.Add("*.qcow2*","","None.","Secret","Get-PrivateKeyFilePath")               | Out-Null     
+        $FileNamePatternsAll.Rows.Add("*.qcow2*","","None.","Secret","Get-PrivateKeyFilePath")               | Out-Null
         $FileNamePatternsAll.Rows.Add("*vcenter*","","None.","Secret","Get-PrivateKeyFilePath")              | Out-Null
         $FileNamePatternsAll.Rows.Add("*vault*","","None.","Secret","Get-PrivateKeyFilePath")                | Out-Null
         $FileNamePatternsAll.Rows.Add("*DefaultAppPool*","","None.","Secret","")                             | Out-Null
@@ -1605,7 +1625,7 @@ function Invoke-HuntSMBShares
         $FileNamePatternsAll.Rows.Add("*.dmp*","This is a memory dump file.","None.","SystemImage","")                                                 | Out-Null
         $FileNamePatternsAll.Rows.Add("*.docker*","This is a docker image file.","None.","SystemImage","")                                             | Out-Null
 
-        # Add rows to data table - Database files  
+        # Add rows to data table - Database files
         $FileNamePatternsAll.Rows.Add("*database*","","None.","Database","")                                 | Out-Null
         $FileNamePatternsAll.Rows.Add("*.sql*","","None.","Database","")                                     | Out-Null
         $FileNamePatternsAll.Rows.Add("*.sqlite*","","None.","Database","")                                  | Out-Null
@@ -1666,7 +1686,7 @@ function Invoke-HuntSMBShares
             $CheckFieldKeyword  =  $FileNamePatternsAllTest | gm | where name -like "keyword" | select name -ExpandProperty name
             $CheckFieldCategory =  $FileNamePatternsAllTest | gm | where name -like "category" | select name -ExpandProperty name
             if($CheckFieldKeyword -and $CheckFieldCategory){
-                # File found and columns exist 
+                # File found and columns exist
                 $FileNamePatternsAll.Clear()
                 $FileNamePatternsAll = $FileNamePatternsAllTest
             }else{
@@ -1677,59 +1697,59 @@ function Invoke-HuntSMBShares
 
         # Get unqiue categories
         $FileNamePatternCategories      = $FileNamePatternsAll | select Category -Unique
-        $FileNamePatternCategoriesCount = $FileNamePatternsAll | select Category -Unique | measure | select count -ExpandProperty count          
+        $FileNamePatternCategoriesCount = $FileNamePatternsAll | select Category -Unique | measure | select count -ExpandProperty count
 
         # Generate chart categories - Individual rows
-        # for each category - "var MyScriptsCount = countStringInDisplayedRows('Scripts');" 
+        # for each category - "var MyScriptsCount = countStringInDisplayedRows('Scripts');"
         $ChartCategoryCatVars = $FileNamePatternCategories |
         foreach{
             $ChartCatGenCat = $_.category
             $ChartCatGenVar = "My"+ $ChartCatGenCat + "Count"
             "var $ChartCatGenVar = countStringInDisplayedRows('$ChartCatGenCat');"
-        } 
+        }
         $ChartCategoryCatVarsFlat = $ChartCategoryCatVars -join "`n"
 
         # Generate chart categories - Category list
         # once -  categories: ['Sensitive', 'Secrets', 'Scripts'],
         $ChartCategoryCommas = ($FileNamePatternCategories | Select-Object -ExpandProperty category | ForEach-Object { "'$_'" }) -join ", "
-        $ChartCategoryCat    = "categories: [$ChartCategoryCommas],"   
-        $ChartCategoryCatDash    = "[$ChartCategoryCommas]" 
-               
+        $ChartCategoryCat    = "categories: [$ChartCategoryCommas],"
+        $ChartCategoryCatDash    = "[$ChartCategoryCommas]"
+
         # Generate chart categories -
-        # once -  data: [MySensitiveCount, MySecretCount, MyScriptsCount] 
+        # once -  data: [MySensitiveCount, MySecretCount, MyScriptsCount]
         $ChartCategoryCountFormat = ($FileNamePatternCategories | Select-Object -ExpandProperty category | ForEach-Object {"My"+ $_ + "Count"}) -join ", "
         $ChartCategoryDat         = "data: [$ChartCategoryCountFormat]"
         $ChartCategoryDatDash     = "[$ChartCategoryCountFormat]"
 
         # Get a list of file names from each folder group for the target share name
         $InterestingFilesAllFileNames = $ExcessiveSharePrivs | select FileList -Unique | foreach {$_.FileList -split "`r`n"} | Where-Object {$_ -ne ''} | foreach {$_.ToLower()}|  select -Unique
-                        
+
         # Identify keyword matches in filenames
-        $InterestingFilesAllMatches =  New-Object system.data.datatable 
+        $InterestingFilesAllMatches =  New-Object system.data.datatable
         $InterestingFilesAllMatches.Columns.Add("FileName")  | Out-Null
-        $InterestingFilesAllMatches.Columns.Add("Category")  | Out-Null 
-        $FileNamePatternsAll | 
+        $InterestingFilesAllMatches.Columns.Add("Category")  | Out-Null
+        $FileNamePatternsAll |
         foreach {
             $TargetKeywordValue       = $_.Keyword
             $TargetKeywordCategory    = $_.Category
-            $InterestingFilesAllFileNames | 
+            $InterestingFilesAllFileNames |
             foreach {
 
                     if($_ -like "$TargetKeywordValue"){
 
                         # check if file has already been labeled
-                        $CheckForFile = $InterestingFilesAllMatches | where Filename -like "$_" 
-                        if(-not $CheckForFile){ 
+                        $CheckForFile = $InterestingFilesAllMatches | where Filename -like "$_"
+                        if(-not $CheckForFile){
 
                             # Add file
                            $InterestingFilesAllMatches.Rows.Add("$_","$TargetKeywordCategory")| Out-Null
-                        }                 
+                        }
                     }
             }
-        }   
-        
+        }
+
         # Query for a list of information for each file name match
-        $InterestingFilesAllObjects =  $InterestingFilesAllMatches | 
+        $InterestingFilesAllObjects =  $InterestingFilesAllMatches |
         foreach{
 
             # Set variables
@@ -1740,34 +1760,34 @@ function Invoke-HuntSMBShares
             $TargetKeywordMatches = $ExcessiveSharePrivs | where FileList -like "*$TargetFileNameValue*" | select ComputerName,ShareName,SharePath -Unique
 
             # Extend object to include a unc path to file
-            $TargetKeywordMatches | 
+            $TargetKeywordMatches |
             foreach {
 
                 # Select the propertity and make new ones
-                $TargetKeywordComputer  = $_.ComputerName   
-                $TargetKeywordShareName = $_.ShareName 
+                $TargetKeywordComputer  = $_.ComputerName
+                $TargetKeywordShareName = $_.ShareName
                 $TargetKeywordSharePath = $_.SharePath
                 $TargetKeywordUNCPath   = "$TargetKeywordSharePath\$TargetFileNameValue"
-                $TargetKeywordCategory  = $TargetCategoryValue 
+                $TargetKeywordCategory  = $TargetCategoryValue
 
                 # Create updated object
                 $object = New-Object psobject
                 $object | add-member noteproperty ComputerName            $TargetKeywordComputer
                 $object | add-member noteproperty ShareName               $TargetKeywordShareName
-                $object | add-member noteproperty SharePath               $TargetKeywordSharePath   
+                $object | add-member noteproperty SharePath               $TargetKeywordSharePath
                 $object | add-member noteproperty UncPath                 $TargetKeywordUNCPath
                 $object | add-member noteproperty FileName                $TargetFileNameValue
                 $object | add-member noteproperty Category                $TargetKeywordCategory
 
                 # Return object
-                $object 
+                $object
             }
-        } | select ComputerName,ShareName,SharePath,UncPath,FileName,Category -Unique  
+        } | select ComputerName,ShareName,SharePath,UncPath,FileName,Category -Unique
 
         # For each category get the count and store the numbers in an array
         $IFCategoryList = ($FileNamePatternCategories | select Category -ExpandProperty Category |
         foreach {
-            
+
             $CurrentCategory = $_
             #$InterestingFilesAllObjects | where Category -eq "$CurrentCategory" | select filename -Unique | measure | select count -ExpandProperty count #unique file name count vs all files
             $InterestingFilesAllObjects | where Category -eq "$CurrentCategory" | measure | select count -ExpandProperty count
@@ -1776,29 +1796,29 @@ function Invoke-HuntSMBShares
         $IFCategoryListCount = "[$IFCategoryList]"
 
         # Export objects to file
-        $InterestingFilesAllObjects | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Interesting-Files.csv"     
+        $InterestingFilesAllObjects | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Interesting-Files.csv"
 
-        # Get secrets & sensitive counts for dashboard         
+        # Get secrets & sensitive counts for dashboard
         $InterestingFilesAllObjectsSecretCount    = $InterestingFilesAllObjects | where category -eq 'secret'    | select UncPath -Unique | measure | select count -ExpandProperty count
         $InterestingFilesAllObjectsSensitiveCount = $InterestingFilesAllObjects | where category -eq 'sensitive' | select UncPath -Unique | measure | select count -ExpandProperty count
 
         # Get order list of interesting file names by count
-        $InterestingFilesAllFilesCount    = $InterestingFilesAllObjects | measure | select count -ExpandProperty count 
-        $InterestingFilesAllFilesCountU   = $InterestingFilesAllObjects | select filename -Unique | measure | select count -ExpandProperty count 
+        $InterestingFilesAllFilesCount    = $InterestingFilesAllObjects | measure | select count -ExpandProperty count
+        $InterestingFilesAllFilesCountU   = $InterestingFilesAllObjects | select filename -Unique | measure | select count -ExpandProperty count
         $InterestingFilesAllFilesGrouped  = $InterestingFilesAllObjects | group  filename | select count,name | sort count -Descending
 
         # Generate a row for each one
         # Headers are Instance Count, FileName, Type, File Paths,Affected Computers, Affected Shares
-        $InterestingFilesAllFilesRows = $InterestingFilesAllFilesGrouped | 
+        $InterestingFilesAllFilesRows = $InterestingFilesAllFilesGrouped |
         foreach{
-            
+
             # Get count
             $IfFinalCount = $_.count
 
             # Get File Name
             $IfFinalName = $_.name
 
-            # Category 
+            # Category
             $IfFinalType = $InterestingFilesAllObjects | Where-Object { $_.FileName -like "$IfFinalName" } | select Category -First 1 -ExpandProperty Category
 
             # Get File Paths
@@ -1811,9 +1831,9 @@ function Invoke-HuntSMBShares
             # Get Computer Count for Name
             # <td>$IfFinalcomputerCount</td>
             $IfFinalcomputerCount = $InterestingFilesAllObjects | Where-Object { $_.FileName -like "$IfFinalName" } | select ComputerName -Unique   | measure | select count -ExpandProperty count
-                
-            # Create Row  
-             
+
+            # Create Row
+
             $IfRow = @"
             <tr>
                 <td>$IfFinalCount</td>
@@ -1829,8 +1849,8 @@ function Invoke-HuntSMBShares
 "@
 
             # Return row
-            $IfRow 
-        }  
+            $IfRow
+        }
 
         # ----------------------------------------------------------------------
         # Interesting Files - Download and Parse Secrets Files
@@ -1839,11 +1859,11 @@ function Invoke-HuntSMBShares
         # Status user
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         Write-Output " [*][$Time] Grabbing secrets for parsing..."
-        
-        # Filter for secret files
-        $MySecrets = $InterestingFilesAllObjects | where category -eq 'secret' 
 
-        # Create data table to store the parsed passwords 
+        # Filter for secret files
+        $MySecrets = $InterestingFilesAllObjects | where category -eq 'secret'
+
+        # Create data table to store the parsed passwords
         <#
         $null = $MySecretsTbl = New-Object System.Data.DataTable
         $null = $MySecretsTbl.Columns.Add("ComputerName", [System.Type]::GetType("System.String"))
@@ -1860,8 +1880,8 @@ function Invoke-HuntSMBShares
 
         # Download the Files
         $MySecretsTbl = $MySecrets | where ComputerName -notlike "" |
-        Foreach {                        
-            
+        Foreach {
+
             # "ComputerName","ShareName","SharePath","UncPath","FileName","Category"
             $MySecretsComputer = $_.ComputerName
             $MySecretsShare    = $_.ShareName
@@ -1872,9 +1892,9 @@ function Invoke-HuntSMBShares
             $MySecretsFileLocalPath = Copy-FileWithStructure -ComputerName $MySecretsComputer -ShareName $MySecretsShare -FilePath $MySecretsFilePath -OutputDirectory "$OutputDirectory" -ErrorAction SilentlyContinue
 
             # Grab function matches for file
-            $FileNamePatternsAll | where category -like 'secret' | where ParserFunction -notlike "" | 
+            $FileNamePatternsAll | where category -like 'secret' | where ParserFunction -notlike "" |
             foreach{
-                    
+
                     # Check for keyword match
                     $MySecretKeywordCheck = $_.Keyword
                     $MySecretKeywordFunction = $_.ParserFunction
@@ -1883,29 +1903,29 @@ function Invoke-HuntSMBShares
                        # Call function to prase file
                        write-verbose "Parsing $MySecretsFile with $MySecretKeywordFunction"
                        $FunctionToCall = Get-Command $MySecretKeywordFunction
-                        & $FunctionToCall -ComputerName $MySecretsComputer -ShareName $MySecretsShare -FileName $MySecretsFile -UncFilePath $MySecretsFilePath -FilePath $MySecretsFileLocalPath 
+                        & $FunctionToCall -ComputerName $MySecretsComputer -ShareName $MySecretsShare -FileName $MySecretsFile -UncFilePath $MySecretsFilePath -FilePath $MySecretsFileLocalPath
                     }
-            }            
+            }
 
-        }        
+        }
 
         # Generate counts for dashabord summary and for "Recovered Secrets" Page
-        $SecretsRecoveredCount = $MySecretsTbl | Where ComputerName -NotLike "" | Select-Object ComputerName, ShareName, UncFilePath, FileName, Section, ObjectName, TargetURL, TargetServer, TargetPort, Database, Domain, Username, Password, PasswordEnc, KeyFilePath -Unique | measure | select count -ExpandProperty count 
+        $SecretsRecoveredCount = $MySecretsTbl | Where ComputerName -NotLike "" | Select-Object ComputerName, ShareName, UncFilePath, FileName, Section, ObjectName, TargetURL, TargetServer, TargetPort, Database, Domain, Username, Password, PasswordEnc, KeyFilePath -Unique | measure | select count -ExpandProperty count
 
         # Generate count of file that secrests were recovered from (instead of total recovered secrets)
-        $SecretsRecoveredFileCount = $MySecretsTbl | Select-Object UncFilePath -Unique | measure | select count -ExpandProperty count 
+        $SecretsRecoveredFileCount = $MySecretsTbl | Select-Object UncFilePath -Unique | measure | select count -ExpandProperty count
 
         # Get secretcount - recovered count
         $SecretsNotRecoveredCount = $InterestingFilesAllObjectsSecretCount - $SecretsRecoveredCount
 
         # Get index of secrets column (position may change on custom list import) for dashboard if chart - $ChartCategoryCatDash
         $ChartCategoryCatDashParse = $ChartCategoryCatDash.Trim("[]").Split(",") | ForEach-Object { $_.Trim().Trim("'") }
-        $secretIndex               = $ChartCategoryCatDashParse.IndexOf('Secret')        
+        $secretIndex               = $ChartCategoryCatDashParse.IndexOf('Secret')
 
         # Calculate difference between discoverd and recovered secrets and update secrets value - $IFCategoryListCount
         $IFCategoryListCountParse                = $IFCategoryListCount.Trim("[]").Split(",") | ForEach-Object { $_.Trim().Trim("'") }
-        $OriginalSecretsValue                    = $IFCategoryListCountParse[$secretIndex] 
-        $IFCategoryListCountParse[$secretIndex]  = $OriginalSecretsValue - $SecretsRecoveredFileCount  # Remove recovered count from total secrets count 
+        $OriginalSecretsValue                    = $IFCategoryListCountParse[$secretIndex]
+        $IFCategoryListCountParse[$secretIndex]  = $OriginalSecretsValue - $SecretsRecoveredFileCount  # Remove recovered count from total secrets count
         $IFCategoryListCount = "['" + ($IFCategoryListCountParse -join "', '") + "']"
 
         # Get the count of the elements in the existing data array
@@ -1918,7 +1938,7 @@ function Invoke-HuntSMBShares
         }
 
         # Get new secrets value
-        $NewSecretsValue = $IFCategoryListCountParse[$secretIndex]                  
+        $NewSecretsValue = $IFCategoryListCountParse[$secretIndex]
 
         # Update the sercrets column
         $newDataArray[$secretIndex] = $SecretsRecoveredFileCount # Only recovered secrets file count
@@ -1929,7 +1949,7 @@ function Invoke-HuntSMBShares
         # Show debug info for dashboard secrets bar calc
         <#
         Write-Verbose "index of secrets: $secretIndex"
-        Write-Verbose  "Original discovered secrets files: $OriginalSecretsValue"        
+        Write-Verbose  "Original discovered secrets files: $OriginalSecretsValue"
         Write-Verbose  "Recovered secrets files: $SecretsRecoveredFileCount"
         Write-Verbose  "Updated discovered secrets files: $NewSecretsValue"
         Write-Verbose  "Summary of change:  $OriginalSecretsValue - $SecretsRecoveredFileCount = $NewSecretsValue"
@@ -1947,7 +1967,7 @@ function Invoke-HuntSMBShares
         # Write passwords to file
         $MySecretsTbl | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Extracted-Secrets.csv" -ErrorAction SilentlyContinue
 
-        # Generate table content for "Recovered Secrets" Page 
+        # Generate table content for "Recovered Secrets" Page
         $SecretsRecoveredString	= $MySecretsTbl | Select-Object ComputerName, ShareName, UncFilePath, FileName, Section, ObjectName, TargetURL, TargetServer, TargetPort, Database, Domain, Username, Password, PasswordEnc, KeyFilePath -Unique | where ComputerName -NotLike "" |
         Foreach {
 
@@ -1974,7 +1994,7 @@ function Invoke-HuntSMBShares
                 <td>$MySecretsTblComputerName</td>
                 <td>$MySecretsTblShareName</td>
                 <td>$MySecretsTblFileName</td>
-                <td >$MySecretsTblUncFilePath</td>                
+                <td >$MySecretsTblUncFilePath</td>
                 <td>$MySecretsTblUsername</td>
                 <td>$MySecretsTblPassword</td>
                 <td>$MySecretsTblPasswordEnc</td>
@@ -2094,12 +2114,12 @@ function Invoke-HuntSMBShares
         $null = $ShareNameList.Rows.Add("Microsoft service for remote installation and deployment","Remote Installation Services (RIS) / Windows Deployment Services (WDS)","Used by Microsoft's Remote Installation Services or Windows Deployment Services. Default path is C:\RemoteInstall.","C:\RemoteInstall\","REMINST","https://docs.microsoft.com/en-us/windows-server/get-started/windows-server-2016-remote-deployment")
 
 
-        
+
         # ----------------------------------------------------------------------
         # Calculate risk score per acl - ace insights
-        # ---------------------------------------------------------------------- 
-        
-        # foreach acl update the record 
+        # ----------------------------------------------------------------------
+
+        # foreach acl update the record
         $ExcessiveSharePrivsFinal = $ExcessiveSharePrivs  |
         foreach {
 
@@ -2125,26 +2145,26 @@ function Invoke-HuntSMBShares
             $myShareName            = $_.ShareName
             $myShareOwner           = $_.ShareOwner
             $mySharePath            = $_.SharePath
-            $myShareType            = $_.ShareType            
+            $myShareType            = $_.ShareType
 
-            # select interesting files, get categories, compress into one line   
-            # pending                      
-            
-            # parse data for risk score              
+            # select interesting files, get categories, compress into one line
+            # pending
+
+            # parse data for risk score
             $ShareNameRiskValue                        = 0
             $ShareRowHasRCE                            = ""
-            $ShareRowHasHighRisk                       = ""                                                  
-            $ShareRowHasWrite                          = ""              
-            $ShareRowHasRead                           = ""                      
-            $ShareRowHasEmpty                          = ""         
+            $ShareRowHasHighRisk                       = ""
+            $ShareRowHasWrite                          = ""
+            $ShareRowHasRead                           = ""
+            $ShareRowHasEmpty                          = ""
             $ShareRowHasStale                          = ""
-            $ShareRowCountInterestingData              = ""           
-            $ShareRowInterestingFileListDataCount      = ""          
-            $ShareRowCountInterestingSecrets           = ""    
-            $ShareRowInterestingFileListDataCount      = "" 
+            $ShareRowCountInterestingData              = ""
+            $ShareRowInterestingFileListDataCount      = ""
+            $ShareRowCountInterestingSecrets           = ""
+            $ShareRowInterestingFileListDataCount      = ""
             $ShareRowNonDefault                        = ""
-            
-            # Check for RCE conditions            
+
+            # Check for RCE conditions
             if((($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')) -and (($myFileSystemRights -like "*GenericAll*") -or ($myFileSystemRights -like "*Write*") -or ($myFileSystemRights -like "*Create*")-and ($myAccessControlType  -eq "Allow")))
             {
                 $ShareRowHasRCE = 1
@@ -2155,7 +2175,7 @@ function Invoke-HuntSMBShares
             # Check for potential read based RCE conditions
             if(($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share'))
             {
-                $ShareRowHasHighRisk = 1 
+                $ShareRowHasHighRisk = 1
             }else{
                 $ShareRowHasHighRisk = 0
             }
@@ -2184,15 +2204,15 @@ function Invoke-HuntSMBShares
             }
 
             # Determine if stale
-            try{                                
-                $oneYearAgo = (Get-Date).AddYears(-1)                            
+            try{
+                $oneYearAgo = (Get-Date).AddYears(-1)
                 if($_.LastModifiedDate -ge $oneYearAgo){
                    $ShareRowHasStale = 1
                 }else{
                    $ShareRowHasStale = 0
                 }
             }catch{
-                $ShareRowHasStale = 0          
+                $ShareRowHasStale = 0
             }
 
             # Determine if default
@@ -2225,7 +2245,7 @@ function Invoke-HuntSMBShares
             }
 
             # categories = $FileNamePatternCategories | Select-Object -ExpandProperty category
-            
+
             # Set wieghts
             $RiskWeightRCE             = 2
             $RiskWeightHR              = 16 # Known high risk Potential RCE - no write access - consider reverting to 9.
@@ -2234,7 +2254,7 @@ function Invoke-HuntSMBShares
             $RiskWeightSecrets         = 2
             $RiskWeightSecretsVolume   = 1
             $RiskWeightWrite           = 5 # consider reverting to 4
-            $RiskWeightRead            = 3    
+            $RiskWeightRead            = 3
             $RiskWeightEmpty           = -1
             $RiskWeightStale           = -1
 
@@ -2242,14 +2262,14 @@ function Invoke-HuntSMBShares
             $ShareNameRiskValue = 0
             if($ShareRowHasRCE                          -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightRCE           } # RCE
             if($ShareRowHasHighRisk                     -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightHR            } # Known high risk
-            if($ShareRowCountInterestingData            -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightData          } # Potential Sensitive Data 
-            if($MySensitiveCount                        -gt 10){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightDataVolume    } # Potential Sensitive Data Volume            
-            if($ShareRowCountInterestingSecrets         -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightSecrets       } # Potential Password Access 
-            if($MySecretsCount                          -gt 10){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightSecretsVolume } # Potential Sensitive Data Volume 
-            if($ShareRowHasWrite                        -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightWrite         } # Write Access          
-            if($ShareRowHasRead                         -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightRead          } # Read Access                          
+            if($ShareRowCountInterestingData            -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightData          } # Potential Sensitive Data
+            if($MySensitiveCount                        -gt 10){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightDataVolume    } # Potential Sensitive Data Volume
+            if($ShareRowCountInterestingSecrets         -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightSecrets       } # Potential Password Access
+            if($MySecretsCount                          -gt 10){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightSecretsVolume } # Potential Sensitive Data Volume
+            if($ShareRowHasWrite                        -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightWrite         } # Write Access
+            if($ShareRowHasRead                         -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightRead          } # Read Access
             if($ShareRowHasEmpty                        -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightEmpty         } # Empty Folders
-            if($ShareRowHasStale                        -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightStale         } # Stake Folders           
+            if($ShareRowHasStale                        -eq  1){ $ShareNameRiskValue =  $ShareNameRiskValue + $RiskWeightStale         } # Stake Folders
 
             # Adjust for sub 0 if (shouldnt happen)
             if($ShareNameRiskValue -lt 0){
@@ -2257,10 +2277,10 @@ function Invoke-HuntSMBShares
             }
 
             # Check risk level - Highest wins
-            If($ShareNameRiskValue  -le 4                                    ) { $RiskLevel = "Low"}  
+            If($ShareNameRiskValue  -le 4                                    ) { $RiskLevel = "Low"}
             If($ShareNameRiskValue  -gt 4  -and $ShareNameRiskValue -lt 11   ) { $RiskLevel = "Medium"}
-            If($ShareNameRiskValue  -ge 11 -and $ShareNameRiskValue -lt 20   ) { $RiskLevel = "High"}   
-            If($ShareNameRiskValue  -ge 20                                   ) { $RiskLevel = "Critical"}  
+            If($ShareNameRiskValue  -ge 11 -and $ShareNameRiskValue -lt 20   ) { $RiskLevel = "High"}
+            If($ShareNameRiskValue  -ge 20                                   ) { $RiskLevel = "Critical"}
 
             # Get Operating System
             $myComputerOs    = $DomainComputers | where ComputerName -eq $myComputerName | select OperatingSystem -ExpandProperty OperatingSystem
@@ -2269,9 +2289,9 @@ function Invoke-HuntSMBShares
             $myShareAppGuess = "Unknown"
             $myShareAppDesc  = "Unknown"
             $ListShareLocalPath = ""
-            $ShareNameList | 
-                foreach { 
-                                        
+            $ShareNameList |
+                foreach {
+
                         $ListShareName         = $_.ShareName
                         $ListShareDesc         = $_.Description
                         $ListShareLocalPathC   = $_.LocalPath
@@ -2283,12 +2303,12 @@ function Invoke-HuntSMBShares
                         $ShareShareJust       = $_.Justification
                         $ListShareApp         = $_.Application
                         if($ListShareName -eq $myShareName){
-                        
-                            # Set description & app guesses from static library 
+
+                            # Set description & app guesses from static library
                             $myShareAppGuess = $ListShareApp
                             $myShareAppDesc  = "The $ListShareName may be associated with $ListShareApp. $ListShareDesc $ShareShareJust"
                         }
-            }        
+            }
 
             # Append new column to object
             $newObject = [PSCustomObject]@{
@@ -2310,7 +2330,7 @@ function Invoke-HuntSMBShares
                 FileSystemRights       = $myFileSystemRights
                 ShareAccess            = $myShareAccess
                 IdentityReference      = $myIdentityReference
-                IdentitySID            = $myIdentitySID                
+                IdentitySID            = $myIdentitySID
                 AccessControlType      = $myAccessControlType
                 AuditSettings          = $myAuditSettings
                 CreationDate           = $myCreationDate
@@ -2319,9 +2339,9 @@ function Invoke-HuntSMBShares
                 LastAccessDateYear     = $myLastAccessDateYear
                 LastModifiedDate       = $myLastModifiedDate
                 LastModifiedDateYear   = $myLastModifiedDateYear
-                HasRead                = $ShareRowHasRead 
+                HasRead                = $ShareRowHasRead
                 HasWrite               = $ShareRowHasWrite
-                HasHR                  = $ShareRowHasHighRisk 
+                HasHR                  = $ShareRowHasHighRisk
                 HasRCE                 = $ShareRowHasRCE
                 HasIF                  = $ShareRowCountInterestingData
                 HasSecrets             = $ShareRowCountInterestingSecrets
@@ -2334,20 +2354,20 @@ function Invoke-HuntSMBShares
             }
 
             # Return object
-            $newObject                                            
-        }  
+            $newObject
+        }
 
         # Output new table that include interesting files, risk, read, write, hr, stale, and empty tags
         # $ExcessiveSharePrivsFinal | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges-New.csv"
-        
+
         # Get severity level counts
         $RiskLevelCountLow      = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Low'      | measure | select count -ExpandProperty count
-        $RiskLevelCountMedium   = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Medium'   | measure | select count -ExpandProperty count 
-        $RiskLevelCountHigh     = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'High'     | measure | select count -ExpandProperty count 
-        $RiskLevelCountCritical = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Critical' | measure | select count -ExpandProperty count 
-        
+        $RiskLevelCountMedium   = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Medium'   | measure | select count -ExpandProperty count
+        $RiskLevelCountHigh     = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'High'     | measure | select count -ExpandProperty count
+        $RiskLevelCountCritical = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Critical' | measure | select count -ExpandProperty count
+
         # Create table for ACEs page
-        $AceTableRows = $ExcessiveSharePrivsFinal | 
+        $AceTableRows = $ExcessiveSharePrivsFinal |
         foreach {
 
             # Risk Level
@@ -2357,16 +2377,16 @@ function Invoke-HuntSMBShares
                 # Read
                 $AceRowHasRead  = $_.HasRead
 
-                # Write 
+                # Write
                 $AceRowHasWrite = $_.HasWrite
 
-                # HR 
+                # HR
                 $AceRowHasHR    = $_.HasHR
 
                 # RCE
                 $AceRowHasRCE   = $_.HasRCE
 
-                # Has sesntive secrests 
+                # Has sesntive secrests
                 $AceRowHasSecrets = $_.HasSecrets
 
                 # Has sesntive data
@@ -2388,17 +2408,17 @@ function Invoke-HuntSMBShares
             $AceRowIdentity   = $_.IdentityReference
 
             # Share Owner
-            $AceRowShareOwner = $_.ShareOwner          
+            $AceRowShareOwner = $_.ShareOwner
 
             # Created
             $AceRowCreated    = $_. CreationDate
 
-            # Modified 
+            # Modified
             $AceRowModified   = $_.LastModifiedDate
 
-            # Files 
+            # Files
             $AceRowFilecount     = $_.FileCount
-            $AceRowFileList      = $_.FileList -split "`r`n" | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String 
+            $AceRowFileList      = $_.FileList -split "`r`n" | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             $AceRow = @"
                 <tr>
@@ -2415,17 +2435,17 @@ function Invoke-HuntSMBShares
                     <td>$AceRowShareOwner</td> <!-- Share Owner -->
                     <td>$AceRowCreated   </td> <!-- Created     -->
                     <td>$AceRowModified  </td> <!-- Modified    -->
-                    <td><!-- Files    -->                    
+                    <td><!-- Files    -->
                         <button class="collapsible"  style="font-size: 10px;">$AceRowFilecount  Files</button>
  		                <div class="content" style="font-size: 10px; width:100px; overflow-wrap: break-word;">
 		                $AceRowFileList
 		                </div>
-                    </td> 
+                    </td>
                 </tr>
 "@
             # Return row
-            $AceRow             
-        }        
+            $AceRow
+        }
 
         #
         # Build ACE summary
@@ -2439,9 +2459,9 @@ function Invoke-HuntSMBShares
         $UniqueFileSystemRightsCategories = "'" + ($UniqueFileSystemRights -join("','") ) + "'"
 
         # Get count for each system right
-        $UniqueFileSystemRightsCounts = $UniqueFileSystemRights | 
+        $UniqueFileSystemRightsCounts = $UniqueFileSystemRights |
         foreach {
-            
+
             # Set target right
             $TargetFileSystemRight = $_
 
@@ -2452,7 +2472,7 @@ function Invoke-HuntSMBShares
            $TargetFileSystemRightCount + " "
         }
 
-        # Create structure for chart series data 
+        # Create structure for chart series data
         $UniqueFileSystemRightsSeries = "[" + ($UniqueFileSystemRightsCounts -replace(" ",",")) + "]"
         $UniqueFileSystemRightsSeries = $UniqueFileSystemRightsSeries -replace(" ",",")
 
@@ -2463,35 +2483,35 @@ function Invoke-HuntSMBShares
         # Create HTML table for report
 
         # Setup HTML begin
-        Write-Verbose "[+] Creating html top." 
+        Write-Verbose "[+] Creating html top."
         $HTMLSTART = @"
         <table id= "networktable" class="table table-striped table-hover tabledrop" style="width: 95%">
 "@
 
-        # Get list of columns        
+        # Get list of columns
         $MyCsvColumns = ("Computers","Shares","ExploitableACEs","WriteACEs","ReadACEs","ACEs","Site","Created","Desc","Subnet")
 
-        # Print columns creation  
-        $HTMLTableHeadStart= "<thead><tr>" 
+        # Print columns creation
+        $HTMLTableHeadStart= "<thead><tr>"
         $MyCsvColumns |
         ForEach-Object {
 
             # Add column
-            $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"    
+            $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"
         }
-        $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>" 
+        $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>"
 
         # Create table rows
-        Write-Verbose "[+] Creating html table rows."     
+        Write-Verbose "[+] Creating html table rows."
         $HTMLTableRow = $SubnetSummary |
         ForEach-Object {
 
             # Create a value contain row data
             $CurrentRow = $_
             $PrintRow = ""
-            $MyCsvColumns | 
+            $MyCsvColumns |
             ForEach-Object{
-        
+
                 try{
                     $GetValue = $CurrentRow | Select-Object $_ -ExpandProperty $_ -ErrorAction SilentlyContinue
                     $ColumnIndex = $MyCsvColumns.IndexOf($_) + 1
@@ -2500,37 +2520,37 @@ function Invoke-HuntSMBShares
                     $BackgroundColor = ""
 
                     if ($ColumnIndex -eq 5 -and [int]$GetValue -gt 0) {          # Originally for column 4 = write
-                        $BackgroundColor = ' style="background-color:#FDFFd9;"'  
+                        $BackgroundColor = ' style="background-color:#FDFFd9;"'
                     } elseif ($ColumnIndex -eq 4 -and [int]$GetValue -gt 0) {    # Originally for column 5 = read
-                        $BackgroundColor = ' style="background-color:#FFCC98;"'  
+                        $BackgroundColor = ' style="background-color:#FFCC98;"'
                     } elseif ($ColumnIndex -eq 3 -and [int]$GetValue -gt 0) {
                         $BackgroundColor = ' style="background-color:#FC6C84;"'  # Originally for column 2=shares,6=aces,1=computers
                     }
 
                     # Append the value with the background color
                     if($PrintRow -eq ""){
-                        $PrintRow = "<td$BackgroundColor>$GetValue</td>"               
-                    }else{         
+                        $PrintRow = "<td$BackgroundColor>$GetValue</td>"
+                    }else{
                         $PrintRow = "<td$BackgroundColor>$GetValue</td>$PrintRow"
                     }
-                }catch{}            
+                }catch{}
             }
 
             # Return row
-            $HTMLTableHeadstart = "<tr>" 
-            $HTMLTableHeadend = "</tr>" 
+            $HTMLTableHeadstart = "<tr>"
+            $HTMLTableHeadend = "</tr>"
             "$HTMLTableHeadStart$PrintRow$HTMLTableHeadend"
         }
 
         # Setup HTML end
-        Write-Verbose "[+] Creating html bottom." 
+        Write-Verbose "[+] Creating html bottom."
         $HTMLEND = @"
           </tbody>
         </table>
 "@
 
         # Return it
-        $SubnetSummaryHTML = "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND"   
+        $SubnetSummaryHTML = "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND"
 
         # Create network risk table data - each network is placed in one severity - the highest
         $SubnetTotalLow      = 0
@@ -2548,34 +2568,34 @@ function Invoke-HuntSMBShares
         foreach{
 
             $CumulativeSevScore = 0
-                
+
             # Get subnet without trailing .0
             $SubnetIp     = $_.Subnet
             $SubnetIpBase = ($SubnetIp  -split '\.')[0..2] -join '.'
 
             # Get Low count for subnet
-            $SubnetCountLow                  = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Low' | measure | select count -ExpandProperty count    
+            $SubnetCountLow                  = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Low' | measure | select count -ExpandProperty count
             if($SubnetCountLow -gt 0){
                 $AllNetworksWithLowCount     = $AllNetworksWithLowCount  + 1
                 $CumulativeSevScore          = $CumulativeSevScore + 1
             }
-            
+
             # Get Medium count for subnet
-            $SubnetCountMedium               = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Medium' | measure | select count -ExpandProperty count  
+            $SubnetCountMedium               = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Medium' | measure | select count -ExpandProperty count
             if( $SubnetCountMedium -gt 0){
                 $AllNetworksWithMediumCount  = $AllNetworksWithMediumCount + 1
                 $CumulativeSevScore          = $CumulativeSevScore + 1
             }
-            
+
             # Get High count for subnet
-            $SubnetCountHigh        = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'High' | measure | select count -ExpandProperty count  
+            $SubnetCountHigh        = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'High' | measure | select count -ExpandProperty count
             if($SubnetCountHigh -gt 0){
                 $AllNetworksWithHighCount    = $AllNetworksWithHighCount  + 1
                 $CumulativeSevScore          = $CumulativeSevScore + 1
             }
-            
+
             # Get Critical count for subnet
-            $SubnetCountCritical               = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Critical' | measure | select count -ExpandProperty count                                                          
+            $SubnetCountCritical               = $ExcessiveSharePrivsFinal | where IpAddress -like "$SubnetIpBase*" | where RiskLevel -eq 'Critical' | measure | select count -ExpandProperty count
             if($SubnetCountCritical -gt 0){
                 $AllNetworksWithCriticalCount  = $AllNetworksWithCriticalCount  + 1
                 $CumulativeSevScore            = $CumulativeSevScore + 1
@@ -2591,8 +2611,8 @@ function Invoke-HuntSMBShares
 
         # Construct the array with the desired pattern
         $subnetArray = @(
-            $SubnetTotalLow, 
-            $SubnetTotalMedium, 
+            $SubnetTotalLow,
+            $SubnetTotalMedium,
             $SubnetTotalHigh,
             $SubnetTotalCritical
         )
@@ -2602,49 +2622,49 @@ function Invoke-HuntSMBShares
 
         # ----------------------------------------------------------------------
         # Create Identity Insights Summary Information
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
 
-        # Get share owners 
+        # Get share owners
         [array]$IdentityOwnerList       = $ExcessiveSharePrivsFinal | select ShareOwner -Unique -ExpandProperty ShareOwner
-        $IdentityOwnerListCount         = $IdentityOwnerList | measure | select count -ExpandProperty count 
+        $IdentityOwnerListCount         = $IdentityOwnerList | measure | select count -ExpandProperty count
 
         # Get identity references
         [array]$IdentityReferenceList   = $ExcessiveSharePrivsFinal | select IdentityReference -Unique -ExpandProperty IdentityReference
-        $IdentityReferenceListCount     = $IdentityReferenceList  | measure | select count -ExpandProperty count 
+        $IdentityReferenceListCount     = $IdentityReferenceList  | measure | select count -ExpandProperty count
 
         # Combine identity lists
         $IdentityCombinedList           = $IdentityOwnerList + $IdentityReferenceList | sort | select -Unique
-        $IdentityCombinedListCount      = $IdentityCombinedList | measure | select count -ExpandProperty count 
+        $IdentityCombinedListCount      = $IdentityCombinedList | measure | select count -ExpandProperty count
 
         # Process each identity
         $IdentityTableRows = $IdentityCombinedList |
-        foreach {           
+        foreach {
 
             # Set target identity
             $TargetIdentity = $_
 
             # Get share owner count
-            $TargetIdentityOwnerCount        = $ExcessiveSharePrivsFinal | where ShareOwner -eq "$TargetIdentity" | select SharePath | measure | select count -ExpandProperty count 
+            $TargetIdentityOwnerCount        = $ExcessiveSharePrivsFinal | where ShareOwner -eq "$TargetIdentity" | select SharePath | measure | select count -ExpandProperty count
 
             # Get share access count
-            $TargetIdentityShareAccessCount  = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | select SharePath -Unique | measure | select count -ExpandProperty count 
-            $TargetIdentityShareAccess       = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | select SharePath -Unique -ExpandProperty SharePath | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String  
+            $TargetIdentityShareAccessCount  = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | select SharePath -Unique | measure | select count -ExpandProperty count
+            $TargetIdentityShareAccess       = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | select SharePath -Unique -ExpandProperty SharePath | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             # Get ACE low risk
-            $TargetIdentityLowRiskCount      = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Low" | select SharePath -Unique |measure | select count -ExpandProperty count     
-            #$TargetIdentityLowRisk           = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Low" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String 
+            $TargetIdentityLowRiskCount      = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Low" | select SharePath -Unique |measure | select count -ExpandProperty count
+            #$TargetIdentityLowRisk           = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Low" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             # Get ACE medium risk
-            $TargetIdentityMediumRiskrCount  = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Medium" | select SharePath -Unique | measure | select count -ExpandProperty count 
-            #$TargetIdentityMediumRisk        = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Medium" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String 
+            $TargetIdentityMediumRiskrCount  = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Medium" | select SharePath -Unique | measure | select count -ExpandProperty count
+            #$TargetIdentityMediumRisk        = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Medium" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             # Get ACE high risk
-            $TargetIdentityHighRiskCount     = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "High" | select SharePath -Unique | measure | select count -ExpandProperty count 
-            #$TargetIdentityHighRisk          = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "High" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String 
+            $TargetIdentityHighRiskCount     = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "High" | select SharePath -Unique | measure | select count -ExpandProperty count
+            #$TargetIdentityHighRisk          = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "High" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             # Get ACE critical risk
-            $TargetIdentityCriticalRiskCount = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Critical" | select SharePath -Unique | measure | select count -ExpandProperty count 
-            #$TargetIdentityCriticalRisk      = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Critical" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String 
+            $TargetIdentityCriticalRiskCount = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Critical" | select SharePath -Unique | measure | select count -ExpandProperty count
+            #$TargetIdentityCriticalRisk      = $ExcessiveSharePrivsFinal | where IdentityReference -eq "$TargetIdentity" | where RiskLevel -eq "Critical" | select SharePath -Unique | ForEach-Object { $ASDF = $_; "$ASDF<br>" } | Out-String
 
             # Get interesting files count (same as share names)
             $TargetIdentityInterestingFiles  = "tbd"
@@ -2660,7 +2680,7 @@ function Invoke-HuntSMBShares
                     <button class="collapsible" style="text-align:left;">$TargetIdentityShareAccessCount</button>
                     <div class="content" style="font-size: 10px; width:100px; overflow-wrap: break-word;">
                     $TargetIdentityShareAccess
-                    </div>               
+                    </div>
                 </td>
                 <td>$TargetIdentityLowRiskCount</td>
                 <td>$TargetIdentityMediumRiskrCount</td>
@@ -2669,12 +2689,12 @@ function Invoke-HuntSMBShares
              </tr>
 "@
             $BuildIdentityTableRows
-        }       
+        }
 
 
         # ----------------------------------------------------------------------
         # Create Computer Insights Summary Information
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
 
         # Reset global computer risk levels - one severity per computer, the highest one.
         $RiskLevelComputersCountCritical = 0
@@ -2698,14 +2718,14 @@ function Invoke-HuntSMBShares
         # Get computer count
         $ComputersChartCount      = $ComputerPageComputerList | measure | select count -ExpandProperty count # Unique folder group
 
-        
+
         # Initialize an empty array to store os counts for vulnerabile computers
         $OperatingSystemCounts = @()
 
         # Process each computer & add data to final risk counts
         $ComputerPageComputerList |
         foreach {
-             
+
              # Set target share name
              $TargetComputers = $_.ComputerName
 
@@ -2727,32 +2747,32 @@ function Invoke-HuntSMBShares
 
              # Check risk level - Highest wins
              If($ComputersTopACLRiskScore -le 4                                          ) { $RiskLevelComputersResult = "Low"}
-             If($ComputersTopACLRiskScore -gt 4  -and $ComputersTopACLRiskScore -lt 11   ) { $RiskLevelComputersResult = "Medium"} 
-             If($ComputersTopACLRiskScore -ge 11 -and $ComputersTopACLRiskScore -lt 20   ) { $RiskLevelComputersResult = "High"}     
-             If($ComputersTopACLRiskScore -ge 20                                         ) { $RiskLevelComputersResult = "Critical"}   
-             
+             If($ComputersTopACLRiskScore -gt 4  -and $ComputersTopACLRiskScore -lt 11   ) { $RiskLevelComputersResult = "Medium"}
+             If($ComputersTopACLRiskScore -ge 11 -and $ComputersTopACLRiskScore -lt 20   ) { $RiskLevelComputersResult = "High"}
+             If($ComputersTopACLRiskScore -ge 20                                         ) { $RiskLevelComputersResult = "Critical"}
+
              # Increment counts
              if($RiskLevelComputersResult -eq "Low"     ){$RiskLevelComputersCountLow      = $RiskLevelComputersCountLow      + 1}
              if($RiskLevelComputersResult -eq "Medium"  ){$RiskLevelComputersCountMedium   = $RiskLevelComputersCountMedium   + 1}
              if($RiskLevelComputersResult -eq "High"    ){$RiskLevelComputersCountHigh     = $RiskLevelComputersCountHigh     + 1}
-             if($RiskLevelComputersResult -eq "Critical"){$RiskLevelComputersCountCritical = $RiskLevelComputersCountCritical + 1} 
-             
-             # Get share count         
-             $ComputerPageShares     = $ExcessiveSharePrivsFinal | where ComputerName -eq $TargetComputers | select SharePath -Unique | ForEach-Object { $ASDF = $_.SharePath; "$ASDF<br>" }  | out-string 
-             $ComputerPageShareCount = $ExcessiveSharePrivsFinal | where ComputerName -eq $TargetComputers | select SharePath -Unique | measure | select count -ExpandProperty count 
+             if($RiskLevelComputersResult -eq "Critical"){$RiskLevelComputersCountCritical = $RiskLevelComputersCountCritical + 1}
+
+             # Get share count
+             $ComputerPageShares     = $ExcessiveSharePrivsFinal | where ComputerName -eq $TargetComputers | select SharePath -Unique | ForEach-Object { $ASDF = $_.SharePath; "$ASDF<br>" }  | out-string
+             $ComputerPageShareCount = $ExcessiveSharePrivsFinal | where ComputerName -eq $TargetComputers | select SharePath -Unique | measure | select count -ExpandProperty count
              $ComputerPageShareCountHTML = @"
              <button class="collapsible" style="text-align:left;">$ComputerPageShareCount</button>
              <div class="content" style="font-size: 10px; width:100px; overflow-wrap: break-word;">
              $ComputerPageShares
              </div>
 "@
-             # Check for interesting files 
+             # Check for interesting files
          	 # For each file category generate count and list
 	         $ComputerPageInterestingFilesInsideHTML  = ""
              $ComputerPageInterestingFilesOutsideHTML = ""
-	         $FileNamePatternCategories | select Category -ExpandProperty Category | 
+	         $FileNamePatternCategories | select Category -ExpandProperty Category |
 	         foreach{
-		
+
 		        # Get category
 		        $ComputerPageCategoryName = $_
 
@@ -2761,11 +2781,11 @@ function Invoke-HuntSMBShares
 		        $ComputerPageCategoryFiles     = $InterestingFilesAllObjects | where ComputerName -eq $TargetComputers |  where Category -eq "$ComputerPageCategoryName" | select FileName | ForEach-Object { $ASDF = $_.FileName; "$ASDF<br>" }  | out-string
 
 		        # Get category count
-		        $ComputerPageCategoryFilesCount =  $ComputerPageCategoryFilesBase | measure | select count -expandproperty count 
+		        $ComputerPageCategoryFilesCount =  $ComputerPageCategoryFilesBase | measure | select count -expandproperty count
 
 		        # Generate HTML with Category
                 if($ComputerPageCategoryFilesCount -ne 0){
-		            $ComputerPageInterestingFilesHTMLPrep = @" 
+		            $ComputerPageInterestingFilesHTMLPrep = @"
                         <button class="collapsible" style="font-size: 10px;">$ComputerPageCategoryFilesCount $ComputerPageCategoryName</button>
  		                <div class="content" style="font-size: 10px; width:100px; overflow-wrap: break-word;">
 		                $ComputerPageCategoryFiles
@@ -2777,8 +2797,8 @@ function Invoke-HuntSMBShares
 	         }
 
              # Get total for interesting files for target share name
-	         $ComputerPageInterestingFilesCount = $InterestingFilesAllObjects | where ComputerName -eq $TargetComputers | measure | select count -expandproperty count 
-       
+	         $ComputerPageInterestingFilesCount = $InterestingFilesAllObjects | where ComputerName -eq $TargetComputers | measure | select count -expandproperty count
+
              # Build final interesting file html for computers page
 	         $ComputerPageInterestingFilesOutsideHTML = @"
 		        <button class="collapsible"  style="font-size: 10px;">$ComputerPageInterestingFilesCount Files</button>
@@ -2786,7 +2806,7 @@ function Invoke-HuntSMBShares
 		        $ComputerPageInterestingFilesInsideHTML
 		        </div>
 "@
-             
+
              # Create Row
              $ComputerTableRow = @"
              <tr>
@@ -2796,16 +2816,16 @@ function Invoke-HuntSMBShares
                 <td>$ComputerPageShareCountHTML</td>
                 <td>$ComputerPageInterestingFilesOutsideHTML</td>
              </tr>
-"@                       
+"@
 
-            # Add row to rows    
-            $ComputerTableRows = $ComputerTableRows + $ComputerTableRow  
+            # Add row to rows
+            $ComputerTableRows = $ComputerTableRows + $ComputerTableRow
         }
 
         # Get opn445 computer with os version
-        $DomainComputerFull = $Computers445Open | 
+        $DomainComputerFull = $Computers445Open |
         foreach{
-            
+
             # Get computer
             $Target445Comp = $_.ComputerName
 
@@ -2814,12 +2834,12 @@ function Invoke-HuntSMBShares
 
             # Create new object
             $myObject = New-Object PSObject
-            $myObject | Add-Member -MemberType NoteProperty -Name "ComputerName"    -Value $Target445Comp 
+            $myObject | Add-Member -MemberType NoteProperty -Name "ComputerName"    -Value $Target445Comp
             $myObject | Add-Member -MemberType NoteProperty -Name "OperatingSystem" -Value $Target445OS
 
             # Return object
             $myObject
-        } 
+        }
 
         # Save to file
         $DomainComputerFull |  Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Domain-Computers-Open445-OSVer.csv"
@@ -2829,28 +2849,28 @@ function Invoke-HuntSMBShares
 
         # Get unique list of operating systems
         $DomainComputerOSList    = $DomainComputerFull | Select OperatingSystem -Unique
-        
+
         # Get count of unique operating systems
         $DomainComputerOSCount = $DomainComputerOSList | measure | select count -ExpandProperty count
 
-        # Get count of each operating system 
-        $DomainComputerOSSum = $DomainComputerOSList | 
+        # Get count of each operating system
+        $DomainComputerOSSum = $DomainComputerOSList |
         Foreach {
-            
+
             $TargetComputerOS = $_.OperatingSystem
-            
+
             # Get count
             $TargetComputerOSCount2 = $DomainComputerFull | where OperatingSystem -eq "$TargetComputerOS" | measure | select count -ExpandProperty count
 
-            # Calculate percentage           
-            $TargetComputerOSP = [math]::Round($TargetComputerOSCount2/$DomainComputerFullCount,2) * 100   
+            # Calculate percentage
+            $TargetComputerOSP = [math]::Round($TargetComputerOSCount2/$DomainComputerFullCount,2) * 100
 
             # Return powershell object os,count,percent
             $object = New-Object psobject
             $object | add-member noteproperty os       $TargetComputerOS
             $object | add-member noteproperty count    $TargetComputerOSCount2
             $object | add-member noteproperty percent  $TargetComputerOSP
-            $object 
+            $object
         }
 
         # Save results to a csv - accurate
@@ -2861,7 +2881,7 @@ function Invoke-HuntSMBShares
         $DomainComputerOSListJsValues = ""
         $OperatingSystemCounts |
         foreach{
-            $TargetOSName  = $_.Name 
+            $TargetOSName  = $_.Name
             $TargetOSValue = $_.Value
             $DomainComputerOSListJsNames  = $DomainComputerOSListJsNames  + ",'" + $TargetOSName + "'"
             $DomainComputerOSListJsValues = $DomainComputerOSListJsValues + "," + $TargetOSValue
@@ -2873,12 +2893,12 @@ function Invoke-HuntSMBShares
 
         # Build final js objects
         $DomainComputerOSListJsNames  = "[" + $DomainComputerOSListJsNames + "]"
-        $DomainComputerOSListJsValues = "[" + $DomainComputerOSListJsValues + "]"       
+        $DomainComputerOSListJsValues = "[" + $DomainComputerOSListJsValues + "]"
 
 
         # ----------------------------------------------------------------------
         # Create Share Name Insights Data
-        # ----------------------------------------------------------------------  
+        # ----------------------------------------------------------------------
 
         # Total Shares Affected by Severity - one computer may have many
         $AllSharesWithCriticalCount = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Critical' | Select SharePath -Unique | Measure | Select Count -ExpandProperty Count
@@ -2887,22 +2907,22 @@ function Invoke-HuntSMBShares
 		$AllSharesWithLowCount      = $ExcessiveSharePrivsFinal | where RiskLevel -eq 'Low'      | Select SharePath -Unique | Measure | Select Count -ExpandProperty Count
 
         # Get unique share name count
-        $ShareNameChartCount       = $ExcessiveSharePrivsFinal | where ShareName -ne "" | select ShareName -Unique | 
+        $ShareNameChartCount       = $ExcessiveSharePrivsFinal | where ShareName -ne "" | select ShareName -Unique |
         foreach{
             if( ($_.sharename -ne 'SYSVOL') -and ($_.sharename -ne 'NETLOGON'))
             {
-                $_                
+                $_
             }
-        } | measure | select count -ExpandProperty count  
+        } | measure | select count -ExpandProperty count
 
         # Get unique share count
-        $ShareNameChartCountUnique = $ExcessiveSharePrivsFinal | where ShareName -ne "" | 
+        $ShareNameChartCountUnique = $ExcessiveSharePrivsFinal | where ShareName -ne "" |
         foreach{
             if( ($_.SharePath -notlike "\*SYSVOL") -and ($_.SharePath -notlike"\*NETLOGON"))
             {
-                $_                
+                $_
             }
-        } | select SharePath -Unique | measure | select count -ExpandProperty count 
+        } | select SharePath -Unique | measure | select count -ExpandProperty count
 
         # Get share name severity
         # Reivew ACLs for each share name, highest severity wins
@@ -2916,11 +2936,11 @@ function Invoke-HuntSMBShares
             # filter out sysvol and netlogon
             if( ($_.sharename -ne 'SYSVOL') -and ($_.sharename -ne 'NETLOGON'))
             {
-                $_                
+                $_
             }
         } | select ShareName -Unique |
         foreach {
-             
+
              # Set target share name
              $TargetRiskShareName = $_.ShareName
 
@@ -2929,20 +2949,20 @@ function Invoke-HuntSMBShares
 
              # Check risk level - Highest wins
              If($ShareNameTopACLRiskScore -le 4                                          ) { $RiskLevelShareNameResult = "Low"}
-             If($ShareNameTopACLRiskScore -gt 4  -and $ShareNameTopACLRiskScore -lt 11   ) { $RiskLevelShareNameResult = "Medium"} 
-             If($ShareNameTopACLRiskScore -ge 11 -and $ShareNameTopACLRiskScore -lt 20   ) { $RiskLevelShareNameResult = "High"}     
-             If($ShareNameTopACLRiskScore -ge 20                                         ) { $RiskLevelShareNameResult = "Critical"}   
-             
+             If($ShareNameTopACLRiskScore -gt 4  -and $ShareNameTopACLRiskScore -lt 11   ) { $RiskLevelShareNameResult = "Medium"}
+             If($ShareNameTopACLRiskScore -ge 11 -and $ShareNameTopACLRiskScore -lt 20   ) { $RiskLevelShareNameResult = "High"}
+             If($ShareNameTopACLRiskScore -ge 20                                         ) { $RiskLevelShareNameResult = "Critical"}
+
              # Increment counts
              if($RiskLevelShareNameResult -eq "Low"     ){$RiskLevelShareNameCountLow      = $RiskLevelShareNameCountLow      + 1}
              if($RiskLevelShareNameResult -eq "Medium"  ){$RiskLevelShareNameCountMedium   = $RiskLevelShareNameCountMedium   + 1}
              if($RiskLevelShareNameResult -eq "High"    ){$RiskLevelShareNameCountHigh     = $RiskLevelShareNameCountHigh     + 1}
-             if($RiskLevelShareNameResult -eq "Critical"){$RiskLevelShareNameCountCritical = $RiskLevelShareNameCountCritical + 1}                         
-        } 
+             if($RiskLevelShareNameResult -eq "Critical"){$RiskLevelShareNameCountCritical = $RiskLevelShareNameCountCritical + 1}
+        }
 
         # ----------------------------------------------------------------------
         # Create Folder Group Insights Data
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
 
         $RiskLevelFolderGroupCountCritical = 0
         $RiskLevelFolderGroupCountHigh     = 0
@@ -2951,7 +2971,7 @@ function Invoke-HuntSMBShares
         $FolderGroupChartCount     = $ExcessiveSharePrivsFinal | select FileListGroup -Unique | measure | select count -ExpandProperty count # Unique folder group
         $ExcessiveSharePrivsFinal | select FileListGroup -Unique |
         foreach {
-             
+
              # Set target share name
              $TargetFileListGroup = $_.FileListGroup
 
@@ -2960,20 +2980,20 @@ function Invoke-HuntSMBShares
 
              # Check risk level - Highest wins
              If($FileListGroupTopACLRiskScore -le 4                                              ) { $RiskLevelFileListGroupResult = "Low"}
-             If($FileListGroupTopACLRiskScore -gt 4  -and $FileListGroupTopACLRiskScore -lt 11   ) { $RiskLevelFileListGroupResult = "Medium"} 
-             If($FileListGroupTopACLRiskScore -ge 11 -and $FileListGroupTopACLRiskScore -lt 20   ) { $RiskLevelFileListGroupResult = "High"}     
-             If($FileListGroupTopACLRiskScore -ge 20                                             ) { $RiskLevelFileListGroupResult = "Critical"}   
-             
+             If($FileListGroupTopACLRiskScore -gt 4  -and $FileListGroupTopACLRiskScore -lt 11   ) { $RiskLevelFileListGroupResult = "Medium"}
+             If($FileListGroupTopACLRiskScore -ge 11 -and $FileListGroupTopACLRiskScore -lt 20   ) { $RiskLevelFileListGroupResult = "High"}
+             If($FileListGroupTopACLRiskScore -ge 20                                             ) { $RiskLevelFileListGroupResult = "Critical"}
+
              # Increment counts
              if($RiskLevelFileListGroupResult -eq "Low"     ){$RiskLevelFolderGroupCountLow      = $RiskLevelFolderGroupCountLow      + 1}
              if($RiskLevelFileListGroupResult -eq "Medium"  ){$RiskLevelFolderGroupCountMedium   = $RiskLevelFolderGroupCountMedium   + 1}
              if($RiskLevelFileListGroupResult -eq "High"    ){$RiskLevelFolderGroupCountHigh     = $RiskLevelFolderGroupCountHigh     + 1}
-             if($RiskLevelFileListGroupResult -eq "Critical"){$RiskLevelFolderGroupCountCritical = $RiskLevelFolderGroupCountCritical + 1}                         
-        } 
+             if($RiskLevelFileListGroupResult -eq "Critical"){$RiskLevelFolderGroupCountCritical = $RiskLevelFolderGroupCountCritical + 1}
+        }
 
         # ----------------------------------------------------------------------
-        # Generate LLM Share Application Fingerprints 
-        # ---------------------------------------------------------------------- 
+        # Generate LLM Share Application Fingerprints
+        # ----------------------------------------------------------------------
 
         # Check if API and Endpoint have been provided
         if ($RunLLMQueries -eq 1) {
@@ -2987,8 +3007,8 @@ function Invoke-HuntSMBShares
              Write-Output " [*][$Time] - LLM lookups starting"
 
              # Get list of targets
-             $LLMQueryResults = $ExcessiveSharePrivsFinal | 
-             Select-Object ShareName, FileList, FileListGroup -Unique | where ShareName -notlike "" | 
+             $LLMQueryResults = $ExcessiveSharePrivsFinal |
+             Select-Object ShareName, FileList, FileListGroup -Unique | where ShareName -notlike "" |
              Foreach {
 
                 # Explicit clear
@@ -2996,7 +3016,7 @@ function Invoke-HuntSMBShares
 
                 # Send fingerprint request to LLM for share name + group
                 $LLMResult = Invoke-FingerprintShare -OutputFile "$OutputDirectory\$TargetDomain-Shares-Inventory-LLM-Fingerprint.csv" -ShareName $_.ShareName -FileList $_.FileList -FolderGroup $_.FileListGroup -MakeLog -APIKEY $ApiKey -Endpoint $Endpoint
-                
+
                 # Return results
                 $LLMResult
 
@@ -3004,13 +3024,13 @@ function Invoke-HuntSMBShares
 
              # Show completion
              $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-             Write-Output " [*][$Time] - LLM lookups complete"   
-             Write-Output " [*][$Time] - Processing responses"           
+             Write-Output " [*][$Time] - LLM lookups complete"
+             Write-Output " [*][$Time] - Processing responses"
 
              # Update tables +  HTML
-             $LLMQueryResults | 
+             $LLMQueryResults |
              foreach {
-                    
+
                     # Get variables for cross reference
                     $NewShareName     = $_.ShareName
                     $NewAppName       = $_.ApplicationName
@@ -3025,20 +3045,20 @@ function Invoke-HuntSMBShares
                             $_.ShareGuessApp   = $NewAppName
                         }
                     }
-             }                                         
+             }
         }
 
-        # Output updated excessive privilege .csv 
+        # Output updated excessive privilege .csv
         try{
-                $ExcessiveSharePrivsFinal | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.csv" 
+                $ExcessiveSharePrivsFinal | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Shares-Inventory-Excessive-Privileges.csv"
                 # Write-Output " [*][$Time] - Details written to $OutputDirectory\$TargetDomain-Shares-Inventory-LLM-Fingerprint.csv"
         }catch{
                 # Write-Output " [*][$Time] - Unable to written to $OutputDirectory\$TargetDomain-Shares-Inventory-LLM-Fingerprint.csv"
-        } 
+        }
 
         # ----------------------------------------------------------------------
         # Generate LLM Application Fingerprint Summary
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
         if($RunLLMQueries -eq 1){
 
             # Status User
@@ -3056,7 +3076,7 @@ function Invoke-HuntSMBShares
 
             # Setup prompt for LLM query to normalize the application names
             $LLMCleanPrompt1 = @"
-            Please normalize the names of the applications in this list. 
+            Please normalize the names of the applications in this list.
 
             Example of desired application name normalization:
             If IIS may be represented as IIS, Microsoft IIS, Internet Information Services, Microsoft Internet Information Services, Microsoft Internet Information Services (IIS), IIS (Internet Information Services), or Window IIS. In that case make them all the most format name, like Microsoft Internet Information Services (IIS).
@@ -3073,14 +3093,14 @@ function Invoke-HuntSMBShares
 
             # Setup prompt for LLM query to summarize applications
             $LLMCleanPrompt2 = @"
-            Please analyze the list of application names below and generate a two sentence summary that includes the total number of applications, the number of unique application names, the functional type of applications (do not cite the application name with the type), and which two applications had the highest count. Please include the highest counts, their percentage of the total application instances, and the specific application names in the highest count list summary. Please make sure to start the response with "In this environment, we observed".            
+            Please analyze the list of application names below and generate a two sentence summary that includes the total number of applications, the number of unique application names, the functional type of applications (do not cite the application name with the type), and which two applications had the highest count. Please include the highest counts, their percentage of the total application instances, and the specific application names in the highest count list summary. Please make sure to start the response with "In this environment, we observed".
             DO NOT RESPONSE WITH ANYTHING IF YOU DONT KNOW WHAT THE APPLICATIONS ARE.
 
             $LLMCleanAppList1
 "@
 
             # Issue LLM query to summarize applications
-            $LLMCleanAppSummary = Invoke-LLMRequest -MaxTokens 4096 -SimpleOutput -apikey $ApiKey -endpoint $Endpoint -text "$LLMCleanPrompt2"            
+            $LLMCleanAppSummary = Invoke-LLMRequest -MaxTokens 4096 -SimpleOutput -apikey $ApiKey -endpoint $Endpoint -text "$LLMCleanPrompt2"
 
             # LLM Warning
             $LLMOutputWarning = "Note: Application fingerprints were generated using an experimental version of the LLM-based application fingerprinting function. As a result, some application classifications may not be accurate."
@@ -3091,12 +3111,12 @@ function Invoke-HuntSMBShares
         }
 
         # ----------------------------------------------------------------------
-        # Calculate Peer Comparison Data - INSIGHTS 
-        # ---------------------------------------------------------------------- 
+        # Calculate Peer Comparison Data - INSIGHTS
+        # ----------------------------------------------------------------------
         # % of computers, shares, aces with excessive privs enumerated from single active directory domain
 
         # Set averages from a sample of 50 representative (size and industry) environments
-        $PeerCompareAverageP = "[18, 9, 15]"  
+        $PeerCompareAverageP = "[18, 9, 15]"
 
         # Get actual computer %
         if($ComputerPingableCount -gt 0){
@@ -3105,18 +3125,18 @@ function Invoke-HuntSMBShares
             $PeerComparisonComputerCount = $Computers445OpenCount # use open445 count
             $ComputerPingableCount       = 0 #hacky patch
         }
-        $PeerComparActualComputers   = [math]::Round($ComputerWithExcessive/$PeerComparisonComputerCount,2) * 100   
+        $PeerComparActualComputers   = [math]::Round($ComputerWithExcessive/$PeerComparisonComputerCount,2) * 100
         $PeerComparActualComputersr  = [math]::Round($ComputerWithReadCount/$PeerComparisonComputerCount,2) * 100
         $PeerComparActualComputersW  = [math]::Round($ComputerWithWriteCount/$PeerComparisonComputerCount,2) * 100
-        $PeerComparActualComputershr = [math]::Round($ComputerwithHighRisk/$PeerComparisonComputerCount,2) * 100           
+        $PeerComparActualComputershr = [math]::Round($ComputerwithHighRisk/$PeerComparisonComputerCount,2) * 100
 
         # Get actual shares %
-        $PeerComparActualShares = [math]::Round($ExcessiveSharesCount/$AllSMBSharesCount,2) * 100      
+        $PeerComparActualShares = [math]::Round($ExcessiveSharesCount/$AllSMBSharesCount,2) * 100
 
         # Get actual aces %
-        $PeerComparActualAces = [math]::Round($ExcessiveSharePrivsCount/$ShareACLsCount ,2) * 100  
-        
-        # Set comparison status 
+        $PeerComparActualAces = [math]::Round($ExcessiveSharePrivsCount/$ShareACLsCount ,2) * 100
+
+        # Set comparison status
         If($PeerComparActualAces -eq 15 ){$EnvironmentStatus = "average"}
         If($PeerComparActualAces -lt 15 ){$EnvironmentStatus = "more secure"}
         If($PeerComparActualAces -gt 15 ){$EnvironmentStatus = "less secure"}
@@ -3125,7 +3145,7 @@ function Invoke-HuntSMBShares
         $PeerCompareActuaP   = "[$PeerComparActualComputers, $PeerComparActualShares, $PeerComparActualAces]"
 
         # ----------------------------------------------------------------------
-        # Calculate Remediation Prioritization and Charts - INSIGHTS 
+        # Calculate Remediation Prioritization and Charts - INSIGHTS
         # ----------------------------------------------------------------------
         $RemediationBase = "[$ExcessiveSharePrivsCount,$ExcessiveSharePrivsCount,$ExcessiveSharePrivsCount]"
         $RemediationSave = "[$ExcessiveSharePrivsCount,$FolderGroupChartCount,$ShareNameChartCount]"
@@ -3220,32 +3240,32 @@ function Invoke-HuntSMBShares
             {
               id: 'Shares ($ExcessiveSharesCount)',
               title: 'Shares ($ExcessiveSharesCount)',
-              color: '#f29650', 
+              color: '#f29650',
             },
             {
               id: 'ACEs ($ExcessiveSharePrivsCount)',
               title: 'ACEs ($ExcessiveSharePrivsCount)',
-              color: '#345367', 
+              color: '#345367',
             },
             {
               id: 'Critical ($RiskLevelCountCritical)',
               title: 'Critical ($RiskLevelCountCritical)',
-              color: '#772400', 
+              color: '#772400',
             },
             {
               id: 'High ($RiskLevelCountHigh)',
               title: 'High ($RiskLevelCountHigh)',
-              color: '#f56a00', 
+              color: '#f56a00',
             },
             {
               id: 'Medium ($RiskLevelCountMedium)',
               title: 'Medium ($RiskLevelCountMedium)',
-              color: '#6f5420', 
+              color: '#6f5420',
             },
             {
               id: 'Low ($RiskLevelCountLow)',
               title: 'Low ($RiskLevelCountLow)',
-              color: '#f3f1e6', 
+              color: '#f3f1e6',
             },
           ],
           edges: [
@@ -3253,7 +3273,7 @@ function Invoke-HuntSMBShares
               source: 'Networks ($SubnetsCount)',
               target: 'Computers ($ComputerWithExcessive)',
               value: $ComputerWithExcessive,
-              color: '#000', // Custom color for this edge 
+              color: '#000', // Custom color for this edge
             },
             {
               source: 'Computers ($ComputerWithExcessive)',
@@ -3266,7 +3286,7 @@ function Invoke-HuntSMBShares
               target: 'ACEs ($ExcessiveSharePrivsCount)',
               value: $ExcessiveSharePrivsCount,
               color: '#000', // Custom color for this edge
-            },    
+            },
             $SanKeyCritical
             $SanKeyHigh
             $SanKeyMedium
@@ -3276,8 +3296,8 @@ function Invoke-HuntSMBShares
 
         const graphOptions = {
           nodeWidth: 10,
-          fontFamily: 'Quicksand, sans-serif', 
-          fontSize: '14px',  
+          fontFamily: 'Quicksand, sans-serif',
+          fontSize: '14px',
           fontWeight: 400,
           fontColor: '#345367',
           height: 200,
@@ -3294,7 +3314,7 @@ function Invoke-HuntSMBShares
 
         # ----------------------------------------------------------------------
         # Generate Share Creation Timeline Data Series Objects
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
 
         # Set Counters
         $LowShareCounter      = 0
@@ -3312,11 +3332,11 @@ function Invoke-HuntSMBShares
         $DataSeriesCritical  = ""
 
         # Get unique dates from final inventory
-        $UniqueDates = $ExcessiveSharePrivsFinal  | select CreationDate -Unique | 
-        foreach { 
+        $UniqueDates = $ExcessiveSharePrivsFinal  | select CreationDate -Unique |
+        foreach {
 
             # Get date
-            $dateTimeString = $_.CreationDate; 
+            $dateTimeString = $_.CreationDate;
 
             # Convert the string to a [DateTime] object
             $dateTime = [DateTime]::Parse($dateTimeString)
@@ -3343,7 +3363,7 @@ function Invoke-HuntSMBShares
 
         # Get start and end dates for all
         $ShareFirstDate     =  $UniqueDates | select -First 1
-        $ShareLastDate      =  $UniqueDates | select -Last 1  
+        $ShareLastDate      =  $UniqueDates | select -Last 1
 
         # Set color check to 0
         $ShareCriticalHighCheck = 0
@@ -3359,14 +3379,14 @@ function Invoke-HuntSMBShares
             $HighLastDateS                =  $HighLastDateD.ToString('MM/dd/yyyy')
 
             $ShareHighTime = "Shares configured with high risk ACEs were created between $HighFirstDateS and $HighLastDateS."
-            # $ShareHighTime = "" 
+            # $ShareHighTime = ""
             $ShareCriticalHighCheck = 1
         }else{
             # $HighFirstDateS    = "NA"
             # $HighLastDateS     = "NA"
-            $ShareHighTime = "No shares were found configured with high risk ACEs."  
+            $ShareHighTime = "No shares were found configured with high risk ACEs."
         }
-        
+
         # Get start and end dates for all critical
         $ShareCriticalCountBlah = $AllAcesWithFormattedDates | Where-Object { $_.RiskLevel -eq 'Critical' } | select SharePath -Unique | measure | select count -ExpandProperty count
         If($ShareCriticalCountBlah -gt 0)
@@ -3381,16 +3401,16 @@ function Invoke-HuntSMBShares
             # $ShareCriticalTime = ""
             $ShareCriticalHighCheck = 1
         }else{
-            # $CriticalFirstDateS  = "NA" 
+            # $CriticalFirstDateS  = "NA"
             # $CriticalLastDateS   = "NA"
-            $ShareCriticalTime = "No shares were found configured with critical risk ACEs." 
+            $ShareCriticalTime = "No shares were found configured with critical risk ACEs."
         }
 
         if($ShareCriticalHighCheck -eq 1){
             $ShareCriticalHighLine = "The red and purple trend lines reflect the cumulative number of critical and high risk shares in the environment so you can easily observe when/if they were introduced."
         }
 
-        
+
         # Iterate through unique dates and count ACEs efficiently
         $UniqueDates | ForEach-Object {
 
@@ -3445,7 +3465,7 @@ function Invoke-HuntSMBShares
 	        $CriticalShareCount = $TargetAces | where RiskLevel -eq 'Critical' | select SharePath -Unique | measure | select count -expandproperty count
 	        if($CriticalShareCount -gt 0){
 		        $CriticalShareCounter = $CriticalShareCounter + $CriticalShareCount
-	        }		
+	        }
             $DataSeriesCritical        = $DataSeriesCritical   + ", $CriticalShareCounter"
         }
 
@@ -3476,14 +3496,14 @@ function Invoke-HuntSMBShares
         $DataSeriesSharesSD = [math]::Round([math]::Sqrt($DataSeriesSharesVariance),2)
         $DataSeriesSharesSDtwo = $DataSeriesSharesSD * 2 + $DataSeriesSharesAvg
 
-        # Get number of records/days past the 
-        $DataSeriesSharesAnomalyCount = ($DataSeriesSharesNum | Where-Object { $_ -ge $DataSeriesSharesSDtwo }) | Measure-Object | select count -ExpandProperty count   
+        # Get number of records/days past the
+        $DataSeriesSharesAnomalyCount = ($DataSeriesSharesNum | Where-Object { $_ -ge $DataSeriesSharesSDtwo }) | Measure-Object | select count -ExpandProperty count
 
         # ----------------------------------------------------------------------
         # Create ShareGraph Nodes and Edges
-        # ---------------------------------------------------------------------- 
+        # ----------------------------------------------------------------------
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-        Write-Output " [*][$Time] Creating ShareGraph nodes and edges..."  
+        Write-Output " [*][$Time] Creating ShareGraph nodes and edges..."
 
         # Create hashsets to track added nodes and edges
         $addedNodes = @{}
@@ -3590,51 +3610,51 @@ function Invoke-HuntSMBShares
             }
         }
 
-        # Reference $ShareGraphNodesFinal and $ShareGraphEdgesFinal in Cytoscape JavaScript   
+        # Reference $ShareGraphNodesFinal and $ShareGraphEdgesFinal in Cytoscape JavaScript
         $ShareGraphNodesFinal = $ShareGraphNodes | select -Unique
-        $ShareGraphEdgesFinal = $ShareGraphEdges | select -Unique                                       
+        $ShareGraphEdgesFinal = $ShareGraphEdges | select -Unique
 
         # ----------------------------------------------------------------------
         # Create Timeline Reports
-        # ----------------------------------------------------------------------     
-        
-        # Generate last modified card 
+        # ----------------------------------------------------------------------
+
+        # Generate last modified card
         If($SupressTimelineRpt){
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-            Write-Output " [*][$Time] Creation timeline reports have been disabled."            
-            $CardLastModifiedTimeLine = "Share creation Timeline reports have been disabled."            
+            Write-Output " [*][$Time] Creation timeline reports have been disabled."
+            $CardLastModifiedTimeLine = "Share creation Timeline reports have been disabled."
         }else{
-            $CardCreationTimeLine = Get-CardCreationTime -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Creation-Summary.csv"            
-        }     
-        
-        # Generate last modified card 
+            $CardCreationTimeLine = Get-CardCreationTime -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Creation-Summary.csv"
+        }
+
+        # Generate last modified card
         If($SupressTimelineRpt){
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
-            Write-Output " [*][$Time] Last modified timeline reports have been disabled."            
-            $CardLastModifiedTimeLine = "Last modified timeline reports have been disabled."            
+            Write-Output " [*][$Time] Last modified timeline reports have been disabled."
+            $CardLastModifiedTimeLine = "Last modified timeline reports have been disabled."
         }else{
-            $CardLastModifiedTimeLine = Get-CardLastModified -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Last-Modified-Summary.csv"            
-        }        
+            $CardLastModifiedTimeLine = Get-CardLastModified -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Last-Modified-Summary.csv"
+        }
 
         # Generate last access card
         If($SupressTimelineRpt){
             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
             Write-Output " [*][$Time] Last access timeline reports have been disabled."
-            $CardLastAccessTimeLine = "Last access timeline reports have been disabled."            
+            $CardLastAccessTimeLine = "Last access timeline reports have been disabled."
         }else{
-            $CardLastAccessTimeLine = Get-CardLastAccess -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Last-Accessed-Summary.csv"            
-        }  
+            $CardLastAccessTimeLine = Get-CardLastAccess -MyDataTable $ExcessiveSharePrivs -OutFilePath "$OutputDirectory\$TargetDomain-Shares-Timeline-Last-Accessed-Summary.csv"
+        }
 
         Write-Output " [*][$Time] Analysis Complete"
 
         # ----------------------------------------------------------------------
         # Display final summary
         # ----------------------------------------------------------------------
-        
+
         Write-Output " ---------------------------------------------------------------"
         Write-Output " SHARE REPORT SUMMARY      "
         Write-Output " ---------------------------------------------------------------"
-        
+
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
         #Write-Output " [*][$Time] Results written to $OutputDirectory"
         #Write-Output " [*][$Time] "
@@ -3662,13 +3682,13 @@ function Invoke-HuntSMBShares
         Write-Output " [*][$Time] - $ComputerCount domain computers found."
         Write-Output " [*][$Time] - $ComputerPingableCount ($PercentComputerPingP) domain computers responded to ping. $NoPingMsg"
         Write-Output " [*][$Time] - $Computers445OpenCount ($PercentComputerPortP) domain computers had TCP port 445 accessible."
-        Write-Output " [*][$Time] - $ComputerwithNonDefaultCount ($PercentComputerNonDefaultP) domain computers had shares that were non-default."  
-        Write-Output " [*][$Time] - $ComputerWithExcessive ($PercentComputerExPrivP) domain computers had shares with potentially excessive privileges."      
-        Write-Output " [*][$Time] - $ComputerWithReadCount ($PercentComputerReadP) domain computers had shares that allowed READ access."  
-        Write-Output " [*][$Time] - $ComputerWithWriteCount ($PercentComputerWriteP) domain computers had shares that allowed WRITE access."  
-        Write-Output " [*][$Time] - $ComputerwithHighRisk ($PercentComputerHighRiskP) domain computers had shares that are HIGH RISK."  
+        Write-Output " [*][$Time] - $ComputerwithNonDefaultCount ($PercentComputerNonDefaultP) domain computers had shares that were non-default."
+        Write-Output " [*][$Time] - $ComputerWithExcessive ($PercentComputerExPrivP) domain computers had shares with potentially excessive privileges."
+        Write-Output " [*][$Time] - $ComputerWithReadCount ($PercentComputerReadP) domain computers had shares that allowed READ access."
+        Write-Output " [*][$Time] - $ComputerWithWriteCount ($PercentComputerWriteP) domain computers had shares that allowed WRITE access."
+        Write-Output " [*][$Time] - $ComputerwithHighRisk ($PercentComputerHighRiskP) domain computers had shares that are HIGH RISK."
         Write-Output " [*][$Time] "
-        Write-Output " [*][$Time] SHARE SUMMARY"      
+        Write-Output " [*][$Time] SHARE SUMMARY"
         Write-Output " [*][$Time] - $AllSMBSharesCount shares were found. We expect a minimum of $MinExpectedShareCount shares"
         Write-Output " [*][$Time]   because $Computers445OpenCount systems had open ports and there are typically two default shares."
         Write-Output " [*][$Time] - $SharesNonDefaultCount ($PercentSharesNonDefaultP) shares across $ComputerwithNonDefaultCount systems were non-default."
@@ -3679,10 +3699,10 @@ function Invoke-HuntSMBShares
         Write-Output " [*][$Time] "
         Write-Output " [*][$Time] SHARE ACL SUMMARY"
         Write-Output " [*][$Time] - $ShareACLsCount ACLs were found."
-        Write-Output " [*][$Time] - $AclNonDefaultCount ($PercentAclNonDefaultP) ACLs were associated with non-default shares." 
-        Write-Output " [*][$Time] - $ExcessiveSharePrivsCount ($PercentAclExPrivP) ACLs were found to be potentially excessive."               
-        Write-Output " [*][$Time] - $AclWithReadCount ($PercentAclReadP) ACLs were found that allowed READ access."  
-        Write-Output " [*][$Time] - $AclWithWriteCount ($PercentAclWriteP) ACLs were found that allowed WRITE access."                               
+        Write-Output " [*][$Time] - $AclNonDefaultCount ($PercentAclNonDefaultP) ACLs were associated with non-default shares."
+        Write-Output " [*][$Time] - $ExcessiveSharePrivsCount ($PercentAclExPrivP) ACLs were found to be potentially excessive."
+        Write-Output " [*][$Time] - $AclWithReadCount ($PercentAclReadP) ACLs were found that allowed READ access."
+        Write-Output " [*][$Time] - $AclWithWriteCount ($PercentAclWriteP) ACLs were found that allowed WRITE access."
         Write-Output " [*][$Time] - $AclHighRiskCount ($PercentAclHighRiskP) ACLs were found that are associated with HIGH RISK share names."
         Write-Output " [*][$Time] "
         Write-Output " [*][$Time] - The most common share names are:"
@@ -3691,9 +3711,9 @@ function Invoke-HuntSMBShares
         foreach {
             $ShareCount = $_.count
             $ShareName = $_.name
-            Write-Output " [*][$Time]   - $ShareCount $ShareName"   
+            Write-Output " [*][$Time]   - $ShareCount $ShareName"
         }
-        
+
         # Estimate report generation time
         $ReportGenTimeEstimate = "Unknown"
         If($AllSMBSharesCount -le 500   ) {$ReportGenTimeEstimate = "1 minute or less"   }
@@ -3704,33 +3724,33 @@ function Invoke-HuntSMBShares
         If($AllSMBSharesCount -ge 15000 ) {$ReportGenTimeEstimate = "25 minutes or less" }
         If($AllSMBSharesCount -ge 30000 ) {$ReportGenTimeEstimate = "30 minutes or less" }
 
-        Write-Output " [*] -----------------------------------------------" 
+        Write-Output " [*] -----------------------------------------------"
         Write-Output " [*][$Time]   - Generating HTML Report"
-        Write-Output " [*][$Time]   - Estimated generation time: $ReportGenTimeEstimate"  
-        
+        Write-Output " [*][$Time]   - Estimated generation time: $ReportGenTimeEstimate"
+
         # ----------------------------------------------------------------------
         # Display final summary - NEW HTML REPORT
         # ----------------------------------------------------------------------
 		if($username -like ""){$username = whoami}
 		$SourceIps = (Get-NetIPAddress | where AddressState -like "*Pref*" | where AddressFamily -like "ipv4" | where ipaddress -notlike "127.0.0.1" | select IpAddress).ipaddress -join ("<br>")
-		$SourceHost = (hostname) 
+		$SourceHost = (hostname)
 
         # Get file group string list
         $CommonShareFileGroupTopString = $CommonShareFileGroupTop5 |
         foreach {
-            $FileGroupName = $_.name                          
+            $FileGroupName = $_.name
             $ThisFileBars = Get-GroupFileBar -DataTable $ExcessiveSharePrivs -Name $FileGroupName -AllComputerCount $ComputerCount -AllShareCount $AllSMBSharesCount -AllAclCount $ShareACLsCount
             $ComputerBarF = $ThisFileBars.ComputerBar
             $ShareBarF = $ThisFileBars.ShareBar
-            $AclBarF = $ThisFileBars.AclBar            
-            $ThisFileListPrep = $ThisFileBars.FileList 
-            $ThisFileList = $ThisFileListPrep -replace "`n", "<br>"          
+            $AclBarF = $ThisFileBars.AclBar
+            $ThisFileListPrep = $ThisFileBars.FileList
+            $ThisFileList = $ThisFileListPrep -replace "`n", "<br>"
             $ThisFileCount = $ThisFileBars.FileCount
             $ThisFileShareCount = $ThisFileBars.Sharecount
             $ThisFileShareNameList = $ExcessiveSharePrivs | where FileListGroup -eq $FileGroupName | select ShareName -unique -expandproperty sharename | foreach { "$_ <br>"}
             $ThisFileShareNameListUniqueCount = $ThisFileShareNameList | measure | select count -ExpandProperty count
             $ShareFileShareUnc = $ExcessiveSharePrivs | where FileListGroup -eq $FileGroupName | select SharePath -unique -expandproperty SharePath | foreach { "$_ <br>"}
-            
+
             # Get application fingerprint values if gathered
             if($RunLLMQueries -eq 1){
 
@@ -3741,7 +3761,7 @@ function Invoke-HuntSMBShares
 
                 # Set $FgAppName to unknown if blank
                 If ($FgAppName -like ""){
-                    $FgAppName = "Unknown"                          
+                    $FgAppName = "Unknown"
                 }
 
             }else{
@@ -3753,13 +3773,13 @@ function Invoke-HuntSMBShares
 
                 # Set $FgAppName to unknown if blank
                 If ($FgAppName -like ""){
-                    $FgAppName = "Unknown"                          
+                    $FgAppName = "Unknown"
                 }
             }
 
             # Set $FgAppName to unknown if blank
             If ($FgAppName -like ""){
-                $FgAppName = "Unknown"                          
+                $FgAppName = "Unknown"
             }
 
             # Grab the risk level for the highest risk acl for the foldergroup
@@ -3767,14 +3787,14 @@ function Invoke-HuntSMBShares
 
             # Check risk level - Highest wins
             If($FolderGroupsTopACLRiskScoreRow -le 4                                                ) { $RiskLevelFolderGroupResultRow = "Low"}
-            If($FolderGroupsTopACLRiskScoreRow -gt 4  -and $FolderGroupsTopACLRiskScoreRow -lt 11   ) { $RiskLevelFolderGroupResultRow = "Medium"} 
-            If($FolderGroupsTopACLRiskScoreRow -ge 11 -and $FolderGroupsTopACLRiskScoreRow -lt 20   ) { $RiskLevelFolderGroupResultRow = "High"}     
-            If($FolderGroupsTopACLRiskScoreRow -ge 20                                               ) { $RiskLevelFolderGroupResultRow = "Critical"} 
-            
+            If($FolderGroupsTopACLRiskScoreRow -gt 4  -and $FolderGroupsTopACLRiskScoreRow -lt 11   ) { $RiskLevelFolderGroupResultRow = "Medium"}
+            If($FolderGroupsTopACLRiskScoreRow -ge 11 -and $FolderGroupsTopACLRiskScoreRow -lt 20   ) { $RiskLevelFolderGroupResultRow = "High"}
+            If($FolderGroupsTopACLRiskScoreRow -ge 20                                               ) { $RiskLevelFolderGroupResultRow = "Critical"}
+
             # Set risk level for row
             $FileGroupNameRiskLevelRow = "$FolderGroupsTopACLRiskScoreRow $RiskLevelFolderGroupResultRow"
 
-            $ThisRow = @" 
+            $ThisRow = @"
 	          <tr>
 	          <td>
                 <!-- Unique Share Count -->
@@ -3782,62 +3802,62 @@ function Invoke-HuntSMBShares
                 <div class="content" style="font-size:11px;width:100px;">
                     $ThisFileShareNameList
                 </div>
-	          </td>	
+	          </td>
 	          <td>
-                <!-- Total Share Count -->    
+                <!-- Total Share Count -->
                 <button class="collapsible">$ThisFileShareCount</button>
                 <div class="content" style="font-size:11px;width:100px;">
                 $ShareFileShareUnc
                 </div>
 	          </td>
-	          <td> <!-- File Count -->               
+	          <td> <!-- File Count -->
                   <button class="collapsible"><span style="color:#CE112D;"></span>$ThisFileCount Files</button>
                   <div class="content" style="font-size:11px;width:100px;">
                   $ThisFileList
                   </div>
-	          </td>	
-	          <td> <!-- Risk Level -->  
+	          </td>
+	          <td> <!-- Risk Level -->
 	          $FileGroupNameRiskLevelRow
 	          </td>
-	          <td style="cursor: default;" onClick="applyFadedClassAndUpdate(cy, '$FileGroupName');radiobtn = document.getElementById('ShareGraph');radiobtn.checked = true;updateLabelColors('tabs', 'btnShareGraph');"> <!-- Folder Group Name -->  
+	          <td style="cursor: default;" onClick="applyFadedClassAndUpdate(cy, '$FileGroupName');radiobtn = document.getElementById('ShareGraph');radiobtn.checked = true;updateLabelColors('tabs', 'btnShareGraph');"> <!-- Folder Group Name -->
               $FileGroupName
-	          </td>		
-	          <td style="cursor: default;"> <!-- Folder Group App Fingerprint -->  
+	          </td>
+	          <td style="cursor: default;"> <!-- Folder Group App Fingerprint -->
               <button class="collapsible"><span style="color:#CE112D;"></span>$FgAppName</button>
                   <div class="content" style="font-size:11px;width:100px;">
                   $FgAppJust
                   </div>
-	          </td>	           	  
+	          </td>
 	          </tr>
-"@              
+"@
             $ThisRow
         }
 
         # ----------------------------------------------------------------------
         # Analyze Share Names
-        # ----------------------------------------------------------------------        
+        # ----------------------------------------------------------------------
 
         # Get share name string list
         $CommonShareNamesTopString = $CommonShareNamesTop5 |
         foreach {
             $ShareCount = $_.count
-            $ShareName = $_.name            
-            Write-Output "$ShareCount $ShareName <br>"   
-        }  
+            $ShareName = $_.name
+            Write-Output "$ShareCount $ShareName <br>"
+        }
 
         # Get share name string list table
         $CommonShareNamesTopStringT = $CommonShareNamesTop5 |
         foreach {
             $ShareCount = $_.count
             $ShareName = $_.name
-            $ShareFolderGroupCount = $ExcessiveSharePrivs | where sharename -like "$ShareName" | select filelistgroup -Unique | measure | select count -ExpandProperty count 
+            $ShareFolderGroupCount = $ExcessiveSharePrivs | where sharename -like "$ShareName" | select filelistgroup -Unique | measure | select count -ExpandProperty count
             $ShareNameBars = Get-GroupNameNoBar -DataTable $ExcessiveSharePrivs -Name $ShareName -AllComputerCount $ComputerCount -AllShareCount $AllSMBSharesCount -AllAclCount $ShareACLsCount
             $ComputerBar = $ShareNameBars.ComputerBar
             $ShareBar    = $ShareNameBars.ShareBar
-            $AclBar      = $ShareNameBars.AclBar  
-            
-            # Get app description from llm results  
-            if($RunLLMQueries -eq 1){  
+            $AclBar      = $ShareNameBars.AclBar
+
+            # Get app description from llm results
+            if($RunLLMQueries -eq 1){
 
                 # Get lmm fingerprint matches for sharename
                 $SnLLmMatchesRaw = $ExcessiveSharePrivsFinal |
@@ -3862,25 +3882,25 @@ function Invoke-HuntSMBShares
             $ShareLastCreated  = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select creationdate | foreach{[datetime]$_.creationdate } | Sort-Object -Descending | select -First 1 | foreach {$_.tostring("MM/dd/yyyy")}
 
             # Last modified
-            # $ShareLastModified = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate | foreach{[datetime]$_.LastModifiedDate } | Sort-Object -Descending | select -First 1 | foreach {$_.tostring("MM/dd/yyyy HH:mm:ss")}            
-            $ShareLastModified = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate | foreach{[datetime]$_.LastModifiedDate } | Sort-Object -Descending | select -First 1 | foreach {$_.tostring("MM/dd/yyyy")}  
+            # $ShareLastModified = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate | foreach{[datetime]$_.LastModifiedDate } | Sort-Object -Descending | select -First 1 | foreach {$_.tostring("MM/dd/yyyy HH:mm:ss")}
+            $ShareLastModified = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate | foreach{[datetime]$_.LastModifiedDate } | Sort-Object -Descending | select -First 1 | foreach {$_.tostring("MM/dd/yyyy")}
 
             # Share owner list
             $ShareOwnerList = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | Sort-Object | select ShareOwner -Unique -ExpandProperty ShareOwner
             $ShareOwnerListHTML = $ShareOwnerList | foreach{ "$_ <br>"}
-            
+
             # Share owner list count
-            $ShareOwnerListCount = $ShareOwnerList | select -Unique | measure-object | select count -expandproperty count               
+            $ShareOwnerListCount = $ShareOwnerList | select -Unique | measure-object | select count -expandproperty count
 
             # Share folder group list
-            $ShareFolderGroupList  = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select SharePath,FileListGroup -Unique | Group-Object FileListGroup   | sort count -Descending | select count, name | 
-            foreach { 
+            $ShareFolderGroupList  = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select SharePath,FileListGroup -Unique | Group-Object FileListGroup   | sort count -Descending | select count, name |
+            foreach {
 
-                $fdcount = $_.count; 
+                $fdcount = $_.count;
                 $fdname = $_.name;
 
                 If($fdname){
-                
+
                     # Get file count
                     $FdFileCount = $ExcessiveSharePrivs | where FileListGroup -eq  $fdname | select FileCount -First 1 -ExpandProperty FileCount -ErrorAction SilentlyContinue
 
@@ -3889,12 +3909,12 @@ function Invoke-HuntSMBShares
                     $MyFdListBr = $MyFdList -replace "`n", "<br>"
 
                     $ThisFileDirList = @"
-                       
+
                         <button class="collapsible" style="font-size: 10px;">$fdcount of $ShareCount shares ($FdFileCount Files)</button>
                         <div class="content" style="font-size: 10px;background-color: white;padding-left:2px;top: 2px;">
                         <!-- $fdname<br><br> -->
                         $MyFdListBr
-                        </div>                
+                        </div>
 "@
                     $ThisFileDirList
                 }
@@ -3902,16 +3922,16 @@ function Invoke-HuntSMBShares
 
             #region SimilarityScore
             # ----------------------------------------------------------------------
-            # Calculate Similarity Score - START  
+            # Calculate Similarity Score - START
             # ----------------------------------------------------------------------
-            
+
             ## ---
-            ## Folder Group Coverage Weighted Calculations 
+            ## Folder Group Coverage Weighted Calculations
             ## ---------------------------------------------
 
             ##
             ## Determine if the percentage of shares that exists in each folder group for the target share name meet the defined thresholds.
-            
+
             # Start all values at 0
             $SimularityFolderGroupCoverageScore = 0
             $SimularityFolderGroupCoverage10    = 0
@@ -3922,13 +3942,13 @@ function Invoke-HuntSMBShares
             $SimularityFolderGroupCoverage60    = 0
             $SimularityFolderGroupCoverage70    = 0
             $SimularityFolderGroupCoverage80    = 0
-            $SimularityFolderGroupCoverage90    = 0            
-            $SimularityFolderGroupCoverage100   = 0            
+            $SimularityFolderGroupCoverage90    = 0
+            $SimularityFolderGroupCoverage100   = 0
 
             # Get the share count for each folder group
             $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select SharePath,FileListGroup -Unique | Group-Object FileListGroup | sort count -Descending | select count, name |
             foreach{
-                
+
                 # Determine if thesholds where met and update tracker variables
 
                 # Get % of shares the folder group includes
@@ -4000,27 +4020,27 @@ function Invoke-HuntSMBShares
             $SimularityFolderGroupCoverageMax     =  100
 
             # Set actual value
-            $SimularityFolderGroupCoverageValue   =  $SimularityFolderGroupCoverage10w  + 
-                                                     $SimularityFolderGroupCoverage20w  + 
-                                                     $SimularityFolderGroupCoverage30w  + 
-                                                     $SimularityFolderGroupCoverage40w  + 
-                                                     $SimularityFolderGroupCoverage50w  + 
-                                                     $SimularityFolderGroupCoverage60w  + 
-                                                     $SimularityFolderGroupCoverage70w  + 
-                                                     $SimularityFolderGroupCoverage80w  + 
-                                                     $SimularityFolderGroupCoverage90w  + 
-                                                     $SimularityFolderGroupCoverage100w  
+            $SimularityFolderGroupCoverageValue   =  $SimularityFolderGroupCoverage10w  +
+                                                     $SimularityFolderGroupCoverage20w  +
+                                                     $SimularityFolderGroupCoverage30w  +
+                                                     $SimularityFolderGroupCoverage40w  +
+                                                     $SimularityFolderGroupCoverage50w  +
+                                                     $SimularityFolderGroupCoverage60w  +
+                                                     $SimularityFolderGroupCoverage70w  +
+                                                     $SimularityFolderGroupCoverage80w  +
+                                                     $SimularityFolderGroupCoverage90w  +
+                                                     $SimularityFolderGroupCoverage100w
 
 
             # Calculate Weighted Score
-            $SimularityFolderGroupCoverageScore   =  $SimularityFolderGroupCoverageValue / $SimularityFolderGroupCoverageMax 
+            $SimularityFolderGroupCoverageScore   =  $SimularityFolderGroupCoverageValue / $SimularityFolderGroupCoverageMax
             $SimularityFolderGroupCoverageScoreP1 =  [math]::round(($SimularityFolderGroupCoverageScore.tostring("P") -replace('%','')))
             $SimularityFolderGroupCoverageScoreP  =  "$SimularityFolderGroupCoverageScoreP1%"
-            
 
-            ## --- 
-            ## File Name Coverage Weighted Calculations  
-            ## ---------------------------------------------       
+
+            ## ---
+            ## File Name Coverage Weighted Calculations
+            ## ---------------------------------------------
 
             ##
             ## Determine if at least one file is the same across the target percentages of file groups for the target share.
@@ -4038,83 +4058,83 @@ function Invoke-HuntSMBShares
             $SimularityFileCoverage90     = 0
             $SimularityFileCoverage100    = 0
             $SimularityFileCommonList     = ""
-            $SimularityFileCommonList     = New-Object System.Data.DataTable 
+            $SimularityFileCommonList     = New-Object System.Data.DataTable
             $SimularityFileCommonList.Columns.Add("Count") | Out-Null
             $SimularityFileCommonList.Columns.Add("FileName") | Out-Null
             $SimularityFileCommonList.Columns.Add("Coverage") | Out-Null
 
             # Get a list of file names from each folder group for the target share name
-            $FullFileListSim = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select FileListGroup,FileList -Unique | Select FileList | foreach {$_.FileList -split "`r`n"} | Where-Object {$_ -ne ''}                              
-            
+            $FullFileListSim = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select FileListGroup,FileList -Unique | Select FileList | foreach {$_.FileList -split "`r`n"} | Where-Object {$_ -ne ''}
+
             # Count how many file groups (file name instances) each file is seen in
             $FullFileListSimCounts = $FullFileListSim | Group-Object | sort count -Descending | select count,name | Where-Object {$_.name -ne ''}
 
             # Determine if at least one file meets each coverage threshold
-            $FullFileListSimCounts | 
+            $FullFileListSimCounts |
             Foreach{
                 [string]$SameFileNameCount    = $_.count
                 [string]$SameFileName         = $_.name
-                $SameFileNameCoverage         = [math]::Round($SameFileNameCount/$ShareFolderGroupCount,4)            
+                $SameFileNameCoverage         = [math]::Round($SameFileNameCount/$ShareFolderGroupCount,4)
 
                 # Check for 10% coverage
-                if($SameFileNameCoverage -ge .10){ 
+                if($SameFileNameCoverage -ge .10){
                    $SimularityFileCoverage10  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 20% coverage
-                if($SameFileNameCoverage -ge .20){ 
+                if($SameFileNameCoverage -ge .20){
                    $SimularityFileCoverage20  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 30% coverage
-                if($SameFileNameCoverage -ge .30){ 
+                if($SameFileNameCoverage -ge .30){
                    $SimularityFileCoverage30  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 40% coverage
-                if($SameFileNameCoverage -ge .40){ 
+                if($SameFileNameCoverage -ge .40){
                    $SimularityFileCoverage40  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 50% coverage
-                if($SameFileNameCoverage -ge .51){ 
+                if($SameFileNameCoverage -ge .51){
                    $SimularityFileCoverage50  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 60% coverage
-                if($SameFileNameCoverage -ge .60){ 
+                if($SameFileNameCoverage -ge .60){
                    $SimularityFileCoverage60  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 70% coverage
-                if($SameFileNameCoverage -ge .70){ 
+                if($SameFileNameCoverage -ge .70){
                    $SimularityFileCoverage70  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 80% coverage
-                if($SameFileNameCoverage -ge .80){ 
+                if($SameFileNameCoverage -ge .80){
                    $SimularityFileCoverage80  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 90% coverage
-                if($SameFileNameCoverage -ge .90){ 
+                if($SameFileNameCoverage -ge .90){
                    $SimularityFileCoverage90  = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
                 }
 
                 # Check for 100% coverage
-                if($SameFileNameCoverage -ge 1){ 
+                if($SameFileNameCoverage -ge 1){
                    $SimularityFileCoverage100 = 1
                    $SimularityFileCommonList.rows.Add($SameFileNameCount,"$SameFileName",$SameFileNameCoverage) | Out-Null
-                } 
+                }
             }
 
             # Set common file constraints
@@ -4129,11 +4149,11 @@ function Invoke-HuntSMBShares
             foreach {
                 $SimularityFileTopName          = $_.FileName
                 $SimularityFileTopCount         = $_.Count
-                $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)                  
+                $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)
                 $SimularityFileTopCPercentage   = ($SimularityFileTopCountCalc * 100).ToString() + '%'
                 "<tr id='ignore'><td>$SimularityFileTopName</td><td>&nbsp;$SimularityFileTopCPercentage ($SimularityFileTopCount)</td></tr>"
             } | select -Unique
-            
+
             # This supports situations when the a file exist in more than one group, but the total folder group count is less than 10
             # we need this should we only show common files with more than one instance
             If($ShareFolderGroupCount -lt 10 -and $ShareFolderGroupCount -gt 1 -and $ShareCount -gt 2) {
@@ -4141,26 +4161,26 @@ function Invoke-HuntSMBShares
                 foreach {
                     $SimularityFileTopName          = $_.FileName
                     $SimularityFileTopCount         = $_.Count
-                    $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)                  
+                    $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)
                     $SimularityFileTopCPercentage   = ($SimularityFileTopCountCalc * 100).ToString() + '%'
                     "<tr id='ignore'><td>$SimularityFileTopName</td><td>&nbsp;$SimularityFileTopCPercentage ($SimularityFileTopCount)</td></tr>"
                 } | select -Unique
-            }  
-            
+            }
+
             # This supports situations when the a file exist in more than one group, but there is only one group
             If($ShareFolderGroupCount -eq 1 -and $ShareCount -gt 1) {
-                $SimularityFileCommonListTop = $SimularityFileCommonList | 
+                $SimularityFileCommonListTop = $SimularityFileCommonList |
                 foreach {
                     $SimularityFileTopName          = $_.FileName
                     $SimularityFileTopCount         = $_.Count
-                    $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)                  
+                    $SimularityFileTopCountCalc     = [math]::Round($SimularityFileTopCount/$ShareFolderGroupCount,4)
                     $SimularityFileTopCPercentage   = ($SimularityFileTopCountCalc * 100).ToString() + '%'
                     "<tr id='ignore'><td>$SimularityFileTopName</td><td>&nbsp;$SimularityFileTopCPercentage ($SimularityFileTopCount)</td></tr>"
                 } | select -Unique
-            }                      
-            
+            }
+
             # Set count for display
-            $SimularityFileCommonListTopNum = $SimularityFileCommonListTop | measure | select count -ExpandProperty count         
+            $SimularityFileCommonListTopNum = $SimularityFileCommonListTop | measure | select count -ExpandProperty count
 
             # Format list for display
             $SimularityFileCommonListTxt = $SimularityFileCommonListTop -join "`n"
@@ -4175,7 +4195,7 @@ function Invoke-HuntSMBShares
             $SimularityFileCoverage70w            =  $SimularityFileCoverage70   * 10
             $SimularityFileCoverage80w            =  $SimularityFileCoverage80   * 10
             $SimularityFileCoverage90w            =  $SimularityFileCoverage90   * 10
-            $SimularityFileCoverage100w           =  $SimularityFileCoverage100  * 10            
+            $SimularityFileCoverage100w           =  $SimularityFileCoverage100  * 10
 
             # Set max value
             $SimularityFileCoverageMax            =  100
@@ -4190,67 +4210,67 @@ function Invoke-HuntSMBShares
                                                      $SimularityFileCoverage70w   +
                                                      $SimularityFileCoverage80w   +
                                                      $SimularityFileCoverage90w   +
-                                                     $SimularityFileCoverage100w 
+                                                     $SimularityFileCoverage100w
 
 
             # Calculate Weighted Score
             $SimularityFileCoverageScore          =  $SimularityFileCoverageValue  / $SimularityFileCoverageMax
             $SimularityFileCoverageScoreP1        =  [math]::round(($SimularityFileCoverageScore.tostring("P") -replace('%','')))
-            $SimularityFileCoverageScoreP         =  "$SimularityFileCoverageScoreP1%"    
-            
-            ## --- 
-            ## Share Properties Weight Group Calculations  
-            ## ---------------------------------------------  
+            $SimularityFileCoverageScoreP         =  "$SimularityFileCoverageScoreP1%"
+
+            ## ---
+            ## Share Properties Weight Group Calculations
+            ## ---------------------------------------------
 
             ##
             ## Calculate share name ratio
-            ## Output Value: 0 or 1 
-            $SimularitySharePropShareName = 1         
+            ## Output Value: 0 or 1
+            $SimularitySharePropShareName = 1
 
             ##
             ## Calculate creation date ratio
             ## Output Value: 0 to 1
-            $ShareCreateCount                    = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select creationdate -Unique | Measure-Object | Select-Object count -ExpandProperty count            
-            $SimularityCalcCreateDate1           = [math]::Round($ShareCount/$ShareCreateCount,4) 
+            $ShareCreateCount                    = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select creationdate -Unique | Measure-Object | Select-Object count -ExpandProperty count
+            $SimularityCalcCreateDate1           = [math]::Round($ShareCount/$ShareCreateCount,4)
             $SimularitySharePropCreateDateRatio  = $SimularityCalcCreateDate1 / $ShareCount
             $SimularitySharePropCreateDateRatioT  = $SimularitySharePropCreateDateRatio.ToString("F2")
-           
+
             ##
             ## Calculate modification date ratio
             ## Output Value: 0 to 1
-            $ShareModifiedCount                   = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate -Unique | Measure-Object | Select-Object count -ExpandProperty count            
-            $SimularityCalcLastModDate1           = [math]::Round($ShareCount/$ShareModifiedCount,4) 
+            $ShareModifiedCount                   = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select LastModifiedDate -Unique | Measure-Object | Select-Object count -ExpandProperty count
+            $SimularityCalcLastModDate1           = [math]::Round($ShareCount/$ShareModifiedCount,4)
             $SimularitySharePropModDateRatio      = $SimularityCalcLastModDate1 / $ShareCount
-            $SimularitySharePropModDateRatioT     = $SimularitySharePropModDateRatio.ToString("F2") 
-                        
+            $SimularitySharePropModDateRatioT     = $SimularitySharePropModDateRatio.ToString("F2")
+
             ##
-            ## Calculate file group owner ratio average 
+            ## Calculate file group owner ratio average
             ## Output Value: 0 to 1
 
             # Reset avg score
             $SimularitySharePropFGOwnerAvg = 0
-                      
+
             # Foreach folder group calculate owner to folder group ratio
-            $FGtoOwnerFGList = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select FileListGroup -Unique  | 
+            $FGtoOwnerFGList = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | select FileListGroup -Unique  |
             foreach{
 
                 # Get folder group name
-                $FGtoOwnerFG = $_.FileListGroup              
+                $FGtoOwnerFG = $_.FileListGroup
 
-                # Get number of shares in folder group          
+                # Get number of shares in folder group
                 $FGtoOwnerShareCount = $ExcessiveSharePrivs | where ShareName -EQ "$ShareName" | where FileListGroup -eq "$FGtoOwnerFG" | select SharePath -Unique | Measure-Object | select count -ExpandProperty count
-                               
+
                 # Get number of owners associated with folder group
-                $FGtoOwnerOwnerCount = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | where FileListGroup -EQ "$FGtoOwnerFG" | select ShareOwner -Unique | Measure-Object | select count -ExpandProperty count                
+                $FGtoOwnerOwnerCount = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | where FileListGroup -EQ "$FGtoOwnerFG" | select ShareOwner -Unique | Measure-Object | select count -ExpandProperty count
 
-                # Calculate fg to owner ratio               
+                # Calculate fg to owner ratio
                 $FGtoOwnerThings = $FGtoOwnerOwnerCount/$FGtoOwnerShareCount
-                $FGtoOwnerThings              
-            } 
+                $FGtoOwnerThings
+            }
 
-            # Calculate file group owner ratio average 
+            # Calculate file group owner ratio average
             $FGtoOwnerMax   = $FGtoOwnerFGList | measure | select count -ExpandProperty count
-            $FGtoOwnerValue = ($FGtoOwnerFGList | measure -sum).sum            
+            $FGtoOwnerValue = ($FGtoOwnerFGList | measure -sum).sum
             $SimularitySharePropFGOwnerAvg = [math]::Round($FGtoOwnerValue/$FGtoOwnerMax,4)
             $SimularitySharePropFGOwnerAvgT = $SimularitySharePropFGOwnerAvg.ToString("F2")
 
@@ -4274,43 +4294,43 @@ function Invoke-HuntSMBShares
             # Calculate Weighted Score
             $SimularitySharePropCoverageScore          =  $SimularitySharePropCoverageValue  / $SimularitySharePropCoverageMax
             $SimularitySharePropCoverageScoreP1        =  [math]::round(($SimularitySharePropCoverageScore.tostring("P") -replace('%','')))
-            $SimularitySharePropCoverageScoreP         =  "$SimularityFolderGroupCoverageScoreP1%"       
+            $SimularitySharePropCoverageScoreP         =  "$SimularityFolderGroupCoverageScoreP1%"
 
             ## ---
-            ## General metrics (Not included in similarity score, but displayed in details)  
-            ## ---------------------------------------------                                
-                                              
+            ## General metrics (Not included in similarity score, but displayed in details)
+            ## ---------------------------------------------
+
             # Calculate the share to owner ratio
-            # Output value: 0 to 1     
-            $SimularityCalcShareOwner1 = [math]::Round($ShareCount/$ShareOwnerListCount,4) 
+            # Output value: 0 to 1
+            $SimularityCalcShareOwner1 = [math]::Round($ShareCount/$ShareOwnerListCount,4)
             $SimularityCalcShareOwner  = $SimularityCalcShareOwner1 / $ShareCount
             $SimularityCalcShareOwner  = $SimularityCalcShareOwner.ToString("F2")
 
             ## Calculate share to folder group ratio
-            # Output value: 0 to 1                                       
+            # Output value: 0 to 1
             $SimularityCalcShareFg1 = [math]::Round($ShareCount/$ShareFolderGroupCount,4) # Original value
-            $SimularityCalcShareFg  = $SimularityCalcShareFg1 / $ShareCount 
+            $SimularityCalcShareFg  = $SimularityCalcShareFg1 / $ShareCount
             $SimularityCalcShareFg  = $SimularityCalcShareFg.ToString("F2")
 
             ##
             ## Calculate if all descriptions for the target share name are the same.
             ## Output Value: 0 or 1
-            $ShareDescriptionCount    = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | where ShareDescription -NE ""| select ShareDescription -Unique | measure | select count -ExpandProperty count        
+            $ShareDescriptionCount    = $ExcessiveSharePrivs | where sharename -EQ "$ShareName" | where ShareDescription -NE ""| select ShareDescription -Unique | measure | select count -ExpandProperty count
             If($ShareDescriptionCount -ge 1){
                 $SimularityCalcShareDesc = 1
             }else{
                 $SimularityCalcShareDesc = 0
-            }            
+            }
 
             ## ---
             ## Final Similarity Weighting V1
-            ## ---------------------------------------------  
-                      
+            ## ---------------------------------------------
+
             # Normalize Weight Groups
             # - File Name Coverage Weight Group
             # - File Group Coverage Wieght Group
             # - Share Properties Weight Group
-            
+
             # Set final max
             $FinalSimilarityMax                     = 3.85
 
@@ -4324,18 +4344,18 @@ function Invoke-HuntSMBShares
                 # Default setting
                 $SimularityFileCoverageScoreW       = $SimularityFileCoverageScore         * 2.25
             }
-            $SimularityFolderGroupCoverageScoreW    = $SimularityFolderGroupCoverageScore  * 1          
+            $SimularityFolderGroupCoverageScoreW    = $SimularityFolderGroupCoverageScore  * 1
             $SimularitySharePropCoverageScoreW      = $SimularitySharePropCoverageScore    * .6
 
             # Set final value
-            $FinalSimilarityValue                   = $SimularityFolderGroupCoverageScoreW + 
+            $FinalSimilarityValue                   = $SimularityFolderGroupCoverageScoreW +
                                                       $SimularityFileCoverageScoreW        +
-                                                      $SimularitySharePropCoverageScoreW 
+                                                      $SimularitySharePropCoverageScoreW
 
             # Set cumulative score
             $FinalSimilarityScore   = $FinalSimilarityValue / $FinalSimilarityMax
             $FinalSimilarityScoreP1 = [math]::round(($FinalSimilarityScore.tostring("P") -replace('%','')))
-            $FinalSimilarityScoreP  = "$FinalSimilarityScoreP1%"           
+            $FinalSimilarityScoreP  = "$FinalSimilarityScoreP1%"
 
             #
             # Set similarity classification
@@ -4343,18 +4363,18 @@ function Invoke-HuntSMBShares
             If($FinalSimilarityScore -ge .80){ $SimLevel = "$FinalSimilarityScoreP High"}
             If($FinalSimilarityScore -ge .95){ $SimLevel = "$FinalSimilarityScoreP Very High"}
             If($FinalSimilarityScore -lt .80){ $SimLevel = "$FinalSimilarityScoreP Medium"}
-            If($FinalSimilarityScore -lt .50){ $SimLevel = "$FinalSimilarityScoreP Low"}                             
+            If($FinalSimilarityScore -lt .50){ $SimLevel = "$FinalSimilarityScoreP Low"}
 
             # ----------------------------------------------------------------------
-            # Calculate Similarity Score - END   
-            # ---------------------------------------------------------------------- 
+            # Calculate Similarity Score - END
+            # ----------------------------------------------------------------------
             #endregion SimilarityScore
-            
+
             #region PeakDateRange
             # ----------------------------------------------------------------------
             # Calculate peak event date range - START
             # ----------------------------------------------------------------------
-            # Assumptions: a) if only two unique dates exist, then both will be included in the observation window. 
+            # Assumptions: a) if only two unique dates exist, then both will be included in the observation window.
 
             # Count total number of events
             $ShareEventCountTotal = $ExcessiveSharePrivs | where sharename -eq "$ShareName" | select SharePath, CreationDate -unique | measure | select count -expandproperty count
@@ -4369,15 +4389,15 @@ function Invoke-HuntSMBShares
             [timespan]$ShareEventTotalTime = $ShareEventLast -  $ShareEventFirst
 
             # Calculate the observation window date range based on the largest interval between events
-            $ShareEventsSorted = $ExcessiveSharePrivs | where sharename -eq "$ShareName" | select SharePath, CreationDate -unique | foreach {[datetime]$_.CreationDate} | sort 
+            $ShareEventsSorted = $ExcessiveSharePrivs | where sharename -eq "$ShareName" | select SharePath, CreationDate -unique | foreach {[datetime]$_.CreationDate} | sort
             [timespan]$ObservationWindow = "00:00:00"
             $ShareEventsSorted |
-            foreach {                
-                 [timespan]$Diff = ($_ - $ShareEventFirst )               
+            foreach {
+                 [timespan]$Diff = ($_ - $ShareEventFirst )
                  if($ObservationWindow -lt $Diff){
                     [timespan]$ObservationWindow = $Diff
-                 }                 
-            }          
+                 }
+            }
 
             # Set initial observation window start and end dates
             $ObservationWindowStartDate = $ShareEventFirst
@@ -4395,28 +4415,28 @@ function Invoke-HuntSMBShares
 
             # Iterate through the observeration windows to identify the one with the greatest number of events
             1..$ObservationWindowInstanceCount |
-            Foreach{                                      
+            Foreach{
 
                     # Select range and get count
-                    $ObservationWindowRangecount = $ShareEventsSorted | Where-Object { $_ -ge $ObservationWindowStartDate -and $_ -le $ObservationWindowsEndDate} | measure | select count -expandproperty count                                                   
+                    $ObservationWindowRangecount = $ShareEventsSorted | Where-Object { $_ -ge $ObservationWindowStartDate -and $_ -le $ObservationWindowsEndDate} | measure | select count -expandproperty count
 
                     # Check if count is bigger than last, if so set tracker
                     if($ObservationWindowsBiggest -le $ObservationWindowRangecount){
 
                         # Get window first date
-                        [datetime]$ObvWinnerFirst = $ShareEventsSorted | Where-Object { $_ -ge $ObservationWindowStartDate -and $_ -le $ObservationWindowsEndDate} | select -first 1                        
+                        [datetime]$ObvWinnerFirst = $ShareEventsSorted | Where-Object { $_ -ge $ObservationWindowStartDate -and $_ -le $ObservationWindowsEndDate} | select -first 1
 
                         # Get window last date
                         [datetime]$ObvWinnerLast = $ShareEventsSorted | Where-Object { $_ -ge $ObservationWindowStartDate -and $_ -le $ObservationWindowsEndDate} | sort -desc | select -first 1
 
-                        $ObservationWindowRangecountWinner = $ObservationWindowRangecount                         
+                        $ObservationWindowRangecountWinner = $ObservationWindowRangecount
 
                         # Create object
                         # $ObservationWindowsBiggestObject = [PSCustomObject]@{ TotalCount = $ShareEventCountTotal; WindowCount = $ObservationWindowRangecount; WindowFirstDate = [datetime]$ObvWinnerFirst; WindowLastDate = [datetime]$ObvWinnerLast}
                     }
 
                     # Set $ObservationWindowStartDate to $ObservationWindowsEndDate
-                    $ObservationWindowStartDate = $ObservationWindowsEndDate 
+                    $ObservationWindowStartDate = $ObservationWindowsEndDate
 
                     # Set $ObservationWindowsEndDate to $ObservationWindowsEndDate + $ObservationWindow
                     $ObservationWindowsEndDate  = $ObservationWindowsEndDate + $ObservationWindow
@@ -4429,25 +4449,25 @@ function Invoke-HuntSMBShares
 
             #region Access Checks
             # ----------------------------------------------------------------------
-            # Check share access types for name - START  
+            # Check share access types for name - START
             # ----------------------------------------------------------------------
 
-            # Check if high risk     
-            try{                                
-                $ShareRowHighRisk = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | 
+            # Check if high risk
+            try{
+                $ShareRowHighRisk = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" |
                 Foreach {
                     if(($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share'))
                     {
                         $_ # out to file
                     }
                 }
-                
-                $ShareRowCountHRAcls         = $ShareRowHighRisk  | Measure-Object | select count -ExpandProperty count 
+
+                $ShareRowCountHRAcls         = $ShareRowHighRisk  | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountHRShares       = $ShareRowHighRisk  | Select-Object SharePath    -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountHRComputers    = $ShareRowHighRisk  | Select-Object ComputerName -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountHRSharesCacl   = $ShareRowCountHRShares / $ShareCount
                 $ShareRowCountHRSharesCaclP1 = [math]::round(($ShareRowCountHRSharesCacl.tostring("P") -replace('%','')))
-                $ShareRowCountHRSharesCaclP  = "$ShareRowCountHRSharesCaclP1% ($ShareRowCountHRShares)"  
+                $ShareRowCountHRSharesCaclP  = "$ShareRowCountHRSharesCaclP1% ($ShareRowCountHRShares)"
 
                 if($ShareRowCountHRAcls -gt 0){
                    $ShareRowHasHighRisk    = "Yes"
@@ -4455,147 +4475,147 @@ function Invoke-HuntSMBShares
                    $ShareRowHasHighRisk    = "No"
                 }
             }catch{
-                $ShareRowCountHRAcls       = "Unknown"   
-                $ShareRowCountHRShares     = "Unknown"   
-                $ShareRowCountHRComputers  = "Unknown"   
-                $ShareRowHasHighRisk       = "Unknown"              
+                $ShareRowCountHRAcls       = "Unknown"
+                $ShareRowCountHRShares     = "Unknown"
+                $ShareRowCountHRComputers  = "Unknown"
+                $ShareRowHasHighRisk       = "Unknown"
             }
 
             # Check if write
-            try{                                
-                $ShareRowWrite = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | 
+            try{
+                $ShareRowWrite = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" |
                 Foreach {
                     if(($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*"))
                     {
                         $_ # out to file
                     }
                 }
-                
-                $ShareRowCountWriteAcls         = $ShareRowWrite    | Measure-Object | select count -ExpandProperty count 
+
+                $ShareRowCountWriteAcls         = $ShareRowWrite    | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountWriteShares       = $ShareRowWrite    | Select-Object SharePath    -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountWriteComputers    = $ShareRowWrite    | Select-Object ComputerName -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountwriteSharesCacl   = $ShareRowCountwriteShares / $ShareCount
                 $ShareRowCountwriteSharesCaclP1 = [math]::round(($ShareRowCountwriteSharesCacl.tostring("P") -replace('%','')))
-                $ShareRowCountwriteSharesCaclP  = "$ShareRowCountwriteSharesCaclP1% ($ShareRowCountwriteShares)"  
+                $ShareRowCountwriteSharesCaclP  = "$ShareRowCountwriteSharesCaclP1% ($ShareRowCountwriteShares)"
 
                 if($ShareRowCountWriteAcls -gt 0){
                    $ShareRowHasWrite          = "Yes"
                 }else{
-                   $ShareRowHasWrite          = "No" 
+                   $ShareRowHasWrite          = "No"
                 }
             }catch{
-                $ShareRowCountWriteAcls       = "Unknown"   
-                $ShareRowCountWriteShares     = "Unknown"   
-                $ShareRowCountWriteComputers  = "Unknown"   
-                $ShareRowHasWrite             = "Unknown"              
+                $ShareRowCountWriteAcls       = "Unknown"
+                $ShareRowCountWriteShares     = "Unknown"
+                $ShareRowCountWriteComputers  = "Unknown"
+                $ShareRowHasWrite             = "Unknown"
             }
 
             # Check if read
-            try{                                
-                $ShareRowRead = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | 
+            try{
+                $ShareRowRead = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" |
                 Foreach {
                     if(($_.FileSystemRights -like "*read*"))
                     {
                         $_ # out to file
                     }
                 }
-                
-                $ShareRowCountReadAcls         = $ShareRowRead   | Measure-Object | select count -ExpandProperty count 
+
+                $ShareRowCountReadAcls         = $ShareRowRead   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountReadShares       = $ShareRowRead   | Select-Object SharePath    -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountReadComputers    = $ShareRowRead   | Select-Object ComputerName -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountReadSharesCacl   = $ShareRowCountReadShares / $ShareCount
                 $ShareRowCountReadSharesCaclP1 = [math]::round(($ShareRowCountReadSharesCacl.tostring("P") -replace('%','')))
-                $ShareRowCountReadSharesCaclP  = "$ShareRowCountReadSharesCaclP1% ($ShareRowCountReadShares)"  
+                $ShareRowCountReadSharesCaclP  = "$ShareRowCountReadSharesCaclP1% ($ShareRowCountReadShares)"
 
                 if($ShareRowCountReadAcls -gt 0){
                    $ShareRowHasRead         = "Yes"
                 }else{
-                   $ShareRowHasRead         = "No" 
+                   $ShareRowHasRead         = "No"
                 }
             }catch{
-                $ShareRowCountReadAcls      = "Unknown"   
-                $ShareRowCountReadShares    = "Unknown"   
-                $ShareRowCountReadComputers = "Unknown"   
-                $ShareRowHasRead            = "Unknown"              
+                $ShareRowCountReadAcls      = "Unknown"
+                $ShareRowCountReadShares    = "Unknown"
+                $ShareRowCountReadComputers = "Unknown"
+                $ShareRowHasRead            = "Unknown"
             }
 
             # Check if non defaults
-            try{                                
-                $ShareRowNonDefault = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | 
+            try{
+                $ShareRowNonDefault = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" |
                 Foreach {
                     if(($_.ShareName -like 'admin$') -or ($_.ShareName -like 'c$') -or ($_.ShareName -like 'd$') -or ($_.ShareName -like 'e$') -or ($_.ShareName -like 'f$'))
                     {
                         $_ # out to file
                     }
                 }
-                
-                $ShareRowCountNonDefaultAcls      = $ShareRowNonDefault | Measure-Object | select count -ExpandProperty count                 
+
+                $ShareRowCountNonDefaultAcls      = $ShareRowNonDefault | Measure-Object | select count -ExpandProperty count
                 if($ShareRowCountNonDefaultAcls -gt 0){
                    $ShareRowHasDefault         = "Yes"
                 }else{
-                   $ShareRowHasDefault         = "No"  
+                   $ShareRowHasDefault         = "No"
                 }
-            }catch{  
-                $ShareRowHasDefault            = "Unknown"              
+            }catch{
+                $ShareRowHasDefault            = "Unknown"
             }
 
             # Check if empty
-            try{                                
+            try{
                 $ShareRowEmpty = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | where FileCount -eq 0
-                
-                $ShareRowCountEmptyAcls      = $ShareRowEmpty  | Measure-Object | select count -ExpandProperty count 
+
+                $ShareRowCountEmptyAcls      = $ShareRowEmpty  | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountEmptyShares    = $ShareRowEmpty  | Select-Object SharePath    -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountEmptyComputers = $ShareRowEmpty  | Select-Object ComputerName -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountEmptySharesCacl   = $ShareRowCountEmptyShares / $ShareCount
                 $ShareRowCountEmptySharesCaclP1 = [math]::round(($ShareRowCountEmptySharesCacl.tostring("P") -replace('%','')))
-                $ShareRowCountEmptySharesCaclP  = "$ShareRowCountEmptySharesCaclP1% ($ShareRowCountEmptyShares)"    
+                $ShareRowCountEmptySharesCaclP  = "$ShareRowCountEmptySharesCaclP1% ($ShareRowCountEmptyShares)"
 
                 if($ShareRowCountEmptyAcls -gt 0){
                    $ShareRowHasEmpty         = "Yes"
                 }else{
-                   $ShareRowHasEmpty         = "No" 
+                   $ShareRowHasEmpty         = "No"
                 }
             }catch{
-                $ShareRowCountEmptyAcls      = "Unknown"   
-                $ShareRowCountEmptyShares    = "Unknown"   
-                $ShareRowCountEmptyComputers = "Unknown"   
-                $ShareRowHasEmpty            = "Unknown"              
+                $ShareRowCountEmptyAcls      = "Unknown"
+                $ShareRowCountEmptyShares    = "Unknown"
+                $ShareRowCountEmptyComputers = "Unknown"
+                $ShareRowHasEmpty            = "Unknown"
             }
 
             # Check if stale
-            try{                                
+            try{
                 $oneYearAgo = (Get-Date).AddYears(-1)
                 $ShareRowStale = $ExcessiveSharePrivs | Where ShareName -like "$ShareName" | where { $_.LastModifiedDate-ge $oneYearAgo }
-                
-                $ShareRowCountStaleAcls      = $ShareRowStale  | Measure-Object | select count -ExpandProperty count 
+
+                $ShareRowCountStaleAcls      = $ShareRowStale  | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountStaleShares    = $ShareRowStale  | Select-Object SharePath    -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountStaleComputers = $ShareRowStale  | Select-Object ComputerName -Unique   | Measure-Object | select count -ExpandProperty count
                 $ShareRowCountStaleSharesCacl   = $ShareRowCountStaleShares / $ShareCount
                 $ShareRowCountStaleSharesCaclP1 = [math]::round(($ShareRowCountStaleSharesCacl.tostring("P") -replace('%','')))
-                $ShareRowCountStaleSharesCaclP  = "$ShareRowCountStaleSharesCaclP1% ($ShareRowCountStaleShares)"           
+                $ShareRowCountStaleSharesCaclP  = "$ShareRowCountStaleSharesCaclP1% ($ShareRowCountStaleShares)"
 
                 if($ShareRowCountStaleAcls -gt 0){
                    $ShareRowHasStale         = "Yes"
                 }else{
-                   $ShareRowHasStale         = "No" 
+                   $ShareRowHasStale         = "No"
                 }
             }catch{
-                $ShareRowCountStaleAcls      = "Unknown"   
-                $ShareRowCountStaleShares    = "Unknown"   
-                $ShareRowCountStaleComputers = "Unknown"   
-                $ShareRowHasStale            = "Unknown"           
+                $ShareRowCountStaleAcls      = "Unknown"
+                $ShareRowCountStaleShares    = "Unknown"
+                $ShareRowCountStaleComputers = "Unknown"
+                $ShareRowHasStale            = "Unknown"
             }
 
             # Set default
             $ShareRowCountInteresting                = "No"
 
-            # Check if interesting files 
+            # Check if interesting files
          	# For each category generate count and list
 	        $ShareNameInterestingFilesInsideHTML  = ""
             $ShareNameInterestingFilesOutsideHTML = ""
-	        $FileNamePatternCategories | select Category -ExpandProperty Category | 
+	        $FileNamePatternCategories | select Category -ExpandProperty Category |
 	        foreach{
-		
+
 		        # Get category
 		        $ShareNameCategoryName = $_
 
@@ -4604,11 +4624,11 @@ function Invoke-HuntSMBShares
 		        $ShareNameCategoryFiles = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" |  where Category -eq "$ShareNameCategoryName" | select FileName -Unique | ForEach-Object { $ASDF = $_.FileName; "$ASDF<br>" }  | out-string
 
 		        # Get category count
-		        $ShareNameCategoryFilesCount =  $ShareNameCategoryFilesBase | where FileName -notlike "" | select FileName -Unique | measure | select count -expandproperty count 
+		        $ShareNameCategoryFilesCount =  $ShareNameCategoryFilesBase | where FileName -notlike "" | select FileName -Unique | measure | select count -expandproperty count
 
 		        # Generate HTML with Category
                 if($ShareNameCategoryFilesCount -ne 0){
-		            $ShareNameInterestingFilesHTMLPrep = @" 
+		            $ShareNameInterestingFilesHTMLPrep = @"
                         <button class="collapsible" style="font-size: 10px;">$ShareNameCategoryFilesCount $ShareNameCategoryName</button>
  		                <div class="content" style="font-size: 10px; width:100px; overflow-wrap: break-word;">
 		                $ShareNameCategoryFiles
@@ -4620,7 +4640,7 @@ function Invoke-HuntSMBShares
 	        }
 
             # Get total for interesting files for target share name
-	        $ShareNameInterestingFilesCount = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" | select filename -Unique | measure | select count -expandproperty count 
+	        $ShareNameInterestingFilesCount = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" | select filename -Unique | measure | select count -expandproperty count
             if($ShareNameInterestingFilesCount -gt 0){
                 $ShareRowCountInteresting = "Yes"
             }else{
@@ -4628,11 +4648,11 @@ function Invoke-HuntSMBShares
             }
 
             # Get secrets count
-            $ShareRowInterestingFileListSecretsCount = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" |  Where Category -eq "Secret" | measure | select count -expandproperty count 
+            $ShareRowInterestingFileListSecretsCount = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" |  Where Category -eq "Secret" | measure | select count -expandproperty count
 
             # Get sensitive count
-            $ShareRowInterestingFileListDataCount    = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" |   Where Category -eq "Sensitive" | measure | select count -expandproperty count 
-       
+            $ShareRowInterestingFileListDataCount    = $InterestingFilesAllObjects | Where ShareName -eq "$ShareName" |   Where Category -eq "Sensitive" | measure | select count -expandproperty count
+
             # Build final interesting file html for share names page
 	        $ShareNameInterestingFilesOutsideHTML = @"
 		        <button class="collapsible"  style="font-size: 10px;">$ShareNameInterestingFilesCount Files</button>
@@ -4640,7 +4660,7 @@ function Invoke-HuntSMBShares
 		        $ShareNameInterestingFilesInsideHTML
 		        </div>
 "@
-            
+
             # Build coverage icon set
             $CoverageIcons = ""
             if($ShareRowHasHighRisk        -eq "Yes"){ $CoverageIcons = $CoverageIcons + "<div class=`"tooltip`"><div class=`"circle`">H</div><span class=`"tooltiptext`">Highly Exploitable</span></div>&nbsp;" }
@@ -4651,7 +4671,7 @@ function Invoke-HuntSMBShares
             if($ShareRowHasStale           -eq "Yes"){ $CoverageIcons = $CoverageIcons + "<div class=`"tooltip`"><div class=`"circle`">S</div><span class=`"tooltiptext`">Stale. <br>No modifications in <br>a year or more.</span></div>&nbsp;" }
 
             # ----------------------------------------------------------------------
-            # Check share access types for name - END 
+            # Check share access types for name - END
             # ----------------------------------------------------------------------
             #endregion Check Access
 
@@ -4665,10 +4685,10 @@ function Invoke-HuntSMBShares
 
             # Check risk level - Highest wins
             If($ShareNameTopACLRiskScore -le 4                                          ) { $RiskLevelShareNameResult = "Low"}
-            If($ShareNameTopACLRiskScore -gt 4  -and $ShareNameTopACLRiskScore -lt 11   ) { $RiskLevelShareNameResult = "Medium"} 
-            If($ShareNameTopACLRiskScore -ge 11 -and $ShareNameTopACLRiskScore -lt 20   ) { $RiskLevelShareNameResult = "High"}     
-            If($ShareNameTopACLRiskScore -ge 20                                         ) { $RiskLevelShareNameResult = "Critical"}   
-             
+            If($ShareNameTopACLRiskScore -gt 4  -and $ShareNameTopACLRiskScore -lt 11   ) { $RiskLevelShareNameResult = "Medium"}
+            If($ShareNameTopACLRiskScore -ge 11 -and $ShareNameTopACLRiskScore -lt 20   ) { $RiskLevelShareNameResult = "High"}
+            If($ShareNameTopACLRiskScore -ge 20                                         ) { $RiskLevelShareNameResult = "Critical"}
+
             # Set final risk level
             if($RiskLevelShareNameResult -eq "Low"     ){$RiskLevel = "$ShareNameTopACLRiskScore Low"}
             if($RiskLevelShareNameResult -eq "Medium"  ){$RiskLevel = "$ShareNameTopACLRiskScore Medium"}
@@ -4684,16 +4704,16 @@ function Invoke-HuntSMBShares
 
             # ----------------------------------------------------------------------
             # Create Share Summary Information
-            # ---------------------------------------------------------------------- 
-        
+            # ----------------------------------------------------------------------
+
             # Get share path count
-            $SharePathChartCount       = $ExcessiveSharePrivsFinal | where SharePath -ne "" | 
+            $SharePathChartCount       = $ExcessiveSharePrivsFinal | where SharePath -ne "" |
             foreach{
                 if( ($_.sharename -ne 'SYSVOL') -and ($_.sharename -ne 'NETLOGON'))
                 {
-                    $_                
+                    $_
                 }
-            } | select SharePath -Unique |  measure | select count -ExpandProperty count  
+            } | select SharePath -Unique |  measure | select count -ExpandProperty count
 
             # Get share path severity
             # Reivew ACLs for each share path, highest severity wins
@@ -4707,11 +4727,11 @@ function Invoke-HuntSMBShares
                 # filter out sysvol and netlogon
                 if( ($_.SharePath -ne 'SYSVOL') -and ($_.SharePath -ne 'NETLOGON'))
                 {
-                    $_                
+                    $_
                 }
             } | select SharePath -Unique |
             foreach {
-             
+
                  # Set target share name
                  $TargetRiskSharePath = $_.SharePath
 
@@ -4720,31 +4740,31 @@ function Invoke-HuntSMBShares
 
                  # Check risk level - Highest wins
                  If($SharePathTopACLRiskScore -le 4                                          ) { $RiskLevelSharePathResult = "Low"}
-                 If($SharePathTopACLRiskScore -gt 4  -and $SharePathTopACLRiskScore -lt 11   ) { $RiskLevelSharePathResult = "Medium"} 
-                 If($SharePathTopACLRiskScore -ge 11 -and $SharePathTopACLRiskScore -lt 20   ) { $RiskLevelSharePathResult = "High"}     
-                 If($SharePathTopACLRiskScore -ge 20                                         ) { $RiskLevelSharePathResult = "Critical"}   
-             
+                 If($SharePathTopACLRiskScore -gt 4  -and $SharePathTopACLRiskScore -lt 11   ) { $RiskLevelSharePathResult = "Medium"}
+                 If($SharePathTopACLRiskScore -ge 11 -and $SharePathTopACLRiskScore -lt 20   ) { $RiskLevelSharePathResult = "High"}
+                 If($SharePathTopACLRiskScore -ge 20                                         ) { $RiskLevelSharePathResult = "Critical"}
+
                  # Increment counts
                  if($RiskLevelSharePathResult -eq "Low"     ){$RiskLevelSharePathCountLow      = $RiskLevelSharePathCountLow      + 1}
                  if($RiskLevelSharePathResult -eq "Medium"  ){$RiskLevelSharePathCountMedium   = $RiskLevelSharePathCountMedium   + 1}
                  if($RiskLevelSharePathResult -eq "High"    ){$RiskLevelSharePathCountHigh     = $RiskLevelSharePathCountHigh     + 1}
-                 if($RiskLevelSharePathResult -eq "Critical"){$RiskLevelSharePathCountCritical = $RiskLevelSharePathCountCritical + 1}                         
-            }        
+                 if($RiskLevelSharePathResult -eq "Critical"){$RiskLevelSharePathCountCritical = $RiskLevelSharePathCountCritical + 1}
+            }
 
             # Counts
             <#
             $RiskLevelSharePathCountLow
             $RiskLevelSharePathCountMedium
-            $RiskLevelSharePathCountHigh 
+            $RiskLevelSharePathCountHigh
             $RiskLevelSharePathCountCritical
             #>
-             
+
             # Check if the share name is in our library of known applications
             $ShareNameListValue = "None"
             $ListShareLocalPath = ""
-            $ShareNameList | 
-            foreach { 
-                                        
+            $ShareNameList |
+            foreach {
+
                     $ListShareName         = $_.ShareName
                     $ListShareDesc         = $_.Description
                     $ListShareLocalPathC   = $_.LocalPath
@@ -4756,18 +4776,18 @@ function Invoke-HuntSMBShares
                     $ShareShareJust       = $_.Justification
                     $ListShareApp         = $_.Application
                     if($ListShareName -eq $ShareName){
-                        
+
                         # Set description
                         $ShareNameListValue = @"
-                        
-                        The $ListShareName may be associated with $ListShareApp. 
+
+                        The $ListShareName may be associated with $ListShareApp.
                         $ListShareDesc
-                        $ShareShareJust 
+                        $ShareShareJust
                         $ListShareLocalPath
 "@
                     }
-            }            
-                                      
+            }
+
             # ----------------------------------------------------------------------
             # Build Share Name Summary Page Rows
             # ----------------------------------------------------------------------
@@ -4778,30 +4798,30 @@ function Invoke-HuntSMBShares
             }
 
             # Build Rows
-            $ThisRow = @" 
+            $ThisRow = @"
 	          <tr h="$ShareRowHasHighRisk" w="$ShareRowHasWrite" r="$ShareRowHasRead" i="$ShareRowCountInteresting" e="$ShareRowHasEmpty" s="$ShareRowHasStale" n="$ShareRowHasDefault" >
               <td style="text-align:Center;">
                     <button class="collapsible">
 		            $GetRowUncPathsCount
                      </button>
                     <div class="content" style="width:80px;overflow-wrap: break-word;text-align:left;font-size: 10px;">
-                  	    $GetRowUncPaths                                                   
-                    </div>  
-	          </td>	 
+                  	    $GetRowUncPaths
+                    </div>
+	          </td>
 	          <td style="vertical-align: top;text-align:left">
                   <button class="collapsible" style="text-align:left">
                   $ShareName<br>
                   $CoverageIcons
                   </button>
                   <div class="content">
-                  <div class="filelistparent" style="font-size: 10px;"> 
-                      $ShareDescriptionSample  
+                  <div class="filelistparent" style="font-size: 10px;">
+                      $ShareDescriptionSample
                       <strong>Share Context Guess</strong><br>
-                      $ShareNameListValue  
-                      <br><br>    
+                      $ShareNameListValue
+                      <br><br>
                       <strong>LLM Application Guess</strong><br>
-                      $SnLLmMatchesList  
-                      <br><br>                                                                                   
+                      $SnLLmMatchesList
+                      <br><br>
                       <a style="font-size: 10px; cursor: default;" onClick="applyFadedClassAndUpdate(cy, '$ShareName');radiobtn = document.getElementById('ShareGraph');radiobtn.checked = true;updateLabelColors('tabs', 'btnShareGraph');">View in ShareGraph</a><br>
                       <br><strong>Affected Assets</strong><br>
                       <table class="subtable">
@@ -4814,38 +4834,38 @@ function Invoke-HuntSMBShares
                        <tr id="ignore">
                         <td>ACLs:</td><td>&nbsp;$AclBar</td>
                        </tr>
-                      </table>      
+                      </table>
                       <br><br>
 
                       <strong>Timeline Context</strong><br>
                       <table class="subtable">
                        <tr id="ignore">
-                        <td>First Created:</td>                          
-                        <td>&nbsp;$ShareFirstCreated</td> 
+                        <td>First Created:</td>
+                        <td>&nbsp;$ShareFirstCreated</td>
                        </tr>
                        <tr id="ignore">
-                        <td>Last Created:</td> 
-                        <td>&nbsp;$ShareLastCreated</td> 
+                        <td>Last Created:</td>
+                        <td>&nbsp;$ShareLastCreated</td>
                        </tr>
                        <tr id="ignore">
-                        <td>Last Mod:</td> 
-                        <td>&nbsp;$ShareLastModified</td> 
+                        <td>Last Mod:</td>
+                        <td>&nbsp;$ShareLastModified</td>
                        </tr>
-                       </table>  
+                       </table>
                        <br><br>
 
-                      <strong>Owners ($ShareOwnerListCount)</strong> 
-                      <br>                  
-                      $ShareOwnerListHTML                                                        
+                      <strong>Owners ($ShareOwnerListCount)</strong>
+                      <br>
+                      $ShareOwnerListHTML
                   </div>
-                  </div>                            
-	          </td>	
+                  </div>
+	          </td>
               <td>
 		        <button class="collapsible" style="text-align:left; font-size: 10px;">
                <strong>$RiskLevel</strong>
                 </button>
                 <div class="content">
-                    <div class="filelistparent" style="font-size: 10px;width:90px;"> 
+                    <div class="filelistparent" style="font-size: 10px;width:90px;">
                       <strong>Risk Summary</strong><br>
                       <table class="subtable">
                        <tr id="ignore">
@@ -4872,30 +4892,30 @@ function Invoke-HuntSMBShares
                        <tr id="ignore">
                         <td>Secrets:</td><td>&nbsp;$ShareRowInterestingFileListSecretsCount</td>
                        </tr>
-                      </table>      
+                      </table>
                     </div>
-                </div>  
-              </td>		 
+                </div>
+              </td>
 	          <td>
                 <button class="collapsible" style="font-size: 10px;"><strong>$SimLevel</strong></button>
                     <div class="content">
-                        <div class="filelistparent" style="font-size: 10px;width:120px;">          
+                        <div class="filelistparent" style="font-size: 10px;width:120px;">
                             <table class="subtable">
                                 <tr id="ignore">
                                     <td><strong>Final Score: </strong>:</td><td>&nbsp;<strong>$FinalSimilarityScoreP</strong></td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>File Name Coverage:</td><td>&nbsp;$SimularityFileCoverageScoreP</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>Folder Group Coverage:</td><td>&nbsp;$SimularityFolderGroupCoverageScoreP</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>Share Property Coverage:</td><td>&nbsp;$SimularitySharePropCoverageScoreP</td>
-                                </tr> 
+                                </tr>
                             </table>
-                            <br> --- <br>  
-                             
+                            <br> --- <br>
+
                             <strong>File Name Metrics</strong><Br>
                             <table class="subtable">
                                 <tr id="ignore">
@@ -4912,53 +4932,53 @@ function Invoke-HuntSMBShares
                                 </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage  &nbsp;51%:</td><td>&nbsp;$SimularityFileCoverage50</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage  &nbsp;60%:</td><td>&nbsp;$SimularityFileCoverage60</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage  &nbsp;70%:</td><td>&nbsp;$SimularityFileCoverage70</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage  &nbsp;80%:</td><td>&nbsp;$SimularityFileCoverage80</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage  &nbsp;90%:</td><td>&nbsp;$SimularityFileCoverage90</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>FG Coverage 100%:</td><td>&nbsp;$SimularityFileCoverage100</td>
-                                </tr>                                  
+                                </tr>
                             </table>
 
                             <Br><Br><strong>Folder Group Metrics</strong><Br>
                             <table class="subtable">
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;10%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage10</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;20%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage20</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;30%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage30</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;40%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage40</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;51%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage50</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;60%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage60</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;70%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage70</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;80%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage80</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG &nbsp;90%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage90</td>
-                                </tr> 
+                                </tr>
                                 <tr id="ignore">
                                     <td>1 FG 100%/shares:</td><td>&nbsp;$SimularityFolderGroupCoverage100</td>
                                 </tr>
@@ -4992,29 +5012,29 @@ function Invoke-HuntSMBShares
                                 </tr>
                             </table>
                         </div>
-                    </div>	              	 
-	          </td>	
-              <td>                  
+                    </div>
+	          </td>
+              <td>
                   <button class="collapsible" style="font-size: 10px;text-align:left;"><strong>$ShareFolderGroupCount</strong></button>
                   <div class="content" style="width:100px;">
                   $ShareFolderGroupList
-                  </div> 
-              </td>   
+                  </div>
+              </td>
 	          <td style="font-size: 10px;">
               <button class="collapsible" style="font-size: 10px;"><strong>$SimularityFileCommonListTopNum Files</strong></button>
-              <div class="content" style="width:100px;overflow-wrap: break-word;">                                         
+              <div class="content" style="width:100px;overflow-wrap: break-word;">
                   <table class="subtable" style="width:80%;"`>
                   $SimularityFileCommonListTop
                   </table>
               </div>
-	          </td> 
+	          </td>
 	          <td style="font-size: 10px;">
-                $ShareNameInterestingFilesOutsideHTML          
-	          </td>            	  
+                $ShareNameInterestingFilesOutsideHTML
+	          </td>
 	          </tr>
-"@               
-            $ThisRow  
-        } 
+"@
+            $ThisRow
+        }
 
         # Get share name string list for card
         $CommonShareNamesRollingCount = 0
@@ -5028,28 +5048,28 @@ function Invoke-HuntSMBShares
             $ShareBar = $ShareNameBars.ShareBar
             $AclBar = $ShareNameBars.AclBar
             $ShareFolderGroupList = $ExcessiveSharePrivs|where sharename -like "$ShareName" | select filelistgroup -Unique | select filelistgroup -ExpandProperty filelistgroup
-            $ThisRow = @" 
+            $ThisRow = @"
 	          <tr>
 	          <td>
               $ShareName
-	          </td>	
+	          </td>
 	          <td>
               $ShareCount
-	          </td>		          	  
+	          </td>
 	          </tr>
-"@              
-            $ThisRow  
-        } 
+"@
+            $ThisRow
+        }
         $CommonShareNamesTotalC = [math]::Round($CommonShareNamesRollingCount/$AllSMBSharesCount,4)
         $CommonShareNamesTotalP = $CommonShareNamesTotalC.tostring("P") -replace(" ","")
 
-        # Get owner string list 
+        # Get owner string list
         $CommonShareOwnersTop5String = $CommonShareOwnersTop5 |
         foreach {
             $ShareCount = $_.count
             $ShareOwner = $_.name
-            Write-Output "$ShareCount $ShareOwner<br>"   
-        } 
+            Write-Output "$ShareCount $ShareOwner<br>"
+        }
 
         # Get owner string list table
         $CommonShareOwnersTop5StringT = $CommonShareOwnersTop5 |
@@ -5060,29 +5080,29 @@ function Invoke-HuntSMBShares
             $ComputerBarO = $ShareOwnerBars.ComputerBar
             $ShareBarO = $ShareOwnerBars.ShareBar
             $AclBarO = $ShareOwnerBars.AclBar
-            $ThisRow = @" 
+            $ThisRow = @"
 	          <tr>
 	          <td>
               $ShareCount
-	          </td>	
+	          </td>
 	          <td>
               $ShareOwner
-	          </td>		  
+	          </td>
 	          <td>
 	          $ComputerBarO
-	          </td>		  
+	          </td>
 	          <td>
 	          $ShareBarO
-	          </td>  
+	          </td>
 	          <td>
 	          $AclBarO
-	          </td>          	  
+	          </td>
 	          </tr>
-"@              
-            $ThisRow    
-        } 
-       
-$NewHtmlReport = @" 
+"@
+            $ThisRow
+        }
+
+$NewHtmlReport = @"
 <html>
 <head>
   <meta charset="UTF-8">
@@ -5095,10 +5115,10 @@ $NewHtmlReport = @"
   <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
   <script src="https://unpkg.com/cytoscape-euler/cytoscape-euler.js"></script>
   <script src="https://unpkg.com/klayjs/klay.js"></script>
-  <script src="https://unpkg.com/cytoscape-klay/cytoscape-klay.js"></script>  
+  <script src="https://unpkg.com/cytoscape-klay/cytoscape-klay.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexsankey"></script>
   <title>Report</title>
-  <style>    
+  <style>
 
     #recoveredsecretstable th, #recoveredsecretstable td {
         max-width: 100px;
@@ -5216,7 +5236,7 @@ $NewHtmlReport = @"
             top: 0;
             cursor: ew-resize;
         }
-  
+
      #cy {
             width: 100%;
             height: 100%;
@@ -5289,28 +5309,28 @@ $NewHtmlReport = @"
             color: #333;
         }
 
-        .side-menu {			
+        .side-menu {
 			--box-shadow: 0 2px 4px 0;
 			width: 180px;
 			height: 100%;
 			background-color:#345367;
 			position: fixed; /* Stay in place */
-			top: 0; 
+			top: 0;
 			left: 0;
 			float:left;
 			line-height:1.15;
 			margin-top: 50px;
 			-webkit-text-size-adjust:100%;
 			-ms-text-size-adjust:100%;
-			z-index: 9998;		
-			--transition: width 0.3s; /* Smooth transition when expanding/collapsing */		
+			z-index: 9998;
+			--transition: width 0.3s; /* Smooth transition when expanding/collapsing */
 			transition: width 0.5s ease;
-			background: linear-gradient(to bottom, #07142A 80%, rgba(0, 0, 0, 1) 98%, black 100%);	
-			--border-top: 0.25px dashed #345367;	
+			background: linear-gradient(to bottom, #07142A 80%, rgba(0, 0, 0, 1) 98%, black 100%);
+			--border-top: 0.25px dashed #345367;
 			padding-left: 5px;
-			padding-right: 5px;		
+			padding-right: 5px;
         }
-		
+
 		.side-menu.collapsed div,
 		.side-menu.collapsed h2,
 		.side-menu.collapsed ul,
@@ -5328,11 +5348,11 @@ $NewHtmlReport = @"
 				-webkit-box-ordinal-group:2;
 				-ms-flex-order:1;
 				order:1;
-		}		
+		}
 
         .side-menu.collapsed {
             width: 50px; /* Width when collapsed */
-        }		
+        }
 
         .side-menu h2 {
             text-align: center;
@@ -5376,19 +5396,19 @@ $NewHtmlReport = @"
         .side-menu.collapsed .menu-button {
             right: 18px; /* Keep the icon aligned to the right */
             top: 10px;   /* Keep the icon aligned to the top */
-        } 
-  
+        }
+
         .toggle-content {
-            display: block; /* Set to block to be expanded by default */	
+            display: block; /* Set to block to be expanded by default */
         }
 
         .toggle-button {
             cursor: pointer;
 			border: none;
             outline: none;
-            background-color: transparent;	
+            background-color: transparent;
 			color: white;
-        } 	
+        }
 
 	.hidden { display: none; }
 
@@ -5398,15 +5418,15 @@ $NewHtmlReport = @"
             background-color: transparent;
             cursor: pointer;
             padding: 5px 10px;
-            margin: 2px;	
-			border-radius:0.20rem 0.20rem 0.20rem 0.20rem;	
-			color: #345367;			
+            margin: 2px;
+			border-radius:0.20rem 0.20rem 0.20rem 0.20rem;
+			color: #345367;
         }
         button.pagination-button:hover{
             background-color: #F56A00 ;
-            color: #345367;		
+            color: #345367;
 		}
-		
+
         button.pagination-button.active {
             background-color: #345367;
             color: white;
@@ -5421,23 +5441,23 @@ $NewHtmlReport = @"
 	}
 
 	.1active:after {
-	  content: "\0078"; 
+	  content: "\0078";
 	  font-size: 30;
 	  color: gray;
 	  padding: 5px;
-	  --font-weight: bold;	  
+	  --font-weight: bold;
 	}
-  
+
 	.collapsible {
 		font-family:"Open Sans", sans-serif;
 		font-size:15;
 		font-weight:600;
-		color: #333;	
+		color: #333;
 		padding-left:0px;
 		background-color: inherit;
 		cursor: pointer;
 		border: none;
-		outline: none;		
+		outline: none;
 	}
 
 	.active, .collapsible:hover {
@@ -5463,14 +5483,14 @@ $NewHtmlReport = @"
 		flex-wrap:wrap;
 		width:100%
 	}
-	
+
 	.tabInput{
 		position:fixed;
 		top:0;
 		left:0;
 		opacity:0
 	}
-	
+
 	.tabLabel{
 		width:auto;
 		color:#C4C4C8;
@@ -5483,12 +5503,12 @@ $NewHtmlReport = @"
 		order:1;
 		--border-radius:0.80rem 0.80rem 0.80rem 0.80rem
 	}
-	
+
 	.tabLabel:focus{
-		outline:0	
+		outline:0
 		background-color:red;
 	}
-	
+
 	.tabInput:target+
 	.tabLabel,
 	.tabInput:checked+
@@ -5503,8 +5523,8 @@ $NewHtmlReport = @"
 	.stuff {
 		color:#C4C4C8;
 		font-weight: bold;
-		font-weight: normal;	
-		width:auto;		
+		font-weight: normal;
+		width:auto;
 		text-decoration: none;
 		padding-top:5px;
 		padding-bottom:5px;
@@ -5529,26 +5549,26 @@ $NewHtmlReport = @"
 	}
 
 	.stuff:active {
-			font-weight: normal;		 
+			font-weight: normal;
 			background-color:#D2D9DE;
-			width:auto;		
-			--padding-left: 15px;	
+			width:auto;
+			--padding-left: 15px;
 			color: white;
 			transition: background-color 0.2s ease;
-	}				
+	}
 
 	.tabLabel:hover{
-		background-color:#555555;		
+		background-color:#555555;
 		color:#ccc;
-		--border-color:#eceeef #eceeef #ddd			
+		--border-color:#eceeef #eceeef #ddd
 	}
-		
+
 	.tabPanel{
 		display:none;width:100%;
 		-webkit-box-ordinal-group:100;
 		-ms-flex-order:99;order:99
 	}
-	
+
 	.tabInput:target+
 	.tabLabel+.tabPanel,
 	.tabInput:checked+
@@ -5559,14 +5579,14 @@ $NewHtmlReport = @"
 		margin-left: 10px;
 		transition: margin-left 0.3s ease;
 	}
-	
+
 	.tabPanel.nojs{
 		opacity:0
 	}
-  
+
 	{box-sizing:border-box}
 	body,html{
-		font-family:"Open Sans", 
+		font-family:"Open Sans",
 		sans-serif;font-weight:400;
 		min-height:100%;
 		color:#3d3935;
@@ -5581,55 +5601,55 @@ $NewHtmlReport = @"
 		--color:#333;
 		--background-color:#DEDFE1
 	}
-		
+
 	table{
 		width:100%;
 		max-width:100%;
 		--margin-bottom:1rem;
-		border-collapse:collapse;	
-		border:.5px solid lightgray;	
+		border-collapse:collapse;
+		border:.5px solid lightgray;
 	}
-		
+
 	.tabledrop {
 		box-shadow: 0 2px 4px 0 lightgray;
 		margin: 10px;
 		width: 90%;
 	}
-	
+
 	.tabledrop:hover {
 		box-shadow: 0 6px 12px 0 lightgray;
-	}	
-	
+	}
+
 	table thead th{
 		vertical-align:bottom;
 		background-color: white;
 		color:#4A4A4A;
 		border:.5px solid lightgray;
-		--border-top-right-radius: 10px;	
+		--border-top-right-radius: 10px;
 	}
-	
-	table tbody tr{
-		background-color:white;	
-	}	
 
-	table thead th:nth-child(1){	 
-		--border-top-left-radius: 10px;	
-	}	
-	
-	table thead th:nth-child(last){	 
-		--border-top-right-radius: 10px;	
-	}	
-	
+	table tbody tr{
+		background-color:white;
+	}
+
+	table thead th:nth-child(1){
+		--border-top-left-radius: 10px;
+	}
+
+	table thead th:nth-child(last){
+		--border-top-right-radius: 10px;
+	}
+
 	table tbody tr:nth-of-type(odd){
 		--background-color:#F0E8E8;
-		background-color:#f9f9f9;		
+		background-color:#f9f9f9;
 	}
-	
+
 	table tbody tr:hover{
-		background-color:#ECF1F1;	
-		--font-weight: bold;		
+		background-color:#ECF1F1;
+		--font-weight: bold;
 	}
-	
+
 	table td,table th{
 		padding:.75rem;
 		line-height:1.5;
@@ -5652,13 +5672,13 @@ $NewHtmlReport = @"
         color: initial;
         text-align: left;
 		font-family:"Proxima Nova","Open Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-		font-size:10px;	
+		font-size:10px;
         border-collapse: unset;
 	}
 
 	.subtable td {
-		background: none;	
-        font-size:10px;	
+		background: none;
+        font-size:10px;
         text-align: left;
         margin: 0;
         padding: 0;
@@ -5667,8 +5687,8 @@ $NewHtmlReport = @"
 	}
 
 	.subtable tr {
-		background: none;	
-        font-size:10px;	
+		background: none;
+        font-size:10px;
         text-align: left;
         margin: 0;
         padding: 0;
@@ -5677,8 +5697,8 @@ $NewHtmlReport = @"
 	}
 
 	.subtable tbody td:nth-child(1) {
-		background: none;	
-        font-size:10px;	
+		background: none;
+        font-size:10px;
         text-align: left;
         margin: 0;
         padding: 0;
@@ -5687,7 +5707,7 @@ $NewHtmlReport = @"
 	}
 
 	.subtable  tbody tr:nth-of-type(odd) {
-		background: none;	
+		background: none;
         font-size:10px;
         text-align: left;
         margin: 0;
@@ -5697,27 +5717,27 @@ $NewHtmlReport = @"
 	}
 
 	.subtable  tbody tr:hover {
-		background: none;	
-        font-size:10px;	
+		background: none;
+        font-size:10px;
         text-align: left;
         margin: 0;
         padding: 0;
         border: none;
         border-collapse: unset;
 	}
-	
+
 	h2{
 		font-size:2rem
 	}
-		
+
 	h3{
 		font-size:1.75rem
 	}
-	
+
 	h4{
 		font-size:1.5rem
 	}
-	
+
 	h1,h2,h3,h4,h5,h6{
 		margin-bottom:.5rem;
 		margin-top:0px;
@@ -5726,14 +5746,14 @@ $NewHtmlReport = @"
 		line-height:1.1;
 		color:inherit
 	}
-	
+
 	label{
 		display:inline-block;
 		padding-top:.5rem;
 		padding-bottom:.25rem;
 		--margin-bottom:.5rem
 	}
-	
+
 	code{
 		padding:.2rem .4rem;
 		font-size:1rem;
@@ -5741,31 +5761,31 @@ $NewHtmlReport = @"
 		background-color:#f7f7f9;
 		--border-radius:.25rem
 	}
-	
+
 	p{
 		margin-top:0;
 		margin-bottom:1rem
 	}
-	
+
 	a, a:visited{
 		text-decoration:none;
 		color: #4A4A4A;
 		font-style: italic;
 		font-weight: bold;
 	}
-	
+
 	a:hover{
 		text-decoration: underline;
 	}
-	
-	
+
+
 	.preload *{
 		-webkit-transition:none !important;
 		-moz-transition:none !important;
 		-ms-transition:none !important;
 		-o-transition:none !important
 	}
-	
+
 	.header{
 		text-align:center
 	}
@@ -5773,26 +5793,26 @@ $NewHtmlReport = @"
     .noscroll{
         overflow:hidden
     }
-	
+
 	.link:hover{
 		text-decoration:underline
 	}
-	
+
 	.mobile{
 		display:none;
 		height:0;
 		width:0
 	}
-	
+
 	@media (max-width: 700px){
 		.mobile{display:block !important}
 	}
-	
+
 	code{
 		color:black;
 		font-family:monospace
 	}
-	
+
 	ul.noindent{
 		padding-left:20px
 	}
@@ -5801,7 +5821,7 @@ $NewHtmlReport = @"
         margin: 10px;
 		width:90%;
     }
-	
+
 	.pagetitle {
 		font-size: 20;
 		font-weight:bold;
@@ -5809,17 +5829,17 @@ $NewHtmlReport = @"
 		--color:#CE112D;
 		color:#345367;
 	}
-	
+
 	.pagetitlesub {
 		font-size: 20;
 		font-weight:bold;
 		--color:#9B3722;
 		color:#345367;
 		--color:#222222;
-	}	
-	
+	}
+
 	.topone{background:#999999}
-  
+
 	.divbarDomain{
 		background:#d9d7d7;
 		width:200px;
@@ -5827,22 +5847,22 @@ $NewHtmlReport = @"
 		height: 15px;
 		text-align:center;
 	}
-  
+
 	.divbarDomainInside{
 		--background:#9B3722;
-		--background:#CE0E2D;	
+		--background:#CE0E2D;
         background:#F56A00;
 		text-align:center;
 		height: 15px;
 		vertical-align:middle;
 	}
-	
-	.piechartComputers {    		
+
+	.piechartComputers {
         display: block;
         width: 130px;
         height: 130px;
-        background: radial-gradient(white 60%, transparent 41%), 
-		conic-gradient(#CE112D 0% 1.13%, 
+        background: radial-gradient(white 60%, transparent 41%),
+		conic-gradient(#CE112D 0% 1.13%,
 					   #d9d7d7 1.13% 100%);
 		border-radius: 50%;
 		text-align: center;
@@ -5850,25 +5870,25 @@ $NewHtmlReport = @"
 		margin-bottom: 10px;
     }
 
-	.piechartShares {    
+	.piechartShares {
         display: block;
         width: 130px;
         height: 130px;
-        background: radial-gradient(white 60%, transparent 41%), 
-		conic-gradient(#CE112D 0% 2.75%, 
+        background: radial-gradient(white 60%, transparent 41%),
+		conic-gradient(#CE112D 0% 2.75%,
 					   #d9d7d7 2.75% 100%);
 		border-radius: 50%;
 		text-align: center;
 		margin-top: 5px;
 		margin-bottom: 10px;
     }
-	
-	.piechartAcls {         
+
+	.piechartAcls {
 		display: block;
         width: 130px;
         height: 130px;
-        background: radial-gradient(white 60%, transparent 41%), 
-		conic-gradient(#CE112D 0% 6.45%, 
+        background: radial-gradient(white 60%, transparent 41%),
+		conic-gradient(#CE112D 0% 6.45%,
 					   #d9d7d7 6.45% 100%);
 		border-radius: 50%;
 		text-align: center;
@@ -5876,12 +5896,12 @@ $NewHtmlReport = @"
 		margin-bottom: 10px;
     }
 
-	.piechartLastAccess {         
+	.piechartLastAccess {
 		display: block;
         width: 130px;
         height: 130px;
-        background: radial-gradient(white 60%, transparent 41%), 
-		conic-gradient(#CE112D 0% 0.00% , 
+        background: radial-gradient(white 60%, transparent 41%),
+		conic-gradient(#CE112D 0% 0.00% ,
 					   #d9d7d7 0.00%  100%);
 		border-radius: 50%;
 		text-align: center;
@@ -5889,12 +5909,12 @@ $NewHtmlReport = @"
 		margin-bottom: 10px;
     }
 
-	.piechartLastMod {         
+	.piechartLastMod {
 		display: block;
         width: 130px;
         height: 130px;
-        background: radial-gradient(white 60%, transparent 41%), 
-		conic-gradient(#CE112D 0% , 
+        background: radial-gradient(white 60%, transparent 41%),
+		conic-gradient(#CE112D 0% ,
 					   #d9d7d7  100%);
 		border-radius: 50%;
 		text-align: center;
@@ -5904,8 +5924,8 @@ $NewHtmlReport = @"
 
 	.percentagetextBuff {
 		--height: 25%;
-	}	
-	
+	}
+
 	.percentagetext {
 		text-align: left;
 		font-size: 2.25em;
@@ -5914,13 +5934,13 @@ $NewHtmlReport = @"
 		--color:#9B3722;
 		color:#F56A00;
 	}
-	
+
 	.percentagetext2 {
 		font-size: 10;
 		font-family:"Open Sans", sans-serif;
-		color:#666;			
+		color:#666;
 		text-align: center;
-	}	
+	}
 
 	.dashboardsub {
 		text-align: center;
@@ -5929,50 +5949,50 @@ $NewHtmlReport = @"
 		color:#666;
 		font-weight: bold;
 	}
-	
+
 	.dashboardsub2 {
 		font-size: 10;
 		font-family:"Open Sans", sans-serif;
-		color:#666;		
+		color:#666;
 		text-align: right;
-	}	
+	}
 
 	.landingheader	{
 		font-size: 16;
 		font-family:"Open Sans", sans-serif;
 		color: #CE112D;
-		font-weight: bold;	
+		font-weight: bold;
 		padding-left:0px;
 	}
 
 	.landingheader2	{
-		font-size: 16;	
-		--font-weight: bold;		
+		font-size: 16;
+		--font-weight: bold;
 		color:White;
 		--color:9B3722;
-		--background-color: #ccc;		
-		border-bottom: 2px solid #999;		
+		--background-color: #ccc;
+		border-bottom: 2px solid #999;
 		padding-left:15px;
-	}	
-	
+	}
+
 	.landingheader2a	{
         background-color: #345367;
-		--background-color: #999;		
+		--background-color: #999;
 		padding-left:120px;;
 		padding-right: 5px;
-	}	
+	}
 
 	.landingheader2b	{
         background-color: #345367;
-		--background-color: #999;		
+		--background-color: #999;
 		padding-left: 5px;
 		padding-right: 5px;
 		margin-top: 10px;
 		margin-left: 10px;
 		font-size: 16;
-		color:White;	
-	}		
-	
+		color:White;
+	}
+
 	.landingtext {
 		font-size: 14;
 		font-family:"Open Sans", sans-serif;
@@ -5983,9 +6003,9 @@ $NewHtmlReport = @"
 		margin-top: 10px;
 		margin-right: 10px;
 		margin-bottom: 15px;
-		width: 90%		
+		width: 90%
 	}
-	
+
 	.landingtext2 {
 		font-size: 14;
 		font-family:"Open Sans", sans-serif;
@@ -6005,8 +6025,8 @@ $NewHtmlReport = @"
 		margin-top: 5px;
 		margin-right: 5px;
 		margin-bottom: 5px;
-		width: 90%		
-	}	
+		width: 90%
+	}
 
 	.filelist {
 		font-size: 14;
@@ -6018,7 +6038,7 @@ $NewHtmlReport = @"
 		margin-top: 5px;
 		margin-right: 5px;
 		margin-bottom: 5px;
-		--width: 90%		
+		--width: 90%
 	}
 
 	.filelistparent {
@@ -6031,19 +6051,19 @@ $NewHtmlReport = @"
 		margin-top: 5px;
 		margin-right: 5px;
 		margin-bottom: 5px;
-		--width: 90%		
+		--width: 90%
 	}
 
 	.tablecolinfo {
 		font-size: 14;
 		font-family:"Open Sans", sans-serif;
-		color:#666;		
+		color:#666;
 	}
 
 	.card {
 		padding:10px;
 		text-align: right;
-		box-shadow: 0 2px 4px 0 #DEDFE1;	
+		box-shadow: 0 2px 4px 0 #DEDFE1;
 		transition:0.3s;
 		background-color: white;
 		font-family:"Open Sans", sans-serif;
@@ -6055,17 +6075,17 @@ $NewHtmlReport = @"
 		display:block;
 		margin:10px;
 		margin-bottom:20px;
-		border:.5px solid lightgray;		
+		border:.5px solid lightgray;
        	border-radius: 6px;
 	}
 
-	.card:hover{	
+	.card:hover{
 		box-shadow: 0 6px 12px 0 lightgray;
 		--box-shadow: 0 8px 16px 0 #DEDFE1;
-		
+
 	}
 
-    .cardtitle{		
+    .cardtitle{
 		font-size: 18;
 		text-align: left;
 	}
@@ -6073,37 +6093,37 @@ $NewHtmlReport = @"
 	.cardsubtitle {
 		font-size: 12;
 		font-family:"Open Sans", sans-serif;
-		color:#222222;	
+		color:#222222;
 		text-align: left;
 		font-weight: bold;
-	}	
+	}
 
 	.cardsubtitle2 {
 		font-size: 12;
 		font-family:"Open Sans", sans-serif;
-		color:#eee;	
+		color:#eee;
 		text-align: left;
 		font-weight: bold;
-	}		
+	}
 
 	.cardbartext {
 		font-size: 10;
 		font-family:"Open Sans", sans-serif;
-		color:#666;			
-		text-align: right;		
+		color:#666;
+		text-align: right;
 		font-weight:bold;
 	}
 
 	.cardbartext2 {
 		font-size: 10;
 		font-family:"Open Sans", sans-serif;
-		color:#666;			
+		color:#666;
 		text-align: right;
 		margin-left: 10px;
 	}
-	
-	.cardtitlescan{	
-		padding:5px;	
+
+	.cardtitlescan{
+		padding:5px;
 		padding-left: 10px;
 		font-size:15;
 		color: white;
@@ -6117,7 +6137,7 @@ $NewHtmlReport = @"
 	.cardtitlescansub {
 		font-size: 10;
 		font-family:"Open Sans", sans-serif;
-		color: #eee;			
+		color: #eee;
 		text-align: center;
 	}
 
@@ -6128,12 +6148,12 @@ $NewHtmlReport = @"
 		--padding-left: 10px;
 		border-right:1px solid #ccc;
 		border-left:1px solid #ccc;
-		border-bottom:1px solid #ccc;	
+		border-bottom:1px solid #ccc;
 		--border-bottom-right-radius: 10px;
 		--border-bottom-left-radius: 10px;
-		border-bottom-left-radius: 3px; 
-		border-bottom-right-radius: 3px; 
-	}	
+		border-bottom-left-radius: 3px;
+		border-bottom-right-radius: 3px;
+	}
 
 	.cardbarouter{
 		background:#d9d7d7;
@@ -6142,7 +6162,7 @@ $NewHtmlReport = @"
 		height: 15px;
 		text-align:center;
 	}
-	  
+
 	.cardbarinside{
 		--background:#9B3722;
 		--background:#CE112D;
@@ -6151,11 +6171,11 @@ $NewHtmlReport = @"
 		height: 15px;
 		vertical-align:middle;
         width: 0px;
-	}	
+	}
 
 	.AclEntryWrapper {
 		--width: 300px;
-		overflow: hidden; 
+		overflow: hidden;
 	}
 
 	.AclEntryLeft {
@@ -6163,31 +6183,31 @@ $NewHtmlReport = @"
 		float:left;
 		font-size: 12;
 		font-family:"Open Sans", sans-serif;
-		color:#666;	
-        --font-weight:bold;		
+		color:#666;
+        --font-weight:bold;
 	}
 	.AclEntryRight{
-		float: left; 
+		float: left;
 		font-size: 12;
 		font-family:"Open Sans", sans-serif;
-		color:#666;			
+		color:#666;
 	}
 
 	.sidenavcred{
 		font-size: 12;
 		font-family:"Open Sans", sans-serif;
-		color: white;			
+		color: white;
 		text-align: left;
 		padding-left:15px;
 	}
-	
+
 .sidenav {
     box-shadow: 0 2px 4px 0;
 	width: 180px;
 	height: 100%;
 	background-color:#345367;
 	position: fixed; /* Stay in place */
-	top: 0; 
+	top: 0;
 	left: 0;
 	float:left;
 	line-height:1.15;
@@ -6214,7 +6234,7 @@ $NewHtmlReport = @"
 
 .Minicard {
 		width: 115px;
-		box-shadow: 0 2px 4px 0 #DEDFE1;	
+		box-shadow: 0 2px 4px 0 #DEDFE1;
 		transition:0.3s;
 		background-color: #BDBDBD;
 		font-family:"Open Sans", sans-serif;
@@ -6229,13 +6249,13 @@ $NewHtmlReport = @"
         --border-radius: 10px;
 	}
 
-	.Minicard:hover{	
+	.Minicard:hover{
 		--box-shadow: 0 8px 16px 0;
-		box-shadow: 0 8px 16px 0 #CDCECF;		
-	}	
+		box-shadow: 0 8px 16px 0 #CDCECF;
+	}
 
-	.Minicardtitle{	
-		padding:5px;	
+	.Minicardtitle{
+		padding:5px;
 		--padding-left: 20px;
 		font-size: 13;
 		color: #345367;
@@ -6244,7 +6264,7 @@ $NewHtmlReport = @"
 		border-bottom:1.5px solid transparent;
 		border-bottom-color:#345367;
 	}
-	
+
 	.Minicardcontainer {
 		background-color:white;
 		padding: 8px;
@@ -6252,18 +6272,18 @@ $NewHtmlReport = @"
 		--padding-left: 10px;
 		border-right:1px solid #ccc;
 		border-left:1px solid #ccc;
-		border-bottom:1px solid #ccc;	
+		border-bottom:1px solid #ccc;
 		--border-bottom-right-radius: 10px;
 		--border-bottom-left-radius: 10px;
-	}		
+	}
 
-	.MinicardconnectLine {    		
+	.MinicardconnectLine {
         display: block;
 		float:left;
-		border-bottom: 1px solid red;	         	
+		border-bottom: 1px solid red;
 		height:10px;
 		width:20px;
-		margin-top:58px;	
+		margin-top:58px;
     }
 .TimelineChart{
   display: grid;
@@ -6304,7 +6324,7 @@ $NewHtmlReport = @"
 	bottom: 0;
 	left: 0;
 }
-	
+
 .TimelineBarOutside:hover{
 	background-color: white;
 
@@ -6312,7 +6332,7 @@ $NewHtmlReport = @"
 
 .TimelineBarOutside:hover > div{
 	opacity: 1;
-}	
+}
 
 .TimelineBarInside:hover > .TimelinePopup{
 	visibility:visible;
@@ -6330,36 +6350,36 @@ $NewHtmlReport = @"
 .TimelineBarInside {
 	width: 100%;
 	display: block;
-    background-color: #345367;	
-    opacity: .5;	
+    background-color: #345367;
+    opacity: .5;
     margin-left:1px;
     position: absolute;
     top: 100%;
     -ms-transform: translateY(-100%);
-    transform: translateY(-100%);	  
+    transform: translateY(-100%);
 }
 
 .TimelineDot {
 	width: 100%;
 	height:15px;
 	display: block;
-	background-color: blue;	
+	background-color: blue;
 	position: absolute;
 	bottom: 0;
-	left: 0;		  
+	left: 0;
 	opacity: .5;
     border-top: 1px solid #F2F3F4;
     border-bottom: 1px solid #F2F3F4;
-}	
+}
 
 .TimelinePopup {
 
 	visibility:hidden;
-}	
+}
 
 .TimelineMinicard {
 	width: 115px;
-	box-shadow: 0 2px 4px 0 #DEDFE1;	
+	box-shadow: 0 2px 4px 0 #DEDFE1;
 	background-color: #BDBDBD;
 	font-family:"Open Sans", sans-serif;
 	font-size: 10;
@@ -6374,12 +6394,12 @@ $NewHtmlReport = @"
     --border-radius: 10px;
 }
 
-.TimelineMinicard:hover{	
-	box-shadow: 0 8px 16px 0 #CDCECF;		
-}	
+.TimelineMinicard:hover{
+	box-shadow: 0 8px 16px 0 #CDCECF;
+}
 
-.TimelineMinicardtitle{	
-	padding:5px;	
+.TimelineMinicardtitle{
+	padding:5px;
 	font-size: 10;
 	color: #345367;
 	font-weight:bold;
@@ -6387,27 +6407,27 @@ $NewHtmlReport = @"
 	border-bottom:1.5px solid transparent;
 	border-bottom-color:#757575;
 }
-	
+
 .TimelineMinicardcontainer {
 	background-color:white;
 	padding: 8px;
 	border-right:1px solid #ccc;
 	border-left:1px solid #ccc;
-	border-bottom:1px solid #ccc;	
+	border-bottom:1px solid #ccc;
 	--border-bottom-right-radius: 10px;
 	--border-bottom-left-radius: 10px;
-}		
-
-.TimelineMinicardconnectLine {    		
-	display: block;
-	float:left;
-	border-bottom: 1px solid red;	         	
-	height:10px;
-	width:20px;
-	margin-top:58px;	
 }
 
-.LargeCard {                              
+.TimelineMinicardconnectLine {
+	display: block;
+	float:left;
+	border-bottom: 1px solid red;
+	height:10px;
+	width:20px;
+	margin-top:58px;
+}
+
+.LargeCard {
 	padding: 10px;
 	background-color: white;
 	transition:0.3s;
@@ -6417,34 +6437,34 @@ $NewHtmlReport = @"
 	margin:10px;
 	margin-bottom:20px;
 	border:.5px solid lightgray;
-	border-radius: 6px;   
+	border-radius: 6px;
 	box-shadow: 0 2px 4px 0 #DEDFE1;
 }
 
-.LargeCard:hover{	
-	box-shadow: 0 6px 12px lightgray;	
+.LargeCard:hover{
+	box-shadow: 0 6px 12px lightgray;
 }
 
-.LargeCardtitle{	
+.LargeCardtitle{
 		font-size: 18;
-		text-align: left;  
+		text-align: left;
 }
 
 .LargeCardSubtitle2 {
 	font-size: 12;
 	font-family:"Open Sans", sans-serif;
-	color:#eee;	
+	color:#eee;
 	text-align: left;
 	font-weight: bold;
-}		
-	
+}
+
 .LargeCardContainer {
 	background-color:white;
 	padding: 8px;
 	border-right:1px solid #ccc;
 	border-left:1px solid #ccc;
-	border-bottom:1px solid #ccc;	
-	border-radius: 3px; 
+	border-bottom:1px solid #ccc;
+	border-radius: 3px;
 }
 
 .tooltip {
@@ -6482,9 +6502,9 @@ input[type="checkbox"] {
     width: 20px;
     height: 20px;
     font-size: 16px;
-    border-radius: 3px;    
+    border-radius: 3px;
     text-align: center;
-    vertical-align: middle;  
+    vertical-align: middle;
     -webkit-appearance: none;
     border: 1px solid #BDBDBD;
     background-color: white;
@@ -6492,7 +6512,7 @@ input[type="checkbox"] {
 
 input[type="checkbox"]:checked {
     background-color: #17405A; /* Change this to your desired color */
-    --border-color: #345367;	
+    --border-color: #345367;
     border: 1px solid #17405A;
 }
 
@@ -6506,14 +6526,14 @@ input[type="checkbox"]:checked::before {
 }
 
 .searchbar {
-	box-shadow: 
+	box-shadow:
     0px  2px 4px 0 #DEDFE1,  /* Shadow on the top-left */
     0px  2px 4px 0 #DEDFE1;  /* Shadow on the top-right */
 	margin-left:10px;
 	background-color: white;
-	border-top-right-radius: 6px; 
-	border-top-left-radius: 6px; 
-	width:95%; 
+	border-top-right-radius: 6px;
+	border-top-left-radius: 6px;
+	width:95%;
 	height: 40px;
 	box-sizing: border-box;
 	border-top: 1px solid lightgray;
@@ -6535,9 +6555,9 @@ input[type="checkbox"]:checked::before {
     justify-content: center;
     font-size: 10px; /* Adjust font size to fit the circle */
     text-align: center;
-    vertical-align: middle;    
-	opacity:.25; 
-	font-weight: bold;	
+    vertical-align: middle;
+	opacity:.25;
+	font-weight: bold;
     z-index: 2;
 }
 
@@ -6559,54 +6579,54 @@ input[type="checkbox"]:checked::before {
 		<a href="https://www.netspi.com" target="_blank" style="text-decoration: none; color:#F56A00;cursor: pointer;">
 			<img style="float:right; transform: scale(0.70); margin-top:8px;  margin-right: 10px; " src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAiCAYAAAC9WiCBAAAAxXpUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVDbDcMwCPxnio5gHnbMOM5L6gYdvxBIlUQ9yQfm7DMGts97h5eDUEDq1Ju2VgyiojQs6SUwDsYiBx/Qlhre60CUAlmJLXJse17As44/gwjDsnox6ksK811QSf/+MMqH2DvyJtY00jRiCgHTYMS3StM+Xb8wb+WOHguc9oXUa3UO7bmXyaa3VnuHiTZGLsbMEg2wLwEeLgTbwciJ1Vi4ZSc2kH9zOgFfitZaVKsZsrIAAAGEaUNDUElDQyBwcm9maWxlAAB4nH2RPUjDQBiG36ZKpVY62EHEIUN1sksVcSxVLIKF0lZo1cHk0j9oYkhSXBwF14KDP4tVBxdnXR1cBUHwB8TZwUnRRUr8Lim0iPGO4x7e+96Xu+8AoVVnqtmXAFTNMrKppFgoroiBVwRphjGIuMRMPZ1byMNzfN3Dx/e7GM/yrvtzDCklkwE+kTjBdMMiXiee2bR0zvvEEVaVFOJz4kmDLkj8yHXZ5TfOFYcFnhkx8tk54gixWOlhuYdZ1VCJp4mjiqpRvlBwWeG8xVmtN1jnnvyFoZK2nOM6rTGksIg0MhAho4Ea6rAQo10jxUSWzpMe/lHHnyGXTK4aGDnmsQEVkuMH/4PfvTXLU3E3KZQE+l9s+2McCOwC7aZtfx/bdvsE8D8DV1rXv9ECZj9Jb3a16BEQ3gYurruavAdc7gAjT7pkSI7kpyWUy8D7GX1TERi+BYKrbt865zh9APLUq6Ub4OAQmKhQ9prHuwd6+/ZvTad/P616cr70WnfRAAANdmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDo1ZWFiMTJlZS0yZmZiLTQzZGYtYThhNS05MWQyODg4Yzk2NDMiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MjNhOWIzMDgtNTMzNS00OWI0LThlM2YtNDM4MDU5MjA4YjE5IgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6MjUxZTU2ODQtZjYxNi00MzU1LTliNzItODAwZjJhNjRkMzE0IgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iV2luZG93cyIKICAgR0lNUDpUaW1lU3RhbXA9IjE3Mjg1NzQxODYzMjg1MTEiCiAgIEdJTVA6VmVyc2lvbj0iMi4xMC4zNCIKICAgdGlmZjpPcmllbnRhdGlvbj0iMSIKICAgeG1wOkNyZWF0b3JUb29sPSJHSU1QIDIuMTAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjQ6MTA6MTBUMTA6Mjk6NDYtMDU6MDAiCiAgIHhtcDpNb2RpZnlEYXRlPSIyMDI0OjEwOjEwVDEwOjI5OjQ2LTA1OjAwIj4KICAgPHhtcE1NOkhpc3Rvcnk+CiAgICA8cmRmOlNlcT4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MDkzY2I4N2UtYzQ1NS00ZmFjLTkwNzItMzU3MmZhMDhmNDkxIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKFdpbmRvd3MpIgogICAgICBzdEV2dDp3aGVuPSIyMDI0LTEwLTEwVDEwOjI5OjQ2Ii8+CiAgICA8L3JkZjpTZXE+CiAgIDwveG1wTU06SGlzdG9yeT4KICA8L3JkZjpEZXNjcmlwdGlvbj4KIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAKPD94cGFja2V0IGVuZD0idyI/PsfSAYIAAAAGYktHRAD/AP8A/6C9p5MAAAAJcEhZcwAALiMAAC4jAXilP3YAAAAHdElNRQfoCgoPHS47KO1kAAAMeElEQVR42u2ceZQU1RXGf7dnBkZ6RhAC4hgFxSWISxJiXCGaaNziOYmIGk3UAMbYqDEIHneNJwIKYlDsuCtEUCRucQ0xghrQKAoukU1RQcMisg0FM8N03/xRt+RRVPV09ywQM/ecOszUvKq3fe/e737vFeKlULatZYAByTQTaLWvjSVah6DVWoHVaq3AarX/byvNwXuyEfdL8gSj2js0pk4ptKGqGlV3RkSyDTyXsHa7Vi8iuj1NhKq2Ado641MP1IpIbQPPFTKesf2OGd+tiolIvY1pqTPXWftbNmhTFLA2AbcB74aAIcAFwCF5dGQJcDOwLnS/C3Al0LHAQU8AA4G+DuATwDRVfaABcB0ODHIGbQUwHFi1HYBJgB5Af+AAoCtQaZO2Flihqu8BU0RkXsTzlTYn++e52Neo6lvA0yKyOtSOfsDJMc4gsPdV9U6gCjgX2BH4FPg3UKWq9wK7AkNKY7zVdCh9HklsrkQzApkTDVgN2WrgMaTtii3aqXU9gN8WCiwD8mHAWSFPeiLwGvBBjmf3AM50vNZHwNimBpat+DJn0WVEpC5H+c7Ab4DfGZgS9qw4QFDgZ0BKVUcD97uAAMqBHwHHNgAIQt5lrqoOA6ZbGwX4jo2v5piDvwMPAAuB8Tau4wyQFwDPAkcB/UtjKldJVGTbjVvzVSVeqlwgU0j40OQdtVt4kkZKGxLBCzsAV6rqwBwhQ+yZROg9TW0HAadbOEsAC1Q1HeVNVXVnYDTw84gw7bY7aHtXYATQXVUvFxEvoly+/SoBDgT+DFyiqo/anOfzngSAiGRUdaOF641AHfCMLZJ1wOLSAnAibH8mwA+BI4F/bOO27AukgAr7fTrwp5iwfk4EqBRYAMy1fu0DfMuZ6DLg18ASVR2VgyN6wIYIXts+tCi7AFcBs61eD1hpZTo4ZRWoNvCsieHeCeBVYAAwC1iWd1aYTNdmgTnA8jzdbkvZLsB5qtphW1OmPMelArgkBKr/GGc51MLRmUAf4GLgC6dcG/vbN3O8fzjQ04AeXHsBRwMvG9UJrBdwjP082sB8DLDUKVNrgN7XgLPKuf+59XkV8CVwhy3weYkYL6BuGHRC+s222qabG8xl2TzvNYWdABxiJLTJiLWqJgp4ZzYELI3p72HmLQKrAcYAE0VkjYhssCuYqNtD7+0OfD9HOzYAq0RktXOtEpFXgF8Bb4XK9/ejm2w0/lYdarcC64HVIlLteMplwAP2+3Rgtoi8KiKzgWtLY+SAfl6KXg7QNvmuru6tZJqpXoq5huKLLTMIW2fgIi/FVEm0n6HZdW1AT7HMp7KJ5j7jEN4dgaHWwdpGAmo/8xbdjC/VquoiYJqIfBQqW26g/oZNdhvnz1XA+aoaAO5lEVlgfMm1amCOiGS2WuEiqqp3A+cD7ZyJ7p4HRYjynp8CTwHfdeSC3uZF1xbEQXxAZeznbOhv9XHAOts80mzgdeA4P5vLXueleDKZZomXkj+AvgzcYq63LBServLHvmYmaDlwHnBEqFxj7FWbvH3s9x9YOLmrSEBVARfZOzqENL56oFpV7wf+CCy3gU0aoHsbyN2+7W1lg0VwvnGZMPDLgd1VNREjm6wwICQckr2+KEIqklXVT4xwBwu8rWXpa5syhCRyCKfVwNXJNEOAn1qqeQswzktxEJTVJdO8aOnw3SHNKshmXB5RZiu6qcLVYuBehzOUAYNUddciQLUvcD9wuXmUchuD4Co3LzzU+rqH089A2CyLGNu2dpU7Yz3HiHBglSbBnKSqySjPICIrRGSZiCy3f9fTtNbkiVku8l5rehTJNAtBhgCXmt7xMNQN9FJSlkyzCBhmK/KdFiT2Yinzi869/YHTTFPKF1QdTcw9zrm9HvircZwXLGMKUvWfAL9X1TID9efAIvMs2RB3+tiuRY6XWQg8HSFV3AdMVtVrVPV4a1dzCLK7ATuEvPGqlgSWoz8lElDiQclDptDOBW4EHe+l6AZSBzLFvNdfinXVRZhn4WatE1YGOB4ln4E+xUTGwFZa5nWWeajTgcF2PwB0f6Cfkd2BFuKvC6X5b9tOwRHG2Z4PNCDLwD4MLcLOJvheDTwCzFLVB1X1aFXdxbZ8Gmu7WR1umH+vOeYrT7kh2xPqT4BMWTLNfMsuRljsf8wn5lKaTPMxJM62CVnYAt5LTXl/zqlrP6BfntlcRwNW0lm9VwPPiMh6EakRkXXAQ0Z61Un7T1PVNiLypYgsM43H7W8dsFREllr42hgC3WBgZsjLBaG1vS2Oc4CXzGtepqq756MMAR1VtZNzVanqEcANBnTXHm+ObD1fHWtvI8U3eCl2TaZZh+ww1jq+2E+Js6O8FN2S6WwNlNxjK34atGlWcInIWuBOR3tJWLbaM4/HqywMBbYEeCksPpqXedSZADFtaKci25wRkamWJF0GvGKhM84OBK4HJqjq9xp4/bnAFIsc7jXF6nNpwifACw1t5BdjBSjvdDaS2cdLcRla8y+k/A20ZgD+PtFFwOFeimGgM0FmgSaSd1Srl2r2kPgaMNWALpaVDlPVQQ081zUkl+wE3K6qUZNcGVqI7W1MljdiUSxS1dvw9926GH/rb1JHBZu3hwJ+1xcYrapnmJeMsr3sasjWArfibyCzLYEVhIBDgcmgY9Ga8ck0y4ARXorXgSuASZC9C7gnmebzFmHxIptUdaRxpd0MXMfib5hrDn4VTF5gHUIkPpeVhJ4tuu3G31YCH6jqGAvnB+NvVx3P5k17sfsnA/cUWWUWmG9e/i6rf5sDy9WpbgT6eilGQmJmMp2d5qWYh79jPwg40ksx0iSJdmzeQ2suW2ArcJRNepVpZ7MaoAISyoTX5Mk5VtDw7kMxQKvHP7L0rqpOAk7F33MMeGA74DBVnRjzivlGT6IU+S8sc58GzG2OENgQsOpNbVcH5XVW3nXNxwPfhuxwLyUTBFmmZEeYAn4TcJ+XYpqFkR72zqIO+uWjBKvqE8btelsdJ8XVZ+U3OG3CwsKFTgaYyzL4e3yFpvwdHRUdq39ljPK+UVUnm454Sogbtoup4kHjw9mIRCc4PJhp7ihSGgOqCcCbzsB9YOn0L43sukdYqnzyrn0UHQUyJ5nWaV6KU21iK53srZN5tObaMF5sAuYYW+GdbULikpTllmrv4GSJq0RkYQQgKsxTiwOsYjzW7SZnBPYx/rbQ/ByLfFnEPY1ZoDXA2ub0Ro0B1mPJNM99lb+m+RAY46U4OJRFuWny6b54qrd4KSYl0ywmdGzES7GneZRmAZZtWTwO/AL/KI3kWNlYJvmhATDwBL1VdUHEsZRz8PdHg62VOSYZVBfYzDeAMxyw7wKcoaojYg4G7g78OGIBrSd6n3a7sESMNiQbLuwgW4KiPJ/wtY+Jf+O8lFQ0Qt5oDLhWmmhalydPetbCUZCcXA/0VNUSO91QqqoHWOZ7IL6638vCV3Vo3DRE7itUNWlXsIgnh5TucvxjNFepahdVrbBrR9OexhuNCKwamNHQWfgiQnQ7Ve3E1ue2xKJOJ2tTolhgNdYqfd619b5XC9pTwBP56En4Kvd7Ic3uSWAIcJpN+kQDk5sojA29biVbbjD3Mv3oCV9E5mgHzDeFwmgH4FqjHM+ZaDnDxNG+oZD3pkkrTQmqhGX0nwH/NM/tAn+8aXyTyPNYeSlfQ7Ojs7fZZO7cQNmPVPUa/H3B7g64Rtrkl4YW4GfAUBH5NPSqd4B5TljtyOZDdAo87ITrCeb5zgrNQSf87Z84exu4QkS+aIZhKzMQxclMmLwixQJLANHs+oQ32FHNdVMh56oBxBvcNhH6mKIx2aCbocadN3JtDr5angq1O+q5vxkvG2UZZZBJtmHzgb168yhD8ZXyrUKwqg7F3xjfMwTGLT6nE5EVqnqpyQqXm8cqiRjfoO4N1pdR+FtlRIRgdfhfseOb6xSsUMDWT2mM8HcU1HdEt/r8q1ue790J6IfWRn3+lSyy06/Zqgo6NzNXVmap+p3Wn8oQr/IiQuIMVT3Jwl8fCwdtjasttdD0iJ3sjKvzDVU9xrLnHmw+SpO17M8t+6Wq3oq/1dLPkqKuzvjUWVsXWnh8MyLTq8E/Crzcmbv5RYBL8c/eTWzg2ffJvfXkeJXoL2da8oPVvP5TkIgPKrP56DExH3Tm/GDV+Xg0YeNQm+tTrjzrzflxrZVv63iuvOottJ4CxjeymAm4RXOsEuI/S8oLsE3N3wxEmSKeqy/imbo8s8omq9fK17dE/5pyfFsyK2y1VmsFVqu1AqvV/ofsv6gJxYW3S/OYAAAAAElFTkSuQmCC"/>
 		</a>
-	</div>	
+	</div>
 </div>
 
-<!--  
+<!--
 |||||||||| SIDE MENU
 -->
-<div class="side-menu" id="sideMenu">	
-	
+<div class="side-menu" id="sideMenu">
+
 	<button onclick="toggleMenu()" class="menu-button" style="margin-top: -12px; margin-right: -8px;">
             <span class="icon" style="font-size: 16px; color:#F56A00; transition: color 0.3s ease;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#F56A00'"><i class="fas fa-times"></i></span>
     </button>
-	
+
     <br>
 
-	<div id="tabs" class="tabs" data-tabs-ignore-url="false">			
+	<div id="tabs" class="tabs" data-tabs-ignore-url="false">
 		<label id="noactionmenuheader1"     class="tabLabel"  onclick="toggleMenuSection('noactionmenuheader1');" style="background-color: transparent; width:100%;color:#F56A00;padding-top:6px;padding-bottom:3px;margin-top:5px;margin-bottom:0px;font-weight:bolder;"><Strong>RESULTS</Strong></label>
 		<label id="btnsummary" href="#"     class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('dashboard');radiobtn.checked = true;updateLabelColors('tabs', 'btnsummary');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNyZWF0ZS1DaGFydC0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q3JlYXRlIENoYXJ0IFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIGZpbGw9IiNjNGM0YzgiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTAgMS42MDQxNjY2NjY2NjY2NjY3QzAgMC43MjA4Nzc1MDAwMDAwMDAxIDAuNzIwODc3NTAwMDAwMDAwMSAwIDEuNjA0MTY2NjY2NjY2NjY2NyAwaDEwLjc5MTY2NjY2NjY2NjY2OEMxMy4yNzkxMTY2NjY2NjY2NjcgMCAxNCAwLjcyMDg3NzUwMDAwMDAwMDEgMTQgMS42MDQxNjY2NjY2NjY2NjY3djEwLjc5MTY2NjY2NjY2NjY2OGMwIDAuODgzMjgzMzMzMzMzMzMzNCAtMC43MjA4ODMzMzMzMzMzMzM0IDEuNjA0MTY2NjY2NjY2NjY2NyAtMS42MDQxNjY2NjY2NjY2NjY3IDEuNjA0MTY2NjY2NjY2NjY2N0gxLjYwNDE2NjY2NjY2NjY2NjdDMC43MjA4Nzc1MDAwMDAwMDAxIDE0IDAgMTMuMjc5MTE2NjY2NjY2NjY3IDAgMTIuMzk1ODMzMzMzMzMzMzM0VjEuNjA0MTY2NjY2NjY2NjY2N1ptNi4xNTMxMTY2NjY2NjY2NjcgMS43NDg5NzkxNjY2NjY2NjY4YzAuMTMzMTE2NjY2NjY2NjY2NjYgLTAuMTMzMTE2NjY2NjY2NjY2NjYgMC4zMTc4NTgzMzMzMzMzMzM0IC0wLjIwMzEzNDE2NjY2NjY2NjY3IDAuNTI2MDUgLTAuMjAzMTM0MTY2NjY2NjY2NjdoMC41ODMzMzMzMzMzMzMzMzM0YzAuMjA4MTMzMzMzMzMzMzMzMzQgMCAwLjM5Mjg3NTAwMDAwMDAwMDAzIDAuMDcwMDE3NSAwLjUyNTk5MTY2NjY2NjY2NjYgMC4yMDMxMzQxNjY2NjY2NjY2NyAwLjEzMzExNjY2NjY2NjY2NjY2IDAuMTMzMTEwODMzMzMzMzMzMzQgMC4yMDMxNzUwMDAwMDAwMDAwMiAwLjMxNzg5MzMzMzMzMzMzMzM2IDAuMjAzMTc1MDAwMDAwMDAwMDIgMC41MjYwMzI1VjEwLjc2MjUwMDAwMDAwMDAwMWMwIDAuMjA4MTMzMzMzMzMzMzMzMzQgLTAuMDcwMDU4MzMzMzMzMzMzMzMgMC4zOTI5MzMzMzMzMzMzMzMzNiAtMC4yMDMxNzUwMDAwMDAwMDAwMiAwLjUyNjA1IC0wLjEzMzExNjY2NjY2NjY2NjY2IDAuMTMzMTE2NjY2NjY2NjY2NjYgLTAuMzE3ODU4MzMzMzMzMzMzNCAwLjIwMzExNjY2NjY2NjY2NjcgLTAuNTI1OTkxNjY2NjY2NjY2NiAwLjIwMzExNjY2NjY2NjY2NjdoLTAuNTgzMzMzMzMzMzMzMzMzNGMtMC4yMDgxOTE2NjY2NjY2NjY2NiAwIC0wLjM5MjkzMzMzMzMzMzMzMzM2IC0wLjA3IC0wLjUyNjA1IC0wLjIwMzExNjY2NjY2NjY2NjcgLTAuMTMzMTE2NjY2NjY2NjY2NjYgLTAuMTMzMTE2NjY2NjY2NjY2NjYgLTAuMjAzMTE2NjY2NjY2NjY2NyAtMC4zMTc5MTY2NjY2NjY2NjY3NCAtMC4yMDMxMTY2NjY2NjY2NjY3IC0wLjUyNjA1VjMuODc5MTc4MzMzMzMzMzMzNGMwIC0wLjIwODEzOTE2NjY2NjY2NjY4IDAuMDcgLTAuMzkyOTIxNjY2NjY2NjY2NjcgMC4yMDMxMTY2NjY2NjY2NjY3IC0wLjUyNjAzMjVabS0zLjcyNTc1IDUuMjQ5OTcwODMzMzMzMzM0YzAuMTMzMTEwODMzMzMzMzMzMzQgLTAuMTMzMDU4MzMzMzMzMzMzMzMgMC4zMTc4OTMzMzMzMzMzMzMzNiAtMC4yMDMxMTY2NjY2NjY2NjY3IDAuNTI2MDM4MzMzMzMzMzMzNCAtMC4yMDMxMTY2NjY2NjY2NjY3aDAuNTgzMzMzMzMzMzMzMzMzNGMwLjIwODEzOTE2NjY2NjY2NjY4IDAgMC4zOTI5MjE2NjY2NjY2NjY2NyAwLjA3MDA1ODMzMzMzMzMzMzMzIDAuNTI2MDMyNSAwLjIwMzExNjY2NjY2NjY2NjcgMC4xMzMxMTY2NjY2NjY2NjY2NiAwLjEzMzExNjY2NjY2NjY2NjY2IDAuMjAzMTM0MTY2NjY2NjY2NjcgMC4zMTc5MTY2NjY2NjY2NjY3NCAwLjIwMzEzNDE2NjY2NjY2NjY3IDAuNTI2MDV2MS42MzMzMzMzMzMzMzMzMzMzYzAgMC4yMDgxMzMzMzMzMzMzMzMzNCAtMC4wNzAwMTc1IDAuMzkyOTMzMzMzMzMzMzMzMzYgLTAuMjAzMTM0MTY2NjY2NjY2NjcgMC41MjYwNSAtMC4xMzMxMTA4MzMzMzMzMzMzNCAwLjEzMzExNjY2NjY2NjY2NjY2IC0wLjMxNzg5MzMzMzMzMzMzMzM2IDAuMjAzMTE2NjY2NjY2NjY2NyAtMC41MjYwMzI1IDAuMjAzMTE2NjY2NjY2NjY2N2gtMC41ODMzMzMzMzMzMzMzMzM0Yy0wLjIwODE0NTAwMDAwMDAwMDAyIDAgLTAuMzkyOTI3NTAwMDAwMDAwMDQgLTAuMDcgLTAuNTI2MDM4MzMzMzMzMzMzNCAtMC4yMDMxMTY2NjY2NjY2NjY3IC0wLjEzMzExNjY2NjY2NjY2NjY2IC0wLjEzMzExNjY2NjY2NjY2NjY2IC0wLjIwMzEyODMzMzMzMzMzMzMzIC0wLjMxNzkxNjY2NjY2NjY2Njc0IC0wLjIwMzEyODMzMzMzMzMzMzMzIC0wLjUyNjA1di0xLjYzMzMzMzMzMzMzMzMzMzNjMCAtMC4yMDgxMzMzMzMzMzMzMzMzNCAwLjA3MDAxMTY2NjY2NjY2NjY3IC0wLjM5MjkzMzMzMzMzMzMzMzM2IDAuMjAzMTI4MzMzMzMzMzMzMzMgLTAuNTI2MDVabTcuNDUxNSAtMi4zMzMzMzMzMzMzMzMzMzM1YzAuMTMzMDU4MzMzMzMzMzMzMzMgLTAuMTMzMDU4MzMzMzMzMzMzMzMgMC4zMTc4NTgzMzMzMzMzMzM0IC0wLjIwMzExNjY2NjY2NjY2NjcgMC41MjU5OTE2NjY2NjY2NjY2IC0wLjIwMzExNjY2NjY2NjY2NjdoMC41ODMzMzMzMzMzMzMzMzM0YzAuMjA4MTMzMzMzMzMzMzMzMzQgMCAwLjM5MjkzMzMzMzMzMzMzMzM2IDAuMDcwMDU4MzMzMzMzMzMzMzMgMC41MjYwNSAwLjIwMzExNjY2NjY2NjY2NjcgMC4xMzMxMTY2NjY2NjY2NjY2NiAwLjEzMzExNjY2NjY2NjY2NjY2IDAuMjAzMTE2NjY2NjY2NjY2NyAwLjMxNzkxNjY2NjY2NjY2Njc0IDAuMjAzMTE2NjY2NjY2NjY2NyAwLjUyNjA1djMuOTY2NjY2NjY2NjY2NjY3YzAgMC4yMDgxMzMzMzMzMzMzMzMzNCAtMC4wNyAwLjM5MjkzMzMzMzMzMzMzMzM2IC0wLjIwMzExNjY2NjY2NjY2NjcgMC41MjYwNSAtMC4xMzMxMTY2NjY2NjY2NjY2NiAwLjEzMzExNjY2NjY2NjY2NjY2IC0wLjMxNzkxNjY2NjY2NjY2Njc0IDAuMjAzMTE2NjY2NjY2NjY2NyAtMC41MjYwNSAwLjIwMzExNjY2NjY2NjY2NjdoLTAuNTgzMzMzMzMzMzMzMzMzNGMtMC4yMDgxMzMzMzMzMzMzMzMzNCAwIC0wLjM5MjkzMzMzMzMzMzMzMzM2IC0wLjA3IC0wLjUyNTk5MTY2NjY2NjY2NjYgLTAuMjAzMTE2NjY2NjY2NjY2NyAtMC4xMzMxMTY2NjY2NjY2NjY2NiAtMC4xMzMxMTY2NjY2NjY2NjY2NiAtMC4yMDMxNzUwMDAwMDAwMDAwMiAtMC4zMTc5MTY2NjY2NjY2NjY3NCAtMC4yMDMxNzUwMDAwMDAwMDAwMiAtMC41MjYwNXYtMy45NjY2NjY2NjY2NjY2NjdjMCAtMC4yMDgxMzMzMzMzMzMzMzMzNCAwLjA3MDA1ODMzMzMzMzMzMzMzIC0wLjM5MjkzMzMzMzMzMzMzMzM2IDAuMjAzMTc1MDAwMDAwMDAwMDIgLTAuNTI2MDVaIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvc3ZnPg==" />&nbsp;&nbsp;Summary Report</label>
-		<label id="btnscaninfo" href="#"    class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('home');radiobtn.checked = true;updateLabelColors('tabs', 'btnscaninfo');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlBvY2tldC1DYXN0cy1Mb2dvLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Qb2NrZXQgQ2FzdHMgTG9nbyBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBkPSJNNyAwYTcgNyAwIDEgMCA3IDdBNyA3IDAgMCAwIDcgMFptMCA4Ljc1djEuMTY2NjY2NjY2NjY2NjY2N2EyLjkxNjY2NjY2NjY2NjY2NyAyLjkxNjY2NjY2NjY2NjY2NyAwIDEgMSAyLjkxNjY2NjY2NjY2NjY2NyAtMi45MTY2NjY2NjY2NjY2NjdoLTEuMTY2NjY2NjY2NjY2NjY2N2ExLjc1IDEuNzUgMCAxIDAgLTEuNzUgMS43NVptMCAtNS44MzMzMzMzMzMzMzMzMzRhNC4wODMzMzMzMzMzMzMzMzQgNC4wODMzMzMzMzMzMzMzMzQgMCAwIDAgMCA4LjE2NjY2NjY2NjY2NjY2OHYxLjE2NjY2NjY2NjY2NjY2NjdhNS4yNSA1LjI1IDAgMSAxIDUuMjUgLTUuMjVoLTEuMTY2NjY2NjY2NjY2NjY2N2E0LjA4MzMzMzMzMzMzMzMzNCA0LjA4MzMzMzMzMzMzMzMzNCAwIDAgMCAtNC4wODMzMzMzMzMzMzMzMzQgLTQuMDgzMzMzMzMzMzMzMzM0WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9zdmc+" />&nbsp;&nbsp;Scan Information</label>		
+		<label id="btnscaninfo" href="#"    class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('home');radiobtn.checked = true;updateLabelColors('tabs', 'btnscaninfo');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlBvY2tldC1DYXN0cy1Mb2dvLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Qb2NrZXQgQ2FzdHMgTG9nbyBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBkPSJNNyAwYTcgNyAwIDEgMCA3IDdBNyA3IDAgMCAwIDcgMFptMCA4Ljc1djEuMTY2NjY2NjY2NjY2NjY2N2EyLjkxNjY2NjY2NjY2NjY2NyAyLjkxNjY2NjY2NjY2NjY2NyAwIDEgMSAyLjkxNjY2NjY2NjY2NjY2NyAtMi45MTY2NjY2NjY2NjY2NjdoLTEuMTY2NjY2NjY2NjY2NjY2N2ExLjc1IDEuNzUgMCAxIDAgLTEuNzUgMS43NVptMCAtNS44MzMzMzMzMzMzMzMzMzRhNC4wODMzMzMzMzMzMzMzMzQgNC4wODMzMzMzMzMzMzMzMzQgMCAwIDAgMCA4LjE2NjY2NjY2NjY2NjY2OHYxLjE2NjY2NjY2NjY2NjY2NjdhNS4yNSA1LjI1IDAgMSAxIDUuMjUgLTUuMjVoLTEuMTY2NjY2NjY2NjY2NjY2N2E0LjA4MzMzMzMzMzMzMzMzNCA0LjA4MzMzMzMzMzMzMzMzNCAwIDAgMCAtNC4wODMzMzMzMzMzMzMzMzQgLTQuMDgzMzMzMzMzMzMzMzM0WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9zdmc+" />&nbsp;&nbsp;Scan Information</label>
 		<label id="noactionmenuheader2"     class="tabLabel"  onclick="toggleMenuSection('noactionmenuheader2');" style="margin-top: 2px; background-color: transparent;width:100%;color:#F56A00;padding-top:6px;padding-bottom:3px;margin-top:5px;margin-bottom:0px;font-weight:bolder;border-top: 0.25px solid rgba(53, 67, 103, 0.5);"><Strong>EXPLORE</Strong></label>
-        <label id="btnnetworks" href="#"    class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onclick="radiobtn = document.getElementById('SubNets');radiobtn.checked = true;updateLabelColors('tabs', 'btnnetworks');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkVhcnRoLTMtLVN0cmVhbWxpbmUtVWx0aW1hdGUuc3ZnIiBoZWlnaHQ9IjE1IiB3aWR0aD0iMTUiPjxkZXNjPkVhcnRoIDMgU3RyZWFtbGluZSBJY29uOiBodHRwczovL3N0cmVhbWxpbmVocS5jb208L2Rlc2M+PGc+PHBhdGggZD0iTTkuMDgyNTAwMDAwMDAwMDAxIDMuMjA4MzMzMzMzMzMzMzMzNWEwLjE0IDAuMTQgMCAwIDAgMC4xMjI1IC0wLjA2NDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwIC0wLjEzNDE2NjY2NjY2NjY2NjY4QTUuNzA1IDUuNzA1IDAgMCAwIDcuMDc1ODMzMzMzMzMzMzM0NSAwLjI1MDgzMzMzMzMzMzMzMzM1YTAuMTQgMC4xNCAwIDAgMCAtMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDUuNzA1IDUuNzA1IDAgMCAwIC0yLjE0NjY2NjY2NjY2NjY2NyAyLjc1OTE2NjY2NjY2NjY2NyAwLjE0IDAuMTQgMCAwIDAgMCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwLjEyMjUgMC4wNjQxNjY2NjY2NjY2NjY2OFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0xMC43NjgzMzMzMzMzMzMzMzQgNi40MTY2NjY2NjY2NjY2NjdhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNGgyLjkxNjY2NjY2NjY2NjY2N2EwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAtMC4wNDY2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wMzUgLTAuMTEwODMzMzMzMzMzMzMzMzQgNi44NTQxNjY2NjY2NjY2NjcgNi44NTQxNjY2NjY2NjY2NjcgMCAwIDAgLTAuNTgzMzMzMzMzMzMzMzMzNCAtMi4yMzQxNjY2NjY2NjY2NjcgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIC0wLjEzNDE2NjY2NjY2NjY2NjY4IC0wLjA4MTY2NjY2NjY2NjY2NjY4aC0yLjYwMTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4wNTI1IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIDAuMTIyNSAxMi45MTUwMDAwMDAwMDAwMDEgMTIuOTE1MDAwMDAwMDAwMDAxIDAgMCAxIDAuMjIxNjY2NjY2NjY2NjY2NjggMi4xNTgzMzMzMzMzMzMzMzM3WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTkuNzUzMzMzMzMzMzMzMzM0IDYuNTYyNWEwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMDUgLTAuMDQ2NjY2NjY2NjY2NjY2NjcgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIDAuMDU4MzMzMzMzMzMzMzMzMzQgLTAuMDk5MTY2NjY2NjY2NjY2NjggMTEuNzU0MTY2NjY2NjY2NjY2IDExLjc1NDE2NjY2NjY2NjY2NiAwIDAgMCAtMC4yOTE2NjY2NjY2NjY2NjY3IC0yLjIxNjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTY5MTY2NjY2NjY2NjY2NjYgLTAuMTE2NjY2NjY2NjY2NjY2NjhINC41NDQxNjY2NjY2NjY2NjdhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTEwODMzMzMzMzMzMzMzMzRBMTEuNzU0MTY2NjY2NjY2NjY2IDExLjc1NDE2NjY2NjY2NjY2NiAwIDAgMCA0LjA4MzMzMzMzMzMzMzMzNCA2LjQxNjY2NjY2NjY2NjY2N2EwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgMC4wMzUgMC4xMDUgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIDAuMTA1IDAuMDQ2NjY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNNC45MTc1IDEwLjc5MTY2NjY2NjY2NjY2OGEwLjE0IDAuMTQgMCAwIDAgLTAuMTIyNSAwLjA2NDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwIDAuMTM0MTY2NjY2NjY2NjY2NjggNS43MDUgNS43MDUgMCAwIDAgMi4xNDY2NjY2NjY2NjY2NjcgMi43NTkxNjY2NjY2NjY2NjcgMC4xNCAwLjE0IDAgMCAwIDAuMTUxNjY2NjY2NjY2NjY2NjcgMCA1LjcwNSA1LjcwNSAwIDAgMCAyLjE0NjY2NjY2NjY2NjY2NyAtMi43NTkxNjY2NjY2NjY2NjcgMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIC0wLjExNjY2NjY2NjY2NjY2NjY4IC0wLjA2NDE2NjY2NjY2NjY2NjY4WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTQuMjUyNSA3LjQzNzUwMDAwMDAwMDAwMWEwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4wNDY2NjY2NjY2NjY2NjY2NyAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgLTAuMDU4MzMzMzMzMzMzMzMzMzQgMC4wOTkxNjY2NjY2NjY2NjY2OCAxMS43NTQxNjY2NjY2NjY2NjYgMTEuNzU0MTY2NjY2NjY2NjY2IDAgMCAwIDAuMjkxNjY2NjY2NjY2NjY2NyAyLjIxNjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjExMDgzMzMzMzMzMzMzMzM0aDQuOTExNjY2NjY2NjY2NjY3YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAwLjE0NTgzMzMzMzMzMzMzMzM0IC0wLjExMDgzMzMzMzMzMzMzMzM0QTExLjc1NDE2NjY2NjY2NjY2NiAxMS43NTQxNjY2NjY2NjY2NjYgMCAwIDAgOS45MTY2NjY2NjY2NjY2NjggNy41ODMzMzMzMzMzMzMzMzRhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIC0wLjAzNSAtMC4xMDUgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjEwNSAtMC4wNDY2NjY2NjY2NjY2NjY2N1oiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0wLjAzNSA2LjQxNjY2NjY2NjY2NjY2N2EwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wMzUgMC4xMTA4MzMzMzMzMzMzMzMzNCAwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAwLjA0NjY2NjY2NjY2NjY2NjY3aDIuOTE2NjY2NjY2NjY2NjY3YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAwLjEzNDE2NjY2NjY2NjY2NjY4IC0wLjE1NzUwMDAwMDAwMDAwMDAzQTEyLjkxNTAwMDAwMDAwMDAwMSAxMi45MTUwMDAwMDAwMDAwMDEgMCAwIDEgMy41IDQuMjU4MzMzMzMzMzMzMzM0YTAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjEyMjUgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIC0wLjE1NzUwMDAwMDAwMDAwMDAzIC0wLjA1MjVIMC43NDA4MzMzMzMzMzMzMzMzYTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAtMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjA4NzUwMDAwMDAwMDAwMDAxQTYuODU0MTY2NjY2NjY2NjY3IDYuODU0MTY2NjY2NjY2NjY3IDAgMCAwIDAuMDM1IDYuNDE2NjY2NjY2NjY2NjY3WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTMuMjMxNjY2NjY2NjY2NjY3IDcuNTgzMzMzMzMzMzMzMzM0YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNGgtMi45MTY2NjY2NjY2NjY2NjdhMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjExMDgzMzMzMzMzMzMzMzM0IDAuMDQ2NjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjAyMzMzMzMzMzMzMzMzMzMzNCAwLjA5MzMzMzMzMzMzMzMzMzM0IDYuODU0MTY2NjY2NjY2NjY3IDYuODU0MTY2NjY2NjY2NjY3IDAgMCAwIDAuNTgzMzMzMzMzMzMzMzMzNCAyLjIzNDE2NjY2NjY2NjY2NyAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjA4NzUwMDAwMDAwMDAwMDAxaDIuNTkwMDAwMDAwMDAwMDAwM2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAtMC4wNTI1IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjEyMjVBMTIuOTE1MDAwMDAwMDAwMDAxIDEyLjkxNTAwMDAwMDAwMDAwMSAwIDAgMSAzLjIzMTY2NjY2NjY2NjY2NyA3LjU4MzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0zLjgwMzMzMzMzMzMzMzMzMzIgMTAuODkwODMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAtMC4xNCAtMC4wOTkxNjY2NjY2NjY2NjY2OEgxLjQwMDAwMDAwMDAwMDAwMDFhMC4xNCAwLjE0IDAgMCAwIC0wLjEyODMzMzMzMzMzMzMzMzM1IDAuMDc1ODMzMzMzMzMzMzMzMzQgMC4xNCAwLjE0IDAgMCAwIDAgMC4xNTE2NjY2NjY2NjY2NjY2NyA3LjAzNTAwMDAwMDAwMDAwMSA3LjAzNTAwMDAwMDAwMDAwMSAwIDAgMCAzLjg5MDgzMzMzMzMzMzMzMzYgMi43MzU4MzMzMzMzMzMzMzQgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTYzMzMzMzMzMzMzMzMzMzYgLTAuMDY0MTY2NjY2NjY2NjY2NjggMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTc1MDAwMDAwMDAwMDAwMDIgNy41ODMzMzMzMzMzMzMzMzQgNy41ODMzMzMzMzMzMzMzMzQgMCAwIDEgLTEuNTIyNSAtMi42MjVaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTAuMzM2NjY2NjY2NjY2NjY2IDEwLjc5MTY2NjY2NjY2NjY2OGEwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgLTAuMTQgMC4wOTkxNjY2NjY2NjY2NjY2OCA3LjU4MzMzMzMzMzMzMzMzNCA3LjU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMS41MTA4MzMzMzMzMzMzMzMzIDIuNjI1IDAuMTQgMC4xNCAwIDAgMCAwIDAuMTc1MDAwMDAwMDAwMDAwMDIgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTYzMzMzMzMzMzMzMzMzMzYgMC4wNjQxNjY2NjY2NjY2NjY2OCA3LjAzNTAwMDAwMDAwMDAwMSA3LjAzNTAwMDAwMDAwMDAwMSAwIDAgMCAzLjg5MDgzMzMzMzMzMzMzMzYgLTIuNzM1ODMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAtMC4xMjgzMzMzMzMzMzMzMzMzNSAtMC4wODE2NjY2NjY2NjY2NjY2OFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0zLjY2MzMzMzMzMzMzMzMzMzYgMy4yMDgzMzMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjE0IC0wLjA5OTE2NjY2NjY2NjY2NjY4QTcuNTgzMzMzMzMzMzMzMzM0IDcuNTgzMzMzMzMzMzMzMzM0IDAgMCAxIDUuMzE0MTY2NjY2NjY2NjY3IDAuNDg0MTY2NjY2NjY2NjY2N2EwLjE0IDAuMTQgMCAwIDAgMCAtMC4xNzUwMDAwMDAwMDAwMDAwMiAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTQ1ODMzMzMzMzMzMzMzMzQgLTAuMDY0MTY2NjY2NjY2NjY2NjggNy4wMzUwMDAwMDAwMDAwMDEgNy4wMzUwMDAwMDAwMDAwMDEgMCAwIDAgLTMuODkwODMzMzMzMzMzMzMzNiAyLjczNTgzMzMzMzMzMzMzNCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgMCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwLjEyODMzMzMzMzMzMzMzMzM1IDAuMDgxNjY2NjY2NjY2NjY2NjhaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTMuOTY1MDAwMDAwMDAwMDAyIDcuNTgzMzMzMzMzMzMzMzM0YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4wMzUgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjExMDgzMzMzMzMzMzMzMzM0IC0wLjA0NjY2NjY2NjY2NjY2NjY3aC0yLjkxNjY2NjY2NjY2NjY2N2EwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNEExMi45MTUwMDAwMDAwMDAwMDEgMTIuOTE1MDAwMDAwMDAwMDAxIDAgMCAxIDEwLjUgOS43NDE2NjY2NjY2NjY2NjdhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIDAgMC4xMjI1IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjExMDgzMzMzMzMzMzMzMzM0IDAuMDUyNWgyLjYwMTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAtMC4wODc1MDAwMDAwMDAwMDAwMUE2Ljg1NDE2NjY2NjY2NjY2NyA2Ljg1NDE2NjY2NjY2NjY2NyAwIDAgMCAxMy45NjUwMDAwMDAwMDAwMDIgNy41ODMzMzMzMzMzMzMzMzRaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTAuMTk2NjY2NjY2NjY2NjY3IDMuMTA5MTY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjE0IDAuMDk5MTY2NjY2NjY2NjY2NjhoMi4yNjMzMzMzMzMzMzMzMzNhMC4xNCAwLjE0IDAgMCAwIDAuMTI4MzMzMzMzMzMzMzMzMzUgLTAuMDc1ODMzMzMzMzMzMzMzMzQgMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTUxNjY2NjY2NjY2NjY2NjdBNy4wMzUwMDAwMDAwMDAwMDEgNy4wMzUwMDAwMDAwMDAwMDEgMCAwIDAgOC44MzE2NjY2NjY2NjY2NjcgMC4yNDVhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjE2MzMzMzMzMzMzMzMzMzM2IDAuMDY0MTY2NjY2NjY2NjY2NjggMC4xNCAwLjE0IDAgMCAwIDAgMC4xNzUwMDAwMDAwMDAwMDAwMiA3LjU4MzMzMzMzMzMzMzMzNCA3LjU4MzMzMzMzMzMzMzMzNCAwIDAgMSAxLjUyODMzMzMzMzMzMzMzMzUgMi42MjVaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L2c+PC9zdmc+" />&nbsp;&nbsp;Networks</label>	
-        <label id="btncomputers" href="#"   class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ComputerInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btncomputers');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlNjcmVlbi0xLUFsdGVybmF0ZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+U2NyZWVuIDEgQWx0ZXJuYXRlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIGQ9Ik0xMy4xMjUgMGgtMTIuMjVBMC44NzUgMC44NzUgMCAwIDAgMCAwLjg3NVYxMC41YTAuODc1IDAuODc1IDAgMCAwIDAuODc1IDAuODc1aDUuMzk1ODMzMzMzMzMzMzM0YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzR2MS4xNjY2NjY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0SDQuMzc1YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjdoNS4yNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2N2gtMS44OTU4MzMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNDU4MzMzMzMzMzMzMzMzNHYtMS4xNjY2NjY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAwLjE0NTgzMzMzMzMzMzMzMzM0IC0wLjE0NTgzMzMzMzMzMzMzMzM0aDUuMzk1ODMzMzMzMzMzMzM0QTAuODc1IDAuODc1IDAgMCAwIDE0IDEwLjVWMC44NzVBMC44NzUgMC44NzUgMCAwIDAgMTMuMTI1IDBaTTEyLjgzMzMzMzMzMzMzMzMzNCA4Ljc1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDEgLTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjdoLTExLjA4MzMzMzMzMzMzMzMzNEEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDEuMTY2NjY2NjY2NjY2NjY2NyA4Ljc1VjEuNDU4MzMzMzMzMzMzMzMzNWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjkxNjY2NjY2NjY2NjY2NyAtMC4yOTE2NjY2NjY2NjY2NjY3aDExLjA4MzMzMzMzMzMzMzMzNGEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Computers</label>	  	  			
-		<label id="btnshares" href="#"      class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkZvbGRlci1FbXB0eS0xLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Gb2xkZXIgRW1wdHkgMSBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBkPSJNMTMuMTI1IDIuOTE2NjY2NjY2NjY2NjY3SDYuNTU2NjY2NjY2NjY2NjY3NWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjI2MjUgLTAuMTYzMzMzMzMzMzMzMzMzMzZsLTAuNTU0MTY2NjY2NjY2NjY2NyAtMS4xMDI1QTAuODc1IDAuODc1IDAgMCAwIDQuOTU4MzMzMzMzMzMzMzM0IDEuMTY2NjY2NjY2NjY2NjY2N2gtNC4wODMzMzMzMzMzMzMzMzRBMC44NzUgMC44NzUgMCAwIDAgMCAyLjA0MTY2NjY2NjY2NjY2N3Y5LjkxNjY2NjY2NjY2NjY2OEEwLjg3NSAwLjg3NSAwIDAgMCAwLjg3NSAxMi44MzMzMzMzMzMzMzMzMzRoMTIuMjVhMC44NzUgMC44NzUgMCAwIDAgMC44NzUgLTAuODc1di04LjE2NjY2NjY2NjY2NjY2OEEwLjg3NSAwLjg3NSAwIDAgMCAxMy4xMjUgMi45MTY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Share Names</label>					
+        <label id="btnnetworks" href="#"    class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onclick="radiobtn = document.getElementById('SubNets');radiobtn.checked = true;updateLabelColors('tabs', 'btnnetworks');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkVhcnRoLTMtLVN0cmVhbWxpbmUtVWx0aW1hdGUuc3ZnIiBoZWlnaHQ9IjE1IiB3aWR0aD0iMTUiPjxkZXNjPkVhcnRoIDMgU3RyZWFtbGluZSBJY29uOiBodHRwczovL3N0cmVhbWxpbmVocS5jb208L2Rlc2M+PGc+PHBhdGggZD0iTTkuMDgyNTAwMDAwMDAwMDAxIDMuMjA4MzMzMzMzMzMzMzMzNWEwLjE0IDAuMTQgMCAwIDAgMC4xMjI1IC0wLjA2NDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwIC0wLjEzNDE2NjY2NjY2NjY2NjY4QTUuNzA1IDUuNzA1IDAgMCAwIDcuMDc1ODMzMzMzMzMzMzM0NSAwLjI1MDgzMzMzMzMzMzMzMzM1YTAuMTQgMC4xNCAwIDAgMCAtMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDUuNzA1IDUuNzA1IDAgMCAwIC0yLjE0NjY2NjY2NjY2NjY2NyAyLjc1OTE2NjY2NjY2NjY2NyAwLjE0IDAuMTQgMCAwIDAgMCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwLjEyMjUgMC4wNjQxNjY2NjY2NjY2NjY2OFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0xMC43NjgzMzMzMzMzMzMzMzQgNi40MTY2NjY2NjY2NjY2NjdhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNGgyLjkxNjY2NjY2NjY2NjY2N2EwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAtMC4wNDY2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wMzUgLTAuMTEwODMzMzMzMzMzMzMzMzQgNi44NTQxNjY2NjY2NjY2NjcgNi44NTQxNjY2NjY2NjY2NjcgMCAwIDAgLTAuNTgzMzMzMzMzMzMzMzMzNCAtMi4yMzQxNjY2NjY2NjY2NjcgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIC0wLjEzNDE2NjY2NjY2NjY2NjY4IC0wLjA4MTY2NjY2NjY2NjY2NjY4aC0yLjYwMTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4wNTI1IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIDAuMTIyNSAxMi45MTUwMDAwMDAwMDAwMDEgMTIuOTE1MDAwMDAwMDAwMDAxIDAgMCAxIDAuMjIxNjY2NjY2NjY2NjY2NjggMi4xNTgzMzMzMzMzMzMzMzM3WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTkuNzUzMzMzMzMzMzMzMzM0IDYuNTYyNWEwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMDUgLTAuMDQ2NjY2NjY2NjY2NjY2NjcgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIDAuMDU4MzMzMzMzMzMzMzMzMzQgLTAuMDk5MTY2NjY2NjY2NjY2NjggMTEuNzU0MTY2NjY2NjY2NjY2IDExLjc1NDE2NjY2NjY2NjY2NiAwIDAgMCAtMC4yOTE2NjY2NjY2NjY2NjY3IC0yLjIxNjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTY5MTY2NjY2NjY2NjY2NjYgLTAuMTE2NjY2NjY2NjY2NjY2NjhINC41NDQxNjY2NjY2NjY2NjdhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTEwODMzMzMzMzMzMzMzMzRBMTEuNzU0MTY2NjY2NjY2NjY2IDExLjc1NDE2NjY2NjY2NjY2NiAwIDAgMCA0LjA4MzMzMzMzMzMzMzMzNCA2LjQxNjY2NjY2NjY2NjY2N2EwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgMC4wMzUgMC4xMDUgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIDAuMTA1IDAuMDQ2NjY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNNC45MTc1IDEwLjc5MTY2NjY2NjY2NjY2OGEwLjE0IDAuMTQgMCAwIDAgLTAuMTIyNSAwLjA2NDE2NjY2NjY2NjY2NjY4IDAuMTQgMC4xNCAwIDAgMCAwIDAuMTM0MTY2NjY2NjY2NjY2NjggNS43MDUgNS43MDUgMCAwIDAgMi4xNDY2NjY2NjY2NjY2NjcgMi43NTkxNjY2NjY2NjY2NjcgMC4xNCAwLjE0IDAgMCAwIDAuMTUxNjY2NjY2NjY2NjY2NjcgMCA1LjcwNSA1LjcwNSAwIDAgMCAyLjE0NjY2NjY2NjY2NjY2NyAtMi43NTkxNjY2NjY2NjY2NjcgMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIC0wLjExNjY2NjY2NjY2NjY2NjY4IC0wLjA2NDE2NjY2NjY2NjY2NjY4WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTQuMjUyNSA3LjQzNzUwMDAwMDAwMDAwMWEwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4wNDY2NjY2NjY2NjY2NjY2NyAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgLTAuMDU4MzMzMzMzMzMzMzMzMzQgMC4wOTkxNjY2NjY2NjY2NjY2OCAxMS43NTQxNjY2NjY2NjY2NjYgMTEuNzU0MTY2NjY2NjY2NjY2IDAgMCAwIDAuMjkxNjY2NjY2NjY2NjY2NyAyLjIxNjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjExMDgzMzMzMzMzMzMzMzM0aDQuOTExNjY2NjY2NjY2NjY3YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAwLjE0NTgzMzMzMzMzMzMzMzM0IC0wLjExMDgzMzMzMzMzMzMzMzM0QTExLjc1NDE2NjY2NjY2NjY2NiAxMS43NTQxNjY2NjY2NjY2NjYgMCAwIDAgOS45MTY2NjY2NjY2NjY2NjggNy41ODMzMzMzMzMzMzMzMzRhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIC0wLjAzNSAtMC4xMDUgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjEwNSAtMC4wNDY2NjY2NjY2NjY2NjY2N1oiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0wLjAzNSA2LjQxNjY2NjY2NjY2NjY2N2EwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wMzUgMC4xMTA4MzMzMzMzMzMzMzMzNCAwLjE1NzUwMDAwMDAwMDAwMDAzIDAuMTU3NTAwMDAwMDAwMDAwMDMgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAwLjA0NjY2NjY2NjY2NjY2NjY3aDIuOTE2NjY2NjY2NjY2NjY3YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAwLjEzNDE2NjY2NjY2NjY2NjY4IC0wLjE1NzUwMDAwMDAwMDAwMDAzQTEyLjkxNTAwMDAwMDAwMDAwMSAxMi45MTUwMDAwMDAwMDAwMDEgMCAwIDEgMy41IDQuMjU4MzMzMzMzMzMzMzM0YTAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjEyMjUgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIC0wLjE1NzUwMDAwMDAwMDAwMDAzIC0wLjA1MjVIMC43NDA4MzMzMzMzMzMzMzMzYTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAtMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjA4NzUwMDAwMDAwMDAwMDAxQTYuODU0MTY2NjY2NjY2NjY3IDYuODU0MTY2NjY2NjY2NjY3IDAgMCAwIDAuMDM1IDYuNDE2NjY2NjY2NjY2NjY3WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTMuMjMxNjY2NjY2NjY2NjY3IDcuNTgzMzMzMzMzMzMzMzM0YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNGgtMi45MTY2NjY2NjY2NjY2NjdhMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjExMDgzMzMzMzMzMzMzMzM0IDAuMDQ2NjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjAyMzMzMzMzMzMzMzMzMzMzNCAwLjA5MzMzMzMzMzMzMzMzMzM0IDYuODU0MTY2NjY2NjY2NjY3IDYuODU0MTY2NjY2NjY2NjY3IDAgMCAwIDAuNTgzMzMzMzMzMzMzMzMzNCAyLjIzNDE2NjY2NjY2NjY2NyAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjA4NzUwMDAwMDAwMDAwMDAxaDIuNTkwMDAwMDAwMDAwMDAwM2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMTA4MzMzMzMzMzMzMzMzNCAtMC4wNTI1IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjEyMjVBMTIuOTE1MDAwMDAwMDAwMDAxIDEyLjkxNTAwMDAwMDAwMDAwMSAwIDAgMSAzLjIzMTY2NjY2NjY2NjY2NyA3LjU4MzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0zLjgwMzMzMzMzMzMzMzMzMzIgMTAuODkwODMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAtMC4xNCAtMC4wOTkxNjY2NjY2NjY2NjY2OEgxLjQwMDAwMDAwMDAwMDAwMDFhMC4xNCAwLjE0IDAgMCAwIC0wLjEyODMzMzMzMzMzMzMzMzM1IDAuMDc1ODMzMzMzMzMzMzMzMzQgMC4xNCAwLjE0IDAgMCAwIDAgMC4xNTE2NjY2NjY2NjY2NjY2NyA3LjAzNTAwMDAwMDAwMDAwMSA3LjAzNTAwMDAwMDAwMDAwMSAwIDAgMCAzLjg5MDgzMzMzMzMzMzMzMzYgMi43MzU4MzMzMzMzMzMzMzQgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTYzMzMzMzMzMzMzMzMzMzYgLTAuMDY0MTY2NjY2NjY2NjY2NjggMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTc1MDAwMDAwMDAwMDAwMDIgNy41ODMzMzMzMzMzMzMzMzQgNy41ODMzMzMzMzMzMzMzMzQgMCAwIDEgLTEuNTIyNSAtMi42MjVaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTAuMzM2NjY2NjY2NjY2NjY2IDEwLjc5MTY2NjY2NjY2NjY2OGEwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgLTAuMTQgMC4wOTkxNjY2NjY2NjY2NjY2OCA3LjU4MzMzMzMzMzMzMzMzNCA3LjU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMS41MTA4MzMzMzMzMzMzMzMzIDIuNjI1IDAuMTQgMC4xNCAwIDAgMCAwIDAuMTc1MDAwMDAwMDAwMDAwMDIgMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMTYzMzMzMzMzMzMzMzMzMzYgMC4wNjQxNjY2NjY2NjY2NjY2OCA3LjAzNTAwMDAwMDAwMDAwMSA3LjAzNTAwMDAwMDAwMDAwMSAwIDAgMCAzLjg5MDgzMzMzMzMzMzMzMzYgLTIuNzM1ODMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAtMC4xMjgzMzMzMzMzMzMzMzMzNSAtMC4wODE2NjY2NjY2NjY2NjY2OFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0zLjY2MzMzMzMzMzMzMzMzMzYgMy4yMDgzMzMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjE0IC0wLjA5OTE2NjY2NjY2NjY2NjY4QTcuNTgzMzMzMzMzMzMzMzM0IDcuNTgzMzMzMzMzMzMzMzM0IDAgMCAxIDUuMzE0MTY2NjY2NjY2NjY3IDAuNDg0MTY2NjY2NjY2NjY2N2EwLjE0IDAuMTQgMCAwIDAgMCAtMC4xNzUwMDAwMDAwMDAwMDAwMiAwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTQ1ODMzMzMzMzMzMzMzMzQgLTAuMDY0MTY2NjY2NjY2NjY2NjggNy4wMzUwMDAwMDAwMDAwMDEgNy4wMzUwMDAwMDAwMDAwMDEgMCAwIDAgLTMuODkwODMzMzMzMzMzMzMzNiAyLjczNTgzMzMzMzMzMzMzNCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAuMTM0MTY2NjY2NjY2NjY2NjggMCAwIDAgMCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMCAwLjEyODMzMzMzMzMzMzMzMzM1IDAuMDgxNjY2NjY2NjY2NjY2NjhaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTMuOTY1MDAwMDAwMDAwMDAyIDcuNTgzMzMzMzMzMzMzMzM0YTAuMTUxNjY2NjY2NjY2NjY2NjcgMC4xNTE2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4wMzUgLTAuMTEwODMzMzMzMzMzMzMzMzQgMC4xNTc1MDAwMDAwMDAwMDAwMyAwLjE1NzUwMDAwMDAwMDAwMDAzIDAgMCAwIC0wLjExMDgzMzMzMzMzMzMzMzM0IC0wLjA0NjY2NjY2NjY2NjY2NjY3aC0yLjkxNjY2NjY2NjY2NjY2N2EwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNEExMi45MTUwMDAwMDAwMDAwMDEgMTIuOTE1MDAwMDAwMDAwMDAxIDAgMCAxIDEwLjUgOS43NDE2NjY2NjY2NjY2NjdhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAwIDAgMC4xMjI1IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjExMDgzMzMzMzMzMzMzMzM0IDAuMDUyNWgyLjYwMTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAtMC4wODc1MDAwMDAwMDAwMDAwMUE2Ljg1NDE2NjY2NjY2NjY2NyA2Ljg1NDE2NjY2NjY2NjY2NyAwIDAgMCAxMy45NjUwMDAwMDAwMDAwMDIgNy41ODMzMzMzMzMzMzMzMzRaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNMTAuMTk2NjY2NjY2NjY2NjY3IDMuMTA5MTY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMCAwLjE0IDAuMDk5MTY2NjY2NjY2NjY2NjhoMi4yNjMzMzMzMzMzMzMzMzNhMC4xNCAwLjE0IDAgMCAwIDAuMTI4MzMzMzMzMzMzMzMzMzUgLTAuMDc1ODMzMzMzMzMzMzMzMzQgMC4xNCAwLjE0IDAgMCAwIDAgLTAuMTUxNjY2NjY2NjY2NjY2NjdBNy4wMzUwMDAwMDAwMDAwMDEgNy4wMzUwMDAwMDAwMDAwMDEgMCAwIDAgOC44MzE2NjY2NjY2NjY2NjcgMC4yNDVhMC4xNTE2NjY2NjY2NjY2NjY2NyAwLjE1MTY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjE2MzMzMzMzMzMzMzMzMzM2IDAuMDY0MTY2NjY2NjY2NjY2NjggMC4xNCAwLjE0IDAgMCAwIDAgMC4xNzUwMDAwMDAwMDAwMDAwMiA3LjU4MzMzMzMzMzMzMzMzNCA3LjU4MzMzMzMzMzMzMzMzNCAwIDAgMSAxLjUyODMzMzMzMzMzMzMzMzUgMi42MjVaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L2c+PC9zdmc+" />&nbsp;&nbsp;Networks</label>
+        <label id="btncomputers" href="#"   class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ComputerInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btncomputers');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlNjcmVlbi0xLUFsdGVybmF0ZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+U2NyZWVuIDEgQWx0ZXJuYXRlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIGQ9Ik0xMy4xMjUgMGgtMTIuMjVBMC44NzUgMC44NzUgMCAwIDAgMCAwLjg3NVYxMC41YTAuODc1IDAuODc1IDAgMCAwIDAuODc1IDAuODc1aDUuMzk1ODMzMzMzMzMzMzM0YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzR2MS4xNjY2NjY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0SDQuMzc1YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjdoNS4yNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2N2gtMS44OTU4MzMzMzMzMzMzMzM1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNDU4MzMzMzMzMzMzMzMzNHYtMS4xNjY2NjY2NjY2NjY2NjY3YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAwLjE0NTgzMzMzMzMzMzMzMzM0IC0wLjE0NTgzMzMzMzMzMzMzMzM0aDUuMzk1ODMzMzMzMzMzMzM0QTAuODc1IDAuODc1IDAgMCAwIDE0IDEwLjVWMC44NzVBMC44NzUgMC44NzUgMCAwIDAgMTMuMTI1IDBaTTEyLjgzMzMzMzMzMzMzMzMzNCA4Ljc1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDEgLTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjdoLTExLjA4MzMzMzMzMzMzMzMzNEEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDEuMTY2NjY2NjY2NjY2NjY2NyA4Ljc1VjEuNDU4MzMzMzMzMzMzMzMzNWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjkxNjY2NjY2NjY2NjY2NyAtMC4yOTE2NjY2NjY2NjY2NjY3aDExLjA4MzMzMzMzMzMzMzMzNGEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Computers</label>
+		<label id="btnshares" href="#"      class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkZvbGRlci1FbXB0eS0xLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Gb2xkZXIgRW1wdHkgMSBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBkPSJNMTMuMTI1IDIuOTE2NjY2NjY2NjY2NjY3SDYuNTU2NjY2NjY2NjY2NjY3NWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjI2MjUgLTAuMTYzMzMzMzMzMzMzMzMzMzZsLTAuNTU0MTY2NjY2NjY2NjY2NyAtMS4xMDI1QTAuODc1IDAuODc1IDAgMCAwIDQuOTU4MzMzMzMzMzMzMzM0IDEuMTY2NjY2NjY2NjY2NjY2N2gtNC4wODMzMzMzMzMzMzMzMzRBMC44NzUgMC44NzUgMCAwIDAgMCAyLjA0MTY2NjY2NjY2NjY2N3Y5LjkxNjY2NjY2NjY2NjY2OEEwLjg3NSAwLjg3NSAwIDAgMCAwLjg3NSAxMi44MzMzMzMzMzMzMzMzMzRoMTIuMjVhMC44NzUgMC44NzUgMCAwIDAgMC44NzUgLTAuODc1di04LjE2NjY2NjY2NjY2NjY2OEEwLjg3NSAwLjg3NSAwIDAgMCAxMy4xMjUgMi45MTY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Share Names</label>
 		<label id="btnfgs" href="#"         class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ShareFolders');radiobtn.checked = true;updateLabelColors('tabs', 'btnfgs');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNvZGluZy1BcHBzLVdlYnNpdGUtQmlnLURhdGEtVm9sdW1lLUZvbGRlci0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q29kaW5nIEFwcHMgV2Vic2l0ZSBCaWcgRGF0YSBWb2x1bWUgRm9sZGVyIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxnPjxwYXRoIGQ9Ik0xMi44MzMzMzMzMzMzMzMzMzQgMS4xNjY2NjY2NjY2NjY2NjY3aC0zLjA4NTgzMzMzMzMzMzMzMzRhMC4yOTc1MDAwMDAwMDAwMDAwNCAwLjI5NzUwMDAwMDAwMDAwMDA0IDAgMCAxIC0wLjIxIC0wLjA4NzUwMDAwMDAwMDAwMDAxTDguODQzMzMzMzMzMzMzMzM0IDAuMzU1ODMzMzMzMzMzMzMzMzNBMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCA4LjAwMzMzMzMzMzMzMzMzNCAwaC0yLjAwMDgzMzMzMzMzMzMzMzVBMS4zMyAxLjMzIDAgMCAwIDQuNjY2NjY2NjY2NjY2NjY3IDEuMzM1ODMzMzMzMzMzMzMzNHYwLjU4MzMzMzMzMzMzMzMzMzRoMS4wMDMzMzMzMzMzMzMzMzM0YTIuMDY1IDIuMDY1IDAgMCAxIDEuNDcwMDAwMDAwMDAwMDAwMiAwLjYyNDE2NjY2NjY2NjY2NjhsMC41MTkxNjY2NjY2NjY2NjY3IDAuNTQyNTAwMDAwMDAwMDAwMUgxMC41YTIuMDQxNjY2NjY2NjY2NjY3IDIuMDQxNjY2NjY2NjY2NjY3IDAgMCAxIDIuMDQxNjY2NjY2NjY2NjY3IDIuMDQxNjY2NjY2NjY2NjY3VjguMTY2NjY2NjY2NjY2NjY4aDAuNzA1ODMzMzMzMzMzMzMzM0MxNCA4LjE2NjY2NjY2NjY2NjY2OCAxNCA3LjU4MzMzMzMzMzMzMzMzNCAxNCA2LjgzMDgzMzMzMzMzMzMzNFYyLjMzMzMzMzMzMzMzMzMzMzVhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMS4xNjY2NjY2NjY2NjY2NjY3IC0xLjE2NjY2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNNy45OTc1MDAwMDAwMDAwMDEgMTRIMS4zMzU4MzMzMzMzMzMzMzM0QTEuMzMgMS4zMyAwIDAgMSAwIDEyLjY2NDE2NjY2NjY2NjY2OHYtNS40OTVBMS4zMyAxLjMzIDAgMCAxIDEuMzM1ODMzMzMzMzMzMzMzNCA1LjgzMzMzMzMzMzMzMzMzNGgyLjAwMDgzMzMzMzMzMzMzMzVhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMSAwLjg0IDAuMzU1ODMzMzMzMzMzMzMzMzNsMC42OTQxNjY2NjY2NjY2NjY3IDAuNzIzMzMzMzMzMzMzMzMzNGEwLjI5NzUwMDAwMDAwMDAwMDA0IDAuMjk3NTAwMDAwMDAwMDAwMDQgMCAwIDAgMC4yMSAwLjA4NzUwMDAwMDAwMDAwMDAxSDguMTY2NjY2NjY2NjY2NjY4YTEuMTY2NjY2NjY2NjY2NjY2NyAxLjE2NjY2NjY2NjY2NjY2NjcgMCAwIDEgMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2N3Y0LjQ5NzUwMDAwMDAwMDAwMDVBMS4zMyAxLjMzIDAgMCAxIDcuOTk3NTAwMDAwMDAwMDAxIDE0WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0iTTEwLjUgMy45NTUwMDAwMDAwMDAwMDA1aC0zLjA4NTgzMzMzMzMzMzMzMzRhMC4yOCAwLjI4IDAgMCAxIC0wLjIxIC0wLjA5MzMzMzMzMzMzMzMzMzM0bC0wLjY5NDE2NjY2NjY2NjY2NjcgLTAuNzE3NWExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjg0IC0wLjM1NTgzMzMzMzMzMzMzMzMzSDMuNjY5MTY2NjY2NjY2NjY3QTEuMzMgMS4zMyAwIDAgMCAyLjMzMzMzMzMzMzMzMzMzMzUgNC4xMTgzMzMzMzMzMzMzMzNWNC45NTgzMzMzMzMzMzMzMzRoMS4wMDMzMzMzMzMzMzMzMzM0YTIuMDY1IDIuMDY1IDAgMCAxIDEuNDcwMDAwMDAwMDAwMDAwMiAwLjYyNDE2NjY2NjY2NjY2NjhsMC41MTkxNjY2NjY2NjY2NjY3IDAuNTQyNTAwMDAwMDAwMDAwMUg4LjE2NjY2NjY2NjY2NjY2OGEyLjA0MTY2NjY2NjY2NjY2NyAyLjA0MTY2NjY2NjY2NjY2NyAwIDAgMSAyLjA0MTY2NjY2NjY2NjY2NyAyLjA0MTY2NjY2NjY2NjY2N3YyLjc4ODMzMzMzMzMzMzMzMzZoMC4xMjI1QTEuMzM1ODMzMzMzMzMzMzMzNCAxLjMzNTgzMzMzMzMzMzMzMzQgMCAwIDAgMTEuNjY2NjY2NjY2NjY2NjY4IDkuNjE5MTY2NjY2NjY2NjY3VjUuMTIxNjY2NjY2NjY2NjY3YTEuMTY2NjY2NjY2NjY2NjY2NyAxLjE2NjY2NjY2NjY2NjY2NjcgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2NyAtMS4xNjY2NjY2NjY2NjY2NjY3WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9nPjwvc3ZnPg==" />&nbsp;&nbsp;Folder Groups</label>
         <label id="btnaces" href="#"        class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkxvY2stVW5sb2NrLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Mb2NrIFVubG9jayBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBkPSJNMTEuMzc1IDUuNTQxNjY2NjY2NjY2NjY3aC0wLjQzNzVWMy45Mzc1MDAwMDAwMDAwMDA0QTMuOTM3NTAwMDAwMDAwMDAwNCAzLjkzNzUwMDAwMDAwMDAwMDQgMCAwIDAgMy4yMjU4MzMzMzMzMzMzMzM2IDIuODA1ODMzMzMzMzMzMzMzYTAuNzI5MTY2NjY2NjY2NjY2NyAwLjcyOTE2NjY2NjY2NjY2NjcgMCAwIDAgMS40MDAwMDAwMDAwMDAwMDAxIDAuNDIgMi40NzkxNjY2NjY2NjY2NjcgMi40NzkxNjY2NjY2NjY2NjcgMCAwIDEgNC44NTMzMzMzMzMzMzMzMzM1IDAuNzExNjY2NjY2NjY2NjY2N1Y1LjI1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDEgLTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjdIMi42MjVhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2N1YxMi44MzMzMzMzMzMzMzMzMzRhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3aDguNzVhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjcgLTEuMTY2NjY2NjY2NjY2NjY2N1Y2LjcwODMzMzMzMzMzMzMzNGExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgLTEuMTY2NjY2NjY2NjY2NjY2N1ptLTUuNTQxNjY2NjY2NjY2NjY3IDMuNWExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAxIDIuMzMzMzMzMzMzMzMzMzMzNSAwIDEuMTY2NjY2NjY2NjY2NjY2NyAxLjE2NjY2NjY2NjY2NjY2NjcgMCAwIDEgLTAuNTgzMzMzMzMzMzMzMzMzNCAxLjAwMzMzMzMzMzMzMzMzMzR2MS4zM2EwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAxIC0xLjE2NjY2NjY2NjY2NjY2NjcgMHYtMS4zM2ExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjU4MzMzMzMzMzMzMzMzMzQgLTEuMDAzMzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvc3ZnPg==" />&nbsp;&nbsp;Insecure ACEs</label>
         <label id="btnidentities" href="#"  class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('IdentityInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnidentities');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlNpbmdsZS1OZXV0cmFsLUFjdGlvbnMtLVN0cmVhbWxpbmUtVWx0aW1hdGUuc3ZnIiBoZWlnaHQ9IjE1IiB3aWR0aD0iMTUiPjxkZXNjPlNpbmdsZSBOZXV0cmFsIEFjdGlvbnMgU3RyZWFtbGluZSBJY29uOiBodHRwczovL3N0cmVhbWxpbmVocS5jb208L2Rlc2M+PGc+PHBhdGggZD0iTTQuMjI5MTY2NjY2NjY2NjY3IDQuMzc1YTIuNzcwODMzMzMzMzMzMzMzNSAyLjc3MDgzMzMzMzMzMzMzMzUgMCAxIDAgNS41NDE2NjY2NjY2NjY2NjcgMCAyLjc3MDgzMzMzMzMzMzMzMzUgMi43NzA4MzMzMzMzMzMzMzM1IDAgMSAwIC01LjU0MTY2NjY2NjY2NjY2NyAwIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNNyA3LjcyOTE2NjY2NjY2NjY2N2E0LjM3NSA0LjM3NSAwIDAgMCAtNC4zNzUgNC4zNzUgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2NyAwIDAgMCAwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3aDguMTY2NjY2NjY2NjY2NjY4YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yOTE2NjY2NjY2NjY2NjY3IC0wLjI5MTY2NjY2NjY2NjY2NjcgNC4zNzUgNC4zNzUgMCAwIDAgLTQuMzc1IC00LjM3NVoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvZz48L3N2Zz4=" />&nbsp;&nbsp;Identities</label>
-        <label id="btnShareGraph" href="#"  class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ShareGraph');radiobtn.checked = true;updateLabelColors('tabs', 'btnShareGraph');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlRleHQtRmxvdy1Db2x1bW5zLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5UZXh0IEZsb3cgQ29sdW1ucyBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBmaWxsPSIjYzRjNGM4IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy42NjczMjUwMDAwMDAwMDIgMS4yMDg4MjQxNjY2NjY2NjY4YzAgLTAuNTYzNzkxNjY2NjY2NjY2NyAtMC40NTcwNDE2NjY2NjY2NjY3IC0xLjAyMDgzNTY2NjY2NjY2NjcgLTEuMDIwODMzMzMzMzMzMzMzNSAtMS4wMjA4MzU2NjY2NjY2NjY3aC0yLjk4Mjc1ODMzMzMzMzMzMzRjLTAuNTYzNzkxNjY2NjY2NjY2NyAwIC0xLjAyMDgzMzMzMzMzMzMzMzUgMC40NTcwNDQgLTEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzNTY2NjY2NjY2Njd2Mi45ODI3NDY2NjY2NjY2NjY0YzAgMC4wNjIxMDc1IDAuMDA1NTQxNjY2NjY2NjY2NjY3IDAuMTIyOTI1ODMzMzMzMzMzMzUgMC4wMTYxNTgzMzMzMzMzMzMzMzQgMC4xODE5NzY2NjY2NjY2NjY2OEw0LjI3NDMyODMzMzMzMzMzNCA4Ljc1ODI4MzMzMzMzMzMzNWMtMC4wMTA1ODc1IDAuMDEwNjE2NjY2NjY2NjY2NjY4IC0wLjAyMDY3OTE2NjY2NjY2NjY3IDAuMDIxNDY2NjY2NjY2NjY2NjcgLTAuMDMwMjgwODMzMzMzMzMzMzMzIDAuMDMyNjY2NjY2NjY2NjY2NjcgLTAuMDI3NDUxNjY2NjY2NjY2NjY2IC0wLjAwMjIxNjY2NjY2NjY2NjY2NjcgLTAuMDU1MjEyNTAwMDAwMDAwMDA1IC0wLjAwMzMyNTAwMDAwMDAwMDAwMDMgLTAuMDgzMjQxNjY2NjY2NjY2NjcgLTAuMDAzMzI1MDAwMDAwMDAwMDAwM0gzLjI1MzkwOTE2NjY2NjY2N2wtMC4wMDAwMDU4MzMzMzMzMzMzMzMzMyAtMy41NzI5NDU4MzMzMzMzMzM3aDAuOTA2OTAyNTAwMDAwMDAwMWMwLjU2Mzc5MTY2NjY2NjY2NjcgMCAxLjAyMDgzMzMzMzMzMzMzMzUgLTAuNDU3MDQxNjY2NjY2NjY2NyAxLjAyMDgzMzMzMzMzMzMzMzUgLTEuMDIwODMzMzMzMzMzMzMzNVYxLjIxMTA5OTE2NjY2NjY2NjZjMCAtMC41NjM3OTE2NjY2NjY2NjY3IC0wLjQ1NzA0MTY2NjY2NjY2NjcgLTEuMDIwODMyMTY2NjY2NjY2NyAtMS4wMjA4MzMzMzMzMzMzMzM1IC0xLjAyMDgzMjE2NjY2NjY2NjdIMS4xNzgwNTkxNjY2NjY2NjY5Yy0wLjU2Mzc5MTY2NjY2NjY2NjcgMCAtMS4wMjA4MzI3NSAwLjQ1NzA0MDUwMDAwMDAwMDA3IC0xLjAyMDgzMjc1IDEuMDIwODMyMTY2NjY2NjY2N3YyLjk4Mjc0NjY2NjY2NjY2NjRjMCAwLjU2Mzc5MTY2NjY2NjY2NjcgMC40NTcwNDEwODMzMzMzMzMzIDEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNWgwLjkwOTE3NzVsMC4wMDAwMDU4MzMzMzMzMzMzMzMzMyAzLjU3Mjk0NTgzMzMzMzMzMzdoLTAuOTA5MTgzMzMzMzMzMzMzM2MtMC41NjM3OTE2NjY2NjY2NjY3IDAgLTEuMDIwODMyNzUgMC40NTcwNDE2NjY2NjY2NjY3IC0xLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNXYyLjk4MjcwMDAwMDAwMDAwMDRjMCAwLjU2Mzc5MTY2NjY2NjY2NjcgMC40NTcwNDEwODMzMzMzMzMzIDEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNWgyLjk4Mjc0NjY2NjY2NjY2NjRjMC41NjM3OTE2NjY2NjY2NjY3IDAgMS4wMjA4MzMzMzMzMzMzMzM1IC0wLjQ1NzA0MTY2NjY2NjY2NjcgMS4wMjA4MzMzMzMzMzMzMzM1IC0xLjAyMDgzMzMzMzMzMzMzMzV2LTIuOTgyNzAwMDAwMDAwMDAwNGMwIC0wLjA5MzkxNjY2NjY2NjY2NjY4IC0wLjAxMjY3IC0wLjE4NDgwMDAwMDAwMDAwMDAyIC0wLjAzNjM5NDE2NjY2NjY2NjY3IC0wLjI3MTEzMzMzMzMzMzMzMzM0TDkuNDg1NjQxNjY2NjY2NjY2IDUuMTk2OTE2NjY2NjY2NjY3NWMwLjA1NzgwODMzMzMzMzMzMzM0IDAuMDEwMTc5MTY2NjY2NjY2NjY4IDAuMTE3MzY2NjY2NjY2NjY2NjcgMC4wMTU0ODc1MDAwMDAwMDAwMDEgMC4xNzgwOTE2NjY2NjY2NjY2OCAwLjAxNTQ4NzUwMDAwMDAwMDAwMWgwLjkwOTE4MzMzMzMzMzMzMzN2NS40NzU2MDQxNjY2NjY2NjdoLTEuNjY1NjVjLTAuMTc2OTgzMzMzMzMzMzMzMzUgMCAtMC4zMzY1MjUgMC4xMDY1NzUgLTAuNDA0MjUgMC4yNzAwODMzMzMzMzMzMzMzNCAtMC4wNjc2NjY2NjY2NjY2NjY2OCAwLjE2MzQ1IC0wLjAzMDI3NTAwMDAwMDAwMDAwMyAwLjM1MTYzMzMzMzMzMzMzMzM1IDAuMDk0ODUgMC40NzY3NTgzMzMzMzMzMzM0bDIuMjQ5MDQxNjY2NjY2NjY3IDIuMjQ5MDQxNjY2NjY2NjY3YzAuMTcwODU4MzMzMzMzMzMzMzMgMC4xNzA4NTgzMzMzMzMzMzMzMyAwLjQ0Nzg4MzMzMzMzMzMzMzQgMC4xNzA4NTgzMzMzMzMzMzMzMyAwLjYxODc0MTY2NjY2NjY2NjcgMGwyLjI0ODk4MzMzMzMzMzMzMzMgLTIuMjQ5MDQxNjY2NjY2NjY3YzAuMTI1MTI1MDAwMDAwMDAwMDEgLTAuMTI1MTI1MDAwMDAwMDAwMDEgMC4xNjI1NzUwMDAwMDAwMDAwMyAtMC4zMTMzMDgzMzMzMzMzMzMzNiAwLjA5NDg1IC0wLjQ3Njc1ODMzMzMzMzMzMzQgLTAuMDY3NzI1MDAwMDAwMDAwMDEgLTAuMTYzNTA4MzMzMzMzMzMzMzQgLTAuMjI3MjY2NjY2NjY2NjY2NjcgLTAuMjcwMDgzMzMzMzMzMzMzMzQgLTAuNDA0MTkxNjY2NjY2NjY2NjcgLTAuMjcwMDgzMzMzMzMzMzMzMzRIMTEuNzM5NTgzMzMzMzMzMzM0VjUuMjEyNDA0MTY2NjY2NjY2NWgwLjkwNjkwODMzMzMzMzMzMzRjMC41NjM3OTE2NjY2NjY2NjY3IDAgMS4wMjA4MzMzMzMzMzMzMzM1IC0wLjQ1NzA0NzUwMDAwMDAwMDA1IDEuMDIwODMzMzMzMzMzMzMzNSAtMS4wMjA4MzMzMzMzMzMzMzM1VjEuMjA4ODI0MTY2NjY2NjY2OFoiIGNsaXAtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9zdmc+" />&nbsp;&nbsp;ShareGraph</label>	
-        <label id="noactionmenuheader3"     class="tabLabel"  onclick="toggleMenuSection('noactionmenuheader3');" style="margin-top: 2px; background-color: transparent;width:100%;color:#F56A00;padding-top:6px;padding-bottom:3px;margin-top:5px;margin-bottom:0px;font-weight:bolder;border-top: 0.25px solid rgba(53, 67, 103, 0.5);"><Strong>TARGET</Strong></label>			
-        <label id="btnif" href="#"          class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('InterestingFiles');radiobtn.checked = true;applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');updateLabelColors('tabs', 'btnif');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNvbW1vbi1GaWxlLVRleHQtV2FybmluZy0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q29tbW9uIEZpbGUgVGV4dCBXYXJuaW5nIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxnPjxwYXRoIGQ9Ik0xMS42NjY2NjY2NjY2NjY2NjggNC4zNzVhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMCAtMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzRoLTQuMDgzMzMzMzMzMzMzMzM0YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjdoNC4wODMzMzMzMzMzMzMzMzRhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMCAwLjU4MzMzMzMzMzMzMzMzMzQgLTAuNTgzMzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik03LjI5MTY2NjY2NjY2NjY2NyA2LjQxNjY2NjY2NjY2NjY2N2EwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgMS4xNjY2NjY2NjY2NjY2NjY3aDIuMzMzMzMzMzMzMzMzMzMzNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2N1oiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0xMy42NTU4MzMzMzMzMzMzMzQgMS43NSAxMi4yNSAwLjM0NDE2NjY2NjY2NjY2NjdBMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxMS40Mjc1IDBINC42NjY2NjY2NjY2NjY2NjdhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2N3Y0LjU2MTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjE0NTgzMzMzMzMzMzMzMzM0IDQuODQ3NTAwMDAwMDAwMDAxIDQuODQ3NTAwMDAwMDAwMDAxIDAgMCAxIDAuODQ1ODMzMzMzMzMzMzMzMyAwLjEyMjUgMC4xNCAwLjE0IDAgMCAwIDAuMTg2NjY2NjY2NjY2NjY2NjggLTAuMTM0MTY2NjY2NjY2NjY2NjhWMS40NTgzMzMzMzMzMzMzMzM1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDEgMC4yOTE2NjY2NjY2NjY2NjY3IC0wLjI5MTY2NjY2NjY2NjY2NjdoNi4zNDY2NjY2NjY2NjY2NjhhMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjA0MTY2NjY2NjY2NjY2NjYgMC4wODc1MDAwMDAwMDAwMDAwMWwxLjIzNjY2NjY2NjY2NjY2NjggMS4yMzY2NjY2NjY2NjY2NjY4YTAuMjc0MTY2NjY2NjY2NjY2NjcgMC4yNzQxNjY2NjY2NjY2NjY2NyAwIDAgMSAwLjA4NzUwMDAwMDAwMDAwMDAxIDAuMjA0MTY2NjY2NjY2NjY2NjZWMTAuNWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3aC00Ljg2NWEwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTM0MTY2NjY2NjY2NjY2NjggMC4yMTU4MzMzMzMzMzMzMzMzNWwwLjQ2MDgzMzMzMzMzMzMzMzQgMC44NzVhMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIDAuMTI4MzMzMzMzMzMzMzMzMzUgMC4wNzU4MzMzMzMzMzMzMzMzNEgxMi44MzMzMzMzMzMzMzMzMzRhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjcgLTEuMTY2NjY2NjY2NjY2NjY2N1YyLjU3MjUwMDAwMDAwMDAwMDJBMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxMy42NTU4MzMzMzMzMzMzMzQgMS43NVoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik00LjUzODMzMzMzMzMzMzMzNCA3LjE1NzUwMDAwMDAwMDAwMWEwLjg0NTgzMzMzMzMzMzMzMzMgMC44NDU4MzMzMzMzMzMzMzMzIDAgMCAwIC0xLjQ5MzMzMzMzMzMzMzMzMzQgMEwwLjA5MzMzMzMzMzMzMzMzMzM0IDEyLjc3NUEwLjg0IDAuODQgMCAwIDAgMC44NCAxNGg1LjkwMzMzMzMzMzMzMzMzM2EwLjgzNDE2NjY2NjY2NjY2NjcgMC44MzQxNjY2NjY2NjY2NjY3IDAgMCAwIDAuNzQ2NjY2NjY2NjY2NjY2NyAtMS4yMTkxNjY2NjY2NjY2NjY3Wk0zLjM1NDE2NjY2NjY2NjY2NyA5LjMzMzMzMzMzMzMzMzMzNGEwLjQzNzUgMC40Mzc1IDAgMCAxIDAuODc1IDB2MS43NWEwLjQzNzUgMC40Mzc1IDAgMCAxIC0wLjg3NSAwWm0wLjQzNzUgMy42NDU4MzMzMzMzMzMzMzM1YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAxIDEgMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvZz48L3N2Zz4=" />&nbsp;&nbsp;Interesting Files</label>			        			
-        <label id="btnSecretsPage" href="#" class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('SecretsPage');radiobtn.checked = true;updateLabelColors('tabs', 'btnSecretsPage');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkxvZ2luLUtleXMtLVN0cmVhbWxpbmUtVWx0aW1hdGUuc3ZnIiBoZWlnaHQ9IjE1IiB3aWR0aD0iMTUiPjxkZXNjPkxvZ2luIEtleXMgU3RyZWFtbGluZSBJY29uOiBodHRwczovL3N0cmVhbWxpbmVocS5jb208L2Rlc2M+PGc+PHBhdGggZD0iTTcuODc1MDAwMDAwMDAwMDAxIDUuMjVBMy41IDMuNSAwIDAgMCA3IDIuOTE2NjY2NjY2NjY2NjY3VjEuNDU4MzMzMzMzMzMzMzMzNWExLjQ1ODMzMzMzMzMzMzMzMzUgMS40NTgzMzMzMzMzMzMzMzM1IDAgMCAwIC0yLjkxNjY2NjY2NjY2NjY2NyAwVjEuNzVhMy41IDMuNSAwIDAgMCAtMC44NzUgNi43OTU4MzMzMzMzMzMzMzR2MC4zNzMzMzMzMzMzMzMzMzMzNWwtMC40OTU4MzMzMzMzMzMzMzMzNSAwLjUwMTY2NjY2NjY2NjY2NjdhMC4yOCAwLjI4IDAgMCAwIDAgMC40MDgzMzMzMzMzMzMzMzMzbDAuNDk1ODMzMzMzMzMzMzMzMzUgMC41MDE2NjY2NjY2NjY2NjY3djAuMzM4MzMzMzMzMzMzMzMzM2wtMC40OTU4MzMzMzMzMzMzMzMzNSAwLjUwMTY2NjY2NjY2NjY2NjdhMC4yOCAwLjI4IDAgMCAwIDAgMC40MDgzMzMzMzMzMzMzMzMzbDAuNDk1ODMzMzMzMzMzMzMzMzUgMC41MDE2NjY2NjY2NjY2NjY3VjEyLjgzMzMzMzMzMzMzMzMzNGEwLjI3NDE2NjY2NjY2NjY2NjY3IDAuMjc0MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wODc1MDAwMDAwMDAwMDAwMSAwLjIwNDE2NjY2NjY2NjY2NjY2bDAuODc1IDAuODc1YTAuMjggMC4yOCAwIDAgMCAwLjQwODMzMzMzMzMzMzMzMzMgMGwwLjg3NSAtMC44NzVBMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAwIDUuNTQxNjY2NjY2NjY2NjY3IDEyLjgzMzMzMzMzMzMzMzMzNHYtNC4yODc1YTMuNSAzLjUgMCAwIDAgMi4zMzMzMzMzMzMzMzMzMzM1IC0zLjI5NTgzMzMzMzMzMzMzNFptLTMuNSAtMS43NWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMSAxIC0wLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzRabTEuMTY2NjY2NjY2NjY2NjY2NyAtMi45MTY2NjY2NjY2NjY2NjdBMC44NzUgMC44NzUgMCAwIDEgNi40MTY2NjY2NjY2NjY2NjcgMS40NTgzMzMzMzMzMzMzMzM1djAuOTUwODMzMzMzMzMzMzMzM2EzLjQ1OTE2NjY2NjY2NjY2NjUgMy40NTkxNjY2NjY2NjY2NjY1IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgLTAuNTQ4MzMzMzMzMzMzMzMzM1YyLjkxNjY2NjY2NjY2NjY2N0g0LjY2NjY2NjY2NjY2NjY2N1YxLjQ1ODMzMzMzMzMzMzMzMzVBMC44NzUgMC44NzUgMCAwIDEgNS41NDE2NjY2NjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0ibTEzLjAzNzUwMDAwMDAwMDAwMSAxMC41IC0zLjAyNzUwMDAwMDAwMDAwMDMgLTMuMDMzMzMzMzMzMzMzMzMzN0EzLjUgMy41IDAgMCAwIDkuMzMzMzMzMzMzMzMzMzM0IDMuNWEzLjYxNjY2NjY2NjY2NjY2NyAzLjYxNjY2NjY2NjY2NjY2NyAwIDAgMCAtMC41ODMzMzMzMzMzMzMzMzM0IC0wLjQ0MzMzMzMzMzMzMzMzMzM2IDAuMjk3NTAwMDAwMDAwMDAwMDQgMC4yOTc1MDAwMDAwMDAwMDAwNCAwIDAgMCAtMC4zNTU4MzMzMzMzMzMzMzMzMyAwIDAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMDcgMC4zNDQxNjY2NjY2NjY2NjY3QTQuMzE2NjY2NjY2NjY2NjY3IDQuMzE2NjY2NjY2NjY2NjY3IDAgMCAxIDguNzUgNS4yNWE0LjM2MzMzMzMzMzMzMzMzNCA0LjM2MzMzMzMzMzMzMzMzNCAwIDAgMSAtMi4wMjQxNjY2NjY2NjY2NjcgMy42ODY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4xMjI1IDAuMzI2NjY2NjY2NjY2NjY2NyAwLjI5NzUwMDAwMDAwMDAwMDA0IDAuMjk3NTAwMDAwMDAwMDAwMDQgMCAwIDAgMC4yOCAwLjIxIDMuNjA1IDMuNjA1IDAgMCAwIDEuNDgxNjY2NjY2NjY2NjY2NyAtMC4zNDQxNjY2NjY2NjY2NjY3bDAuMzc5MTY2NjY2NjY2NjY2NyAwLjMzMjV2MC43NDY2NjY2NjY2NjY2NjY3YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2N2gwLjc1MjUwMDAwMDAwMDAwMDFsMC4xMjI1IDAuMTI4MzMzMzMzMzMzMzMzMzV2MC43NDY2NjY2NjY2NjY2NjY3YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2N2gwLjY1MzMzMzMzMzMzMzMzMzRsMC41MzY2NjY2NjY2NjY2NjY3IDAuNTAxNjY2NjY2NjY2NjY2N2EwLjI4IDAuMjggMCAwIDAgMC4xOTgzMzMzMzMzMzMzMzMzNiAwLjA4MTY2NjY2NjY2NjY2NjY4SDEyLjgzMzMzMzMzMzMzMzMzNGEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMjkxNjY2NjY2NjY2NjY2NyAtMC4yOTE2NjY2NjY2NjY2NjY3di0xLjIzNjY2NjY2NjY2NjY2NjhhMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjA4NzUwMDAwMDAwMDAwMDAxIC0wLjIyMTY2NjY2NjY2NjY2NjY4WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9nPjwvc3ZnPg==" />&nbsp;&nbsp;Extracted Secrets</label>	        
+        <label id="btnShareGraph" href="#"  class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('ShareGraph');radiobtn.checked = true;updateLabelColors('tabs', 'btnShareGraph');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlRleHQtRmxvdy1Db2x1bW5zLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5UZXh0IEZsb3cgQ29sdW1ucyBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48cGF0aCBmaWxsPSIjYzRjNGM4IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy42NjczMjUwMDAwMDAwMDIgMS4yMDg4MjQxNjY2NjY2NjY4YzAgLTAuNTYzNzkxNjY2NjY2NjY2NyAtMC40NTcwNDE2NjY2NjY2NjY3IC0xLjAyMDgzNTY2NjY2NjY2NjcgLTEuMDIwODMzMzMzMzMzMzMzNSAtMS4wMjA4MzU2NjY2NjY2NjY3aC0yLjk4Mjc1ODMzMzMzMzMzMzRjLTAuNTYzNzkxNjY2NjY2NjY2NyAwIC0xLjAyMDgzMzMzMzMzMzMzMzUgMC40NTcwNDQgLTEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzNTY2NjY2NjY2Njd2Mi45ODI3NDY2NjY2NjY2NjY0YzAgMC4wNjIxMDc1IDAuMDA1NTQxNjY2NjY2NjY2NjY3IDAuMTIyOTI1ODMzMzMzMzMzMzUgMC4wMTYxNTgzMzMzMzMzMzMzMzQgMC4xODE5NzY2NjY2NjY2NjY2OEw0LjI3NDMyODMzMzMzMzMzNCA4Ljc1ODI4MzMzMzMzMzMzNWMtMC4wMTA1ODc1IDAuMDEwNjE2NjY2NjY2NjY2NjY4IC0wLjAyMDY3OTE2NjY2NjY2NjY3IDAuMDIxNDY2NjY2NjY2NjY2NjcgLTAuMDMwMjgwODMzMzMzMzMzMzMzIDAuMDMyNjY2NjY2NjY2NjY2NjcgLTAuMDI3NDUxNjY2NjY2NjY2NjY2IC0wLjAwMjIxNjY2NjY2NjY2NjY2NjcgLTAuMDU1MjEyNTAwMDAwMDAwMDA1IC0wLjAwMzMyNTAwMDAwMDAwMDAwMDMgLTAuMDgzMjQxNjY2NjY2NjY2NjcgLTAuMDAzMzI1MDAwMDAwMDAwMDAwM0gzLjI1MzkwOTE2NjY2NjY2N2wtMC4wMDAwMDU4MzMzMzMzMzMzMzMzMyAtMy41NzI5NDU4MzMzMzMzMzM3aDAuOTA2OTAyNTAwMDAwMDAwMWMwLjU2Mzc5MTY2NjY2NjY2NjcgMCAxLjAyMDgzMzMzMzMzMzMzMzUgLTAuNDU3MDQxNjY2NjY2NjY2NyAxLjAyMDgzMzMzMzMzMzMzMzUgLTEuMDIwODMzMzMzMzMzMzMzNVYxLjIxMTA5OTE2NjY2NjY2NjZjMCAtMC41NjM3OTE2NjY2NjY2NjY3IC0wLjQ1NzA0MTY2NjY2NjY2NjcgLTEuMDIwODMyMTY2NjY2NjY2NyAtMS4wMjA4MzMzMzMzMzMzMzM1IC0xLjAyMDgzMjE2NjY2NjY2NjdIMS4xNzgwNTkxNjY2NjY2NjY5Yy0wLjU2Mzc5MTY2NjY2NjY2NjcgMCAtMS4wMjA4MzI3NSAwLjQ1NzA0MDUwMDAwMDAwMDA3IC0xLjAyMDgzMjc1IDEuMDIwODMyMTY2NjY2NjY2N3YyLjk4Mjc0NjY2NjY2NjY2NjRjMCAwLjU2Mzc5MTY2NjY2NjY2NjcgMC40NTcwNDEwODMzMzMzMzMzIDEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNWgwLjkwOTE3NzVsMC4wMDAwMDU4MzMzMzMzMzMzMzMzMyAzLjU3Mjk0NTgzMzMzMzMzMzdoLTAuOTA5MTgzMzMzMzMzMzMzM2MtMC41NjM3OTE2NjY2NjY2NjY3IDAgLTEuMDIwODMyNzUgMC40NTcwNDE2NjY2NjY2NjY3IC0xLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNXYyLjk4MjcwMDAwMDAwMDAwMDRjMCAwLjU2Mzc5MTY2NjY2NjY2NjcgMC40NTcwNDEwODMzMzMzMzMzIDEuMDIwODMzMzMzMzMzMzMzNSAxLjAyMDgzMjc1IDEuMDIwODMzMzMzMzMzMzMzNWgyLjk4Mjc0NjY2NjY2NjY2NjRjMC41NjM3OTE2NjY2NjY2NjY3IDAgMS4wMjA4MzMzMzMzMzMzMzM1IC0wLjQ1NzA0MTY2NjY2NjY2NjcgMS4wMjA4MzMzMzMzMzMzMzM1IC0xLjAyMDgzMzMzMzMzMzMzMzV2LTIuOTgyNzAwMDAwMDAwMDAwNGMwIC0wLjA5MzkxNjY2NjY2NjY2NjY4IC0wLjAxMjY3IC0wLjE4NDgwMDAwMDAwMDAwMDAyIC0wLjAzNjM5NDE2NjY2NjY2NjY3IC0wLjI3MTEzMzMzMzMzMzMzMzM0TDkuNDg1NjQxNjY2NjY2NjY2IDUuMTk2OTE2NjY2NjY2NjY3NWMwLjA1NzgwODMzMzMzMzMzMzM0IDAuMDEwMTc5MTY2NjY2NjY2NjY4IDAuMTE3MzY2NjY2NjY2NjY2NjcgMC4wMTU0ODc1MDAwMDAwMDAwMDEgMC4xNzgwOTE2NjY2NjY2NjY2OCAwLjAxNTQ4NzUwMDAwMDAwMDAwMWgwLjkwOTE4MzMzMzMzMzMzMzN2NS40NzU2MDQxNjY2NjY2NjdoLTEuNjY1NjVjLTAuMTc2OTgzMzMzMzMzMzMzMzUgMCAtMC4zMzY1MjUgMC4xMDY1NzUgLTAuNDA0MjUgMC4yNzAwODMzMzMzMzMzMzMzNCAtMC4wNjc2NjY2NjY2NjY2NjY2OCAwLjE2MzQ1IC0wLjAzMDI3NTAwMDAwMDAwMDAwMyAwLjM1MTYzMzMzMzMzMzMzMzM1IDAuMDk0ODUgMC40NzY3NTgzMzMzMzMzMzM0bDIuMjQ5MDQxNjY2NjY2NjY3IDIuMjQ5MDQxNjY2NjY2NjY3YzAuMTcwODU4MzMzMzMzMzMzMzMgMC4xNzA4NTgzMzMzMzMzMzMzMyAwLjQ0Nzg4MzMzMzMzMzMzMzQgMC4xNzA4NTgzMzMzMzMzMzMzMyAwLjYxODc0MTY2NjY2NjY2NjcgMGwyLjI0ODk4MzMzMzMzMzMzMzMgLTIuMjQ5MDQxNjY2NjY2NjY3YzAuMTI1MTI1MDAwMDAwMDAwMDEgLTAuMTI1MTI1MDAwMDAwMDAwMDEgMC4xNjI1NzUwMDAwMDAwMDAwMyAtMC4zMTMzMDgzMzMzMzMzMzMzNiAwLjA5NDg1IC0wLjQ3Njc1ODMzMzMzMzMzMzQgLTAuMDY3NzI1MDAwMDAwMDAwMDEgLTAuMTYzNTA4MzMzMzMzMzMzMzQgLTAuMjI3MjY2NjY2NjY2NjY2NjcgLTAuMjcwMDgzMzMzMzMzMzMzMzQgLTAuNDA0MTkxNjY2NjY2NjY2NjcgLTAuMjcwMDgzMzMzMzMzMzMzMzRIMTEuNzM5NTgzMzMzMzMzMzM0VjUuMjEyNDA0MTY2NjY2NjY2NWgwLjkwNjkwODMzMzMzMzMzMzRjMC41NjM3OTE2NjY2NjY2NjY3IDAgMS4wMjA4MzMzMzMzMzMzMzM1IC0wLjQ1NzA0NzUwMDAwMDAwMDA1IDEuMDIwODMzMzMzMzMzMzMzNSAtMS4wMjA4MzMzMzMzMzMzMzM1VjEuMjA4ODI0MTY2NjY2NjY2OFoiIGNsaXAtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9zdmc+" />&nbsp;&nbsp;ShareGraph</label>
+        <label id="noactionmenuheader3"     class="tabLabel"  onclick="toggleMenuSection('noactionmenuheader3');" style="margin-top: 2px; background-color: transparent;width:100%;color:#F56A00;padding-top:6px;padding-bottom:3px;margin-top:5px;margin-bottom:0px;font-weight:bolder;border-top: 0.25px solid rgba(53, 67, 103, 0.5);"><Strong>TARGET</Strong></label>
+        <label id="btnif" href="#"          class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('InterestingFiles');radiobtn.checked = true;applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');updateLabelColors('tabs', 'btnif');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNvbW1vbi1GaWxlLVRleHQtV2FybmluZy0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q29tbW9uIEZpbGUgVGV4dCBXYXJuaW5nIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxnPjxwYXRoIGQ9Ik0xMS42NjY2NjY2NjY2NjY2NjggNC4zNzVhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMCAtMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzRoLTQuMDgzMzMzMzMzMzMzMzM0YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjdoNC4wODMzMzMzMzMzMzMzMzRhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMCAwLjU4MzMzMzMzMzMzMzMzMzQgLTAuNTgzMzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik03LjI5MTY2NjY2NjY2NjY2NyA2LjQxNjY2NjY2NjY2NjY2N2EwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgMS4xNjY2NjY2NjY2NjY2NjY3aDIuMzMzMzMzMzMzMzMzMzMzNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2N1oiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik0xMy42NTU4MzMzMzMzMzMzMzQgMS43NSAxMi4yNSAwLjM0NDE2NjY2NjY2NjY2NjdBMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxMS40Mjc1IDBINC42NjY2NjY2NjY2NjY2NjdhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAtMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2N3Y0LjU2MTY2NjY2NjY2NjY2N2EwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDAgMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjE0NTgzMzMzMzMzMzMzMzM0IDQuODQ3NTAwMDAwMDAwMDAxIDQuODQ3NTAwMDAwMDAwMDAxIDAgMCAxIDAuODQ1ODMzMzMzMzMzMzMzMyAwLjEyMjUgMC4xNCAwLjE0IDAgMCAwIDAuMTg2NjY2NjY2NjY2NjY2NjggLTAuMTM0MTY2NjY2NjY2NjY2NjhWMS40NTgzMzMzMzMzMzMzMzM1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDEgMC4yOTE2NjY2NjY2NjY2NjY3IC0wLjI5MTY2NjY2NjY2NjY2NjdoNi4zNDY2NjY2NjY2NjY2NjhhMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAxIDAuMjA0MTY2NjY2NjY2NjY2NjYgMC4wODc1MDAwMDAwMDAwMDAwMWwxLjIzNjY2NjY2NjY2NjY2NjggMS4yMzY2NjY2NjY2NjY2NjY4YTAuMjc0MTY2NjY2NjY2NjY2NjcgMC4yNzQxNjY2NjY2NjY2NjY2NyAwIDAgMSAwLjA4NzUwMDAwMDAwMDAwMDAxIDAuMjA0MTY2NjY2NjY2NjY2NjZWMTAuNWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3aC00Ljg2NWEwLjE1MTY2NjY2NjY2NjY2NjY3IDAuMTUxNjY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMTM0MTY2NjY2NjY2NjY2NjggMC4yMTU4MzMzMzMzMzMzMzMzNWwwLjQ2MDgzMzMzMzMzMzMzMzQgMC44NzVhMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAwIDAuMTI4MzMzMzMzMzMzMzMzMzUgMC4wNzU4MzMzMzMzMzMzMzMzNEgxMi44MzMzMzMzMzMzMzMzMzRhMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxLjE2NjY2NjY2NjY2NjY2NjcgLTEuMTY2NjY2NjY2NjY2NjY2N1YyLjU3MjUwMDAwMDAwMDAwMDJBMS4xNjY2NjY2NjY2NjY2NjY3IDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAgMCAxMy42NTU4MzMzMzMzMzMzMzQgMS43NVoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik00LjUzODMzMzMzMzMzMzMzNCA3LjE1NzUwMDAwMDAwMDAwMWEwLjg0NTgzMzMzMzMzMzMzMzMgMC44NDU4MzMzMzMzMzMzMzMzIDAgMCAwIC0xLjQ5MzMzMzMzMzMzMzMzMzQgMEwwLjA5MzMzMzMzMzMzMzMzMzM0IDEyLjc3NUEwLjg0IDAuODQgMCAwIDAgMC44NCAxNGg1LjkwMzMzMzMzMzMzMzMzM2EwLjgzNDE2NjY2NjY2NjY2NjcgMC44MzQxNjY2NjY2NjY2NjY3IDAgMCAwIDAuNzQ2NjY2NjY2NjY2NjY2NyAtMS4yMTkxNjY2NjY2NjY2NjY3Wk0zLjM1NDE2NjY2NjY2NjY2NyA5LjMzMzMzMzMzMzMzMzMzNGEwLjQzNzUgMC40Mzc1IDAgMCAxIDAuODc1IDB2MS43NWEwLjQzNzUgMC40Mzc1IDAgMCAxIC0wLjg3NSAwWm0wLjQzNzUgMy42NDU4MzMzMzMzMzMzMzM1YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAxIDEgMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNFoiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvZz48L3N2Zz4=" />&nbsp;&nbsp;Interesting Files</label>
+        <label id="btnSecretsPage" href="#" class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('SecretsPage');radiobtn.checked = true;updateLabelColors('tabs', 'btnSecretsPage');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkxvZ2luLUtleXMtLVN0cmVhbWxpbmUtVWx0aW1hdGUuc3ZnIiBoZWlnaHQ9IjE1IiB3aWR0aD0iMTUiPjxkZXNjPkxvZ2luIEtleXMgU3RyZWFtbGluZSBJY29uOiBodHRwczovL3N0cmVhbWxpbmVocS5jb208L2Rlc2M+PGc+PHBhdGggZD0iTTcuODc1MDAwMDAwMDAwMDAxIDUuMjVBMy41IDMuNSAwIDAgMCA3IDIuOTE2NjY2NjY2NjY2NjY3VjEuNDU4MzMzMzMzMzMzMzMzNWExLjQ1ODMzMzMzMzMzMzMzMzUgMS40NTgzMzMzMzMzMzMzMzM1IDAgMCAwIC0yLjkxNjY2NjY2NjY2NjY2NyAwVjEuNzVhMy41IDMuNSAwIDAgMCAtMC44NzUgNi43OTU4MzMzMzMzMzMzMzR2MC4zNzMzMzMzMzMzMzMzMzMzNWwtMC40OTU4MzMzMzMzMzMzMzMzNSAwLjUwMTY2NjY2NjY2NjY2NjdhMC4yOCAwLjI4IDAgMCAwIDAgMC40MDgzMzMzMzMzMzMzMzMzbDAuNDk1ODMzMzMzMzMzMzMzMzUgMC41MDE2NjY2NjY2NjY2NjY3djAuMzM4MzMzMzMzMzMzMzMzM2wtMC40OTU4MzMzMzMzMzMzMzMzNSAwLjUwMTY2NjY2NjY2NjY2NjdhMC4yOCAwLjI4IDAgMCAwIDAgMC40MDgzMzMzMzMzMzMzMzMzbDAuNDk1ODMzMzMzMzMzMzMzMzUgMC41MDE2NjY2NjY2NjY2NjY3VjEyLjgzMzMzMzMzMzMzMzMzNGEwLjI3NDE2NjY2NjY2NjY2NjY3IDAuMjc0MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4wODc1MDAwMDAwMDAwMDAwMSAwLjIwNDE2NjY2NjY2NjY2NjY2bDAuODc1IDAuODc1YTAuMjggMC4yOCAwIDAgMCAwLjQwODMzMzMzMzMzMzMzMzMgMGwwLjg3NSAtMC44NzVBMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAwIDUuNTQxNjY2NjY2NjY2NjY3IDEyLjgzMzMzMzMzMzMzMzMzNHYtNC4yODc1YTMuNSAzLjUgMCAwIDAgMi4zMzMzMzMzMzMzMzMzMzM1IC0zLjI5NTgzMzMzMzMzMzMzNFptLTMuNSAtMS43NWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMSAxIC0wLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMC41ODMzMzMzMzMzMzMzMzM0IC0wLjU4MzMzMzMzMzMzMzMzMzRabTEuMTY2NjY2NjY2NjY2NjY2NyAtMi45MTY2NjY2NjY2NjY2NjdBMC44NzUgMC44NzUgMCAwIDEgNi40MTY2NjY2NjY2NjY2NjcgMS40NTgzMzMzMzMzMzMzMzM1djAuOTUwODMzMzMzMzMzMzMzM2EzLjQ1OTE2NjY2NjY2NjY2NjUgMy40NTkxNjY2NjY2NjY2NjY1IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgLTAuNTQ4MzMzMzMzMzMzMzMzM1YyLjkxNjY2NjY2NjY2NjY2N0g0LjY2NjY2NjY2NjY2NjY2N1YxLjQ1ODMzMzMzMzMzMzMzMzVBMC44NzUgMC44NzUgMCAwIDEgNS41NDE2NjY2NjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PHBhdGggZD0ibTEzLjAzNzUwMDAwMDAwMDAwMSAxMC41IC0zLjAyNzUwMDAwMDAwMDAwMDMgLTMuMDMzMzMzMzMzMzMzMzMzN0EzLjUgMy41IDAgMCAwIDkuMzMzMzMzMzMzMzMzMzM0IDMuNWEzLjYxNjY2NjY2NjY2NjY2NyAzLjYxNjY2NjY2NjY2NjY2NyAwIDAgMCAtMC41ODMzMzMzMzMzMzMzMzM0IC0wLjQ0MzMzMzMzMzMzMzMzMzM2IDAuMjk3NTAwMDAwMDAwMDAwMDQgMC4yOTc1MDAwMDAwMDAwMDAwNCAwIDAgMCAtMC4zNTU4MzMzMzMzMzMzMzMzMyAwIDAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMDcgMC4zNDQxNjY2NjY2NjY2NjY3QTQuMzE2NjY2NjY2NjY2NjY3IDQuMzE2NjY2NjY2NjY2NjY3IDAgMCAxIDguNzUgNS4yNWE0LjM2MzMzMzMzMzMzMzMzNCA0LjM2MzMzMzMzMzMzMzMzNCAwIDAgMSAtMi4wMjQxNjY2NjY2NjY2NjcgMy42ODY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2NyAwIDAgMCAtMC4xMjI1IDAuMzI2NjY2NjY2NjY2NjY2NyAwLjI5NzUwMDAwMDAwMDAwMDA0IDAuMjk3NTAwMDAwMDAwMDAwMDQgMCAwIDAgMC4yOCAwLjIxIDMuNjA1IDMuNjA1IDAgMCAwIDEuNDgxNjY2NjY2NjY2NjY2NyAtMC4zNDQxNjY2NjY2NjY2NjY3bDAuMzc5MTY2NjY2NjY2NjY2NyAwLjMzMjV2MC43NDY2NjY2NjY2NjY2NjY3YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2N2gwLjc1MjUwMDAwMDAwMDAwMDFsMC4xMjI1IDAuMTI4MzMzMzMzMzMzMzMzMzV2MC43NDY2NjY2NjY2NjY2NjY3YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yOTE2NjY2NjY2NjY2NjY3IDAuMjkxNjY2NjY2NjY2NjY2N2gwLjY1MzMzMzMzMzMzMzMzMzRsMC41MzY2NjY2NjY2NjY2NjY3IDAuNTAxNjY2NjY2NjY2NjY2N2EwLjI4IDAuMjggMCAwIDAgMC4xOTgzMzMzMzMzMzMzMzMzNiAwLjA4MTY2NjY2NjY2NjY2NjY4SDEyLjgzMzMzMzMzMzMzMzMzNGEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAwIDAuMjkxNjY2NjY2NjY2NjY2NyAtMC4yOTE2NjY2NjY2NjY2NjY3di0xLjIzNjY2NjY2NjY2NjY2NjhhMC4yNzQxNjY2NjY2NjY2NjY2NyAwLjI3NDE2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjA4NzUwMDAwMDAwMDAwMDAxIC0wLjIyMTY2NjY2NjY2NjY2NjY4WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9nPjwvc3ZnPg==" />&nbsp;&nbsp;Extracted Secrets</label>
 		<label id="noactionmenuheader4"     class="tabLabel"  onclick="toggleMenuSection('noactionmenuheader4');" style="margin-top: 2px; background-color: transparent;width:100%;color:#F56A00;padding-top:6px;padding-bottom:3px;margin-top:5px;margin-bottom:0px;font-weight:bolder;border-top: 0.25px solid rgba(53, 67, 103, 0.5);"><strong>ACT</strong></label>
-		<label id="btnexploit" href="#"     class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('Attacks');radiobtn.checked = true;updateLabelColors('tabs', 'btnexploit');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlByb3RlY3Rpb24tU2hpZWxkLVNrdWxsLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Qcm90ZWN0aW9uIFNoaWVsZCBTa3VsbCBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48Zz48cGF0aCBkPSJNMTQgMS4xNjY2NjY2NjY2NjY2NjY3YTEuMTY2NjY2NjY2NjY2NjY2NyAxLjE2NjY2NjY2NjY2NjY2NjcgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2NyAtMS4xNjY2NjY2NjY2NjY2NjY3SDEuMTY2NjY2NjY2NjY2NjY2N2ExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3djQuMjY0MTY2NjY2NjY2NjY3QTguODI1ODMzMzMzMzMzMzM0IDguODI1ODMzMzMzMzMzMzM0IDAgMCAwIDYuOTE4MzMzMzMzMzMzMzMzIDE0YTAuMzk2NjY2NjY2NjY2NjY2NyAwLjM5NjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwIDAuNDE0MTY2NjY2NjY2NjY2NyAwLjQxNDE2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwQTguODMxNjY2NjY2NjY2NjY3IDguODMxNjY2NjY2NjY2NjY3IDAgMCAwIDE0IDUuMzY2NjY2NjY2NjY2NjY2Wm0tMy41IDUuNTY0OTk5OTk5OTk5OTk5NWExLjc1IDEuNzUgMCAwIDEgLTEuMjQ4MzMzMzMzMzMzMzMzNSAxLjY4IDAuMjg1ODMzMzMzMzMzMzMzMzMgMC4yODU4MzMzMzMzMzMzMzMzMyAwIDAgMCAtMC4yMSAwLjI4djAuMzczMzMzMzMzMzMzMzMzMzVBMC44NzUgMC44NzUgMCAwIDEgOC4zNDE2NjY2NjY2NjY2NjcgOS45MTY2NjY2NjY2NjY2NjhhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAxIC0wLjEyMjUgLTAuMDI5MTY2NjY2NjY2NjY2NjcgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAxIC0wLjA1MjUgLTAuMTEwODMzMzMzMzMzMzMzMzRWOC43NWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjU4MzMzMzMzMzMzMzMzMzQgMHYxLjAyMDgzMzMzMzMzMzMzMzVhMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAxIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzRoLTAuODc1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNDU4MzMzMzMzMzMzMzMzNFY4Ljc1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuNTgzMzMzMzMzMzMzMzMzNCAwdjEuMDA5MTY2NjY2NjY2NjY2OGEwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDEgLTAuMDUyNSAwLjExMDgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMSAtMC4xMjI1IDAuMDQ2NjY2NjY2NjY2NjY2NjcgMC44NzUgMC44NzUgMCAwIDEgLTAuNzAwMDAwMDAwMDAwMDAwMSAtMC44NTc1di0wLjM3MzMzMzMzMzMzMzMzMzM1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMjEgLTAuMjhBMS43NSAxLjc1IDAgMCAxIDMuNSA2LjcwMjUwMDAwMDAwMDAwMVY1LjgzMzMzMzMzMzMzMzMzNGEzLjUgMy41IDAgMCAxIDcgMFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik00LjM3NSA2LjExOTE2NjY2NjY2NjY2NzVhMC44NzUgMC44NzUgMCAxIDAgMS43NSAwIDAuODc1IDAuODc1IDAgMSAwIC0xLjc1IDAiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik03Ljg3NTAwMDAwMDAwMDAwMSA2LjExOTE2NjY2NjY2NjY2NzVhMC44NzUgMC44NzUgMCAxIDAgMS43NSAwIDAuODc1IDAuODc1IDAgMSAwIC0xLjc1IDAiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvZz48L3N2Zz4=" />&nbsp;&nbsp;Exploit</label>		
+		<label id="btnexploit" href="#"     class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('Attacks');radiobtn.checked = true;updateLabelColors('tabs', 'btnexploit');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlByb3RlY3Rpb24tU2hpZWxkLVNrdWxsLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5Qcm90ZWN0aW9uIFNoaWVsZCBTa3VsbCBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48Zz48cGF0aCBkPSJNMTQgMS4xNjY2NjY2NjY2NjY2NjY3YTEuMTY2NjY2NjY2NjY2NjY2NyAxLjE2NjY2NjY2NjY2NjY2NjcgMCAwIDAgLTEuMTY2NjY2NjY2NjY2NjY2NyAtMS4xNjY2NjY2NjY2NjY2NjY3SDEuMTY2NjY2NjY2NjY2NjY2N2ExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3djQuMjY0MTY2NjY2NjY2NjY3QTguODI1ODMzMzMzMzMzMzM0IDguODI1ODMzMzMzMzMzMzM0IDAgMCAwIDYuOTE4MzMzMzMzMzMzMzMzIDE0YTAuMzk2NjY2NjY2NjY2NjY2NyAwLjM5NjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwIDAuNDE0MTY2NjY2NjY2NjY2NyAwLjQxNDE2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwQTguODMxNjY2NjY2NjY2NjY3IDguODMxNjY2NjY2NjY2NjY3IDAgMCAwIDE0IDUuMzY2NjY2NjY2NjY2NjY2Wm0tMy41IDUuNTY0OTk5OTk5OTk5OTk5NWExLjc1IDEuNzUgMCAwIDEgLTEuMjQ4MzMzMzMzMzMzMzMzNSAxLjY4IDAuMjg1ODMzMzMzMzMzMzMzMzMgMC4yODU4MzMzMzMzMzMzMzMzMyAwIDAgMCAtMC4yMSAwLjI4djAuMzczMzMzMzMzMzMzMzMzMzVBMC44NzUgMC44NzUgMCAwIDEgOC4zNDE2NjY2NjY2NjY2NjcgOS45MTY2NjY2NjY2NjY2NjhhMC4xMzQxNjY2NjY2NjY2NjY2OCAwLjEzNDE2NjY2NjY2NjY2NjY4IDAgMCAxIC0wLjEyMjUgLTAuMDI5MTY2NjY2NjY2NjY2NjcgMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAxIC0wLjA1MjUgLTAuMTEwODMzMzMzMzMzMzMzMzRWOC43NWEwLjI5MTY2NjY2NjY2NjY2NjcgMC4yOTE2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjU4MzMzMzMzMzMzMzMzMzQgMHYxLjAyMDgzMzMzMzMzMzMzMzVhMC4xNDU4MzMzMzMzMzMzMzMzNCAwLjE0NTgzMzMzMzMzMzMzMzM0IDAgMCAxIC0wLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzRoLTAuODc1YTAuMTQ1ODMzMzMzMzMzMzMzMzQgMC4xNDU4MzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4xNDU4MzMzMzMzMzMzMzMzNCAtMC4xNDU4MzMzMzMzMzMzMzMzNFY4Ljc1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuNTgzMzMzMzMzMzMzMzMzNCAwdjEuMDA5MTY2NjY2NjY2NjY2OGEwLjE0NTgzMzMzMzMzMzMzMzM0IDAuMTQ1ODMzMzMzMzMzMzMzMzQgMCAwIDEgLTAuMDUyNSAwLjExMDgzMzMzMzMzMzMzMzM0IDAuMTM0MTY2NjY2NjY2NjY2NjggMC4xMzQxNjY2NjY2NjY2NjY2OCAwIDAgMSAtMC4xMjI1IDAuMDQ2NjY2NjY2NjY2NjY2NjcgMC44NzUgMC44NzUgMCAwIDEgLTAuNzAwMDAwMDAwMDAwMDAwMSAtMC44NTc1di0wLjM3MzMzMzMzMzMzMzMzMzM1YTAuMjkxNjY2NjY2NjY2NjY2NyAwLjI5MTY2NjY2NjY2NjY2NjcgMCAwIDAgLTAuMjEgLTAuMjhBMS43NSAxLjc1IDAgMCAxIDMuNSA2LjcwMjUwMDAwMDAwMDAwMVY1LjgzMzMzMzMzMzMzMzMzNGEzLjUgMy41IDAgMCAxIDcgMFoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik00LjM3NSA2LjExOTE2NjY2NjY2NjY2NzVhMC44NzUgMC44NzUgMCAxIDAgMS43NSAwIDAuODc1IDAuODc1IDAgMSAwIC0xLjc1IDAiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik03Ljg3NTAwMDAwMDAwMDAwMSA2LjExOTE2NjY2NjY2NjY2NzVhMC44NzUgMC44NzUgMCAxIDAgMS43NSAwIDAuODc1IDAuODc1IDAgMSAwIC0xLjc1IDAiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjwvZz48L3N2Zz4=" />&nbsp;&nbsp;Exploit</label>
 		<label id="btndetect" href="#"      class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('Detections');radiobtn.checked = true;updateLabelColors('tabs', 'btndetect');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IlNoaWVsZC1XYXJuaW5nLS1TdHJlYW1saW5lLVVsdGltYXRlLnN2ZyIgaGVpZ2h0PSIxNSIgd2lkdGg9IjE1Ij48ZGVzYz5TaGllbGQgV2FybmluZyBTdHJlYW1saW5lIEljb246IGh0dHBzOi8vc3RyZWFtbGluZWhxLmNvbTwvZGVzYz48Zz48cGF0aCBkPSJNMTMuNjYxNjY2NjY2NjY2NjY5IDAuMzMyNUExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIDEyLjgzMzMzMzMzMzMzMzMzNCAwSDEuMTY2NjY2NjY2NjY2NjY2N2ExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0xLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3djQuMjY0MTY2NjY2NjY2NjY3QTguODI1ODMzMzMzMzMzMzM0IDguODI1ODMzMzMzMzMzMzM0IDAgMCAwIDYuOTE4MzMzMzMzMzMzMzMzIDE0YTAuMzk2NjY2NjY2NjY2NjY2NyAwLjM5NjY2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwIDAuNDE0MTY2NjY2NjY2NjY2NyAwLjQxNDE2NjY2NjY2NjY2NjcgMCAwIDAgMC4xMTY2NjY2NjY2NjY2NjY2OCAwQTguODMxNjY2NjY2NjY2NjY3IDguODMxNjY2NjY2NjY2NjY3IDAgMCAwIDE0IDUuMzY2NjY2NjY2NjY2NjY2VjEuMTY2NjY2NjY2NjY2NjY2N2ExLjE2NjY2NjY2NjY2NjY2NjcgMS4xNjY2NjY2NjY2NjY2NjY3IDAgMCAwIC0wLjMzODMzMzMzMzMzMzMzMzMgLTAuODM0MTY2NjY2NjY2NjY2N1ptLTIuOTkyNSA4LjYwNDE2NjY2NjY2NjY2OGEwLjg1MTY2NjY2NjY2NjY2NjcgMC44NTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjcxNzUgMC40MDI0OTk5OTk5OTk5OTk5N0g0LjA0ODMzMzMzMzMzMzMzNGEwLjg1MTY2NjY2NjY2NjY2NjcgMC44NTE2NjY2NjY2NjY2NjY3IDAgMCAxIC0wLjcxNzUgLTAuNDAyNDk5OTk5OTk5OTk5OTcgMC44NDU4MzMzMzMzMzMzMzMzIDAuODQ1ODMzMzMzMzMzMzMzMyAwIDAgMSAwIC0wLjgyMjVsMi45NTE2NjY2NjY2NjY2NjY3IC01LjYxNzUwMDAwMDAwMDAwMWEwLjg0NTgzMzMzMzMzMzMzMzMgMC44NDU4MzMzMzMzMzMzMzMzIDAgMCAxIDEuNDkzMzMzMzMzMzMzMzMzNCAwbDIuOTUxNjY2NjY2NjY2NjY2NyA1LjYxNzUwMDAwMDAwMDAwMWEwLjg0NTgzMzMzMzMzMzMzMzMgMC44NDU4MzMzMzMzMzMzMzMzIDAgMCAxIC0wLjA1ODMzMzMzMzMzMzMzMzM0IDAuODIyNVoiIGZpbGw9IiNjNGM0YzgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIGQ9Ik02LjQxNjY2NjY2NjY2NjY2NyA3Ljg4MDgzMzMzMzMzMzMzM2EwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMSAwIDEuMTY2NjY2NjY2NjY2NjY2NyAwIDAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAxIDAgLTEuMTY2NjY2NjY2NjY2NjY2NyAwIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBkPSJNNyA2Ljg2YTAuNDQzMzMzMzMzMzMzMzMzMzYgMC40NDMzMzMzMzMzMzMzMzMzNiAwIDAgMCAwLjQzNzUgLTAuNDM3NVY0LjY2NjY2NjY2NjY2NjY2N2EwLjQzNzUgMC40Mzc1IDAgMSAwIC0wLjg3NSAwdjEuNzVhMC40NDMzMzMzMzMzMzMzMzMzNiAwLjQ0MzMzMzMzMzMzMzMzMzM2IDAgMCAwIDAuNDM3NSAwLjQ0MzMzMzMzMzMzMzMzMzM2WiIgZmlsbD0iI2M0YzRjOCIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+PC9nPjwvc3ZnPg==" />&nbsp;&nbsp;Detect</label>
-		<label id="btnprioritize" href="#"  class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('Remediation');radiobtn.checked = true;updateLabelColors('tabs', 'btnprioritize');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNoZWNrLVNoaWVsZC0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q2hlY2sgU2hpZWxkIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIGQ9Ik0xMS45MTE2NjY2NjY2NjY2NjkgMEgyLjA4ODMzMzMzMzMzMzMzMzRhMC44NzUgMC44NzUgMCAwIDAgLTAuODY5MTY2NjY2NjY2NjY2OCAwLjg3NXYzLjY1MTY2NjY2NjY2NjY2N2ExMC42NTE2NjY2NjY2NjY2NjkgMTAuNjUxNjY2NjY2NjY2NjY5IDAgMCAwIDUuNjQ2NjY2NjY2NjY2NjY2NSA5LjQzODMzMzMzMzMzMzMzNCAwLjI3NDE2NjY2NjY2NjY2NjY3IDAuMjc0MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yNjgzMzMzMzMzMzMzMzMzNyAwIDEwLjY1MTY2NjY2NjY2NjY2OSAxMC42NTE2NjY2NjY2NjY2NjkgMCAwIDAgNS42NDY2NjY2NjY2NjY2NjY1IC05LjQzODMzMzMzMzMzMzMzNFYwLjg3NUEwLjg3NSAwLjg3NSAwIDAgMCAxMS45MTE2NjY2NjY2NjY2NjkgMFpNMTAuNDQxNjY2NjY2NjY2NjY2IDQuNjMxNjY2NjY2NjY2NjY3bC00LjE0NzUwMDAwMDAwMDAwMSAzLjkwODMzMzMzMzMzMzMzMzdhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4zOTY2NjY2NjY2NjY2NjY3IDAuMTU3NTAwMDAwMDAwMDAwMDMgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC40MTQxNjY2NjY2NjY2NjY3IC0wLjE2OTE2NjY2NjY2NjY2NjY2TDQuMDgzMzMzMzMzMzMzMzM0IDcuMTI4MzMzMzMzMzMzMzM0YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMCAtMC44MjI1IDAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMC44MjgzMzMzMzMzMzMzMzM0IDBsMC45OCAwLjk5MTY2NjY2NjY2NjY2NjcgMy43MzMzMzMzMzMzMzMzMzQgLTMuNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAxIDAuODE2NjY2NjY2NjY2NjY2NyAwLjgzNDE2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Remediate</label>	        		
+		<label id="btnprioritize" href="#"  class="stuff"     style="margin-top: 2px; margin-bottom: 2px; display: flex; align-items: center; width:100%;" onClick="radiobtn = document.getElementById('Remediation');radiobtn.checked = true;updateLabelColors('tabs', 'btnprioritize');"><img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkNoZWNrLVNoaWVsZC0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+Q2hlY2sgU2hpZWxkIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIGQ9Ik0xMS45MTE2NjY2NjY2NjY2NjkgMEgyLjA4ODMzMzMzMzMzMzMzMzRhMC44NzUgMC44NzUgMCAwIDAgLTAuODY5MTY2NjY2NjY2NjY2OCAwLjg3NXYzLjY1MTY2NjY2NjY2NjY2N2ExMC42NTE2NjY2NjY2NjY2NjkgMTAuNjUxNjY2NjY2NjY2NjY5IDAgMCAwIDUuNjQ2NjY2NjY2NjY2NjY2NSA5LjQzODMzMzMzMzMzMzMzNCAwLjI3NDE2NjY2NjY2NjY2NjY3IDAuMjc0MTY2NjY2NjY2NjY2NjcgMCAwIDAgMC4yNjgzMzMzMzMzMzMzMzMzNyAwIDEwLjY1MTY2NjY2NjY2NjY2OSAxMC42NTE2NjY2NjY2NjY2NjkgMCAwIDAgNS42NDY2NjY2NjY2NjY2NjY1IC05LjQzODMzMzMzMzMzMzMzNFYwLjg3NUEwLjg3NSAwLjg3NSAwIDAgMCAxMS45MTE2NjY2NjY2NjY2NjkgMFpNMTAuNDQxNjY2NjY2NjY2NjY2IDQuNjMxNjY2NjY2NjY2NjY3bC00LjE0NzUwMDAwMDAwMDAwMSAzLjkwODMzMzMzMzMzMzMzMzdhMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC4zOTY2NjY2NjY2NjY2NjY3IDAuMTU3NTAwMDAwMDAwMDAwMDMgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAwIDAgMSAtMC40MTQxNjY2NjY2NjY2NjY3IC0wLjE2OTE2NjY2NjY2NjY2NjY2TDQuMDgzMzMzMzMzMzMzMzM0IDcuMTI4MzMzMzMzMzMzMzM0YTAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMCAtMC44MjI1IDAuNTgzMzMzMzMzMzMzMzMzNCAwLjU4MzMzMzMzMzMzMzMzMzQgMCAwIDEgMC44MjgzMzMzMzMzMzMzMzM0IDBsMC45OCAwLjk5MTY2NjY2NjY2NjY2NjcgMy43MzMzMzMzMzMzMzMzMzQgLTMuNWEwLjU4MzMzMzMzMzMzMzMzMzQgMC41ODMzMzMzMzMzMzMzMzM0IDAgMCAxIDAuODE2NjY2NjY2NjY2NjY2NyAwLjgzNDE2NjY2NjY2NjY2NjdaIiBmaWxsPSIjYzRjNGM4IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />&nbsp;&nbsp;Remediate</label>
 	</div>
 </div>
 <div id="main">
 
 
-<!--  
-|||||||||| PAGE: Interesting Files 
+<!--
+|||||||||| PAGE: Interesting Files
 -->
 		<input class="tabInput"  name="tabs" type="radio" id="InterestingFiles"/>
 		<label class="tabLabel" onClick="updateTab('InterestingFiles',false)" for="InterestingFiles"></label>
 		<div id="tabPanel" class="tabPanel">
-		<h2 style="margin-top: 72px;margin-left:10px;margin-bottom: 17px;">Interesting Files</h2>		
-            <div style="margin-top:3px">					
+		<h2 style="margin-top: 72px;margin-left:10px;margin-bottom: 17px;">Interesting Files</h2>
+            <div style="margin-top:3px">
 				<div style="width:100%;">
-                    <div style="margin-left:10px; width:95%;">                   
+                    <div style="margin-left:10px; width:95%;">
                     This section provides a list of files that may contain passwords or sensitive data, or may be abused for remote code execution.
                     <br><br>
                     </div>
@@ -6620,12 +6640,12 @@ input[type="checkbox"]:checked::before {
        Interesting Files Found
       </div>
       <div style="text-align: left;">
-        <span class="percentagetext" style = "color:#f29650;">                   
-        $InterestingFilesAllFilesCount&nbsp;                     
-        </span>	
+        <span class="percentagetext" style = "color:#f29650;">
+        $InterestingFilesAllFilesCount&nbsp;
+        </span>
         <Br>
         <div style="padding-right: 10px;">
-        ($InterestingFilesAllFilesCountU unique file names)	
+        ($InterestingFilesAllFilesCountU unique file names)
         </div>
       </div>
     </div>
@@ -6633,67 +6653,67 @@ input[type="checkbox"]:checked::before {
 
   <!-- Right aligned card -->
   <div style="width: 77%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="chart"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
 </div>
-					<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >	
+					<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
 						<div id="filterCounterIF" style="margin-top:0px;">Loading...</div>
-                        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('InterestingFileTable', 3)">Export</a> &nbsp;&nbsp;| 	
-                        <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('filterInputIF').value = '';applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');">Clear</a>						      
+                        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('InterestingFileTable', 3)">Export</a> &nbsp;&nbsp;|
+                        <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('filterInputIF').value = '';applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');">Clear</a>
                     </div>
 
                     <div class="searchbar" style="text-align:left; display: flex;" >
                             <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-							<input type="text" id="filterInputIF" placeholder="Search" style="padding-left: 5px; margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367;">								
-					 </div>					
+							<input type="text" id="filterInputIF" placeholder="Search" style="padding-left: 5px; margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367;">
+					 </div>
 
                     <table id="InterestingFileTable" class="table table-striped table-hover tabledrop" style="width: 95%; margin-top: 0px;">
                       <thead>
                         <tr>
 
-                        <th class="NamesTh"  onclick="sortTable('InterestingFileTable',0,'number')" style="vertical-align: middle;text-align: left;">File Count</th>       
+                        <th class="NamesTh"  onclick="sortTable('InterestingFileTable',0,'number')" style="vertical-align: middle;text-align: left;">File Count</th>
                         <th class="NamesTh"  onclick="sortTable('InterestingFileTable',1,'alpha')" style="vertical-align: middle;text-align: left;">File Name</th>
                         <th class="NamesTh"  onclick="sortTable('InterestingFileTable',2,'alpha')" style="vertical-align: middle;text-align: left;">Category</th>
-                        <th class="NamesTh"  onclick="sortTable('InterestingFileTable',3,'alpha')" style="vertical-align: middle;text-align: left;">File Paths</th>	 	 	  
+                        <th class="NamesTh"  onclick="sortTable('InterestingFileTable',3,'alpha')" style="vertical-align: middle;text-align: left;">File Paths</th>
                         </tr>
                         </thead>
 
                         <tbody>
-                        $InterestingFilesAllFilesRows   
+                        $InterestingFilesAllFilesRows
                         </tbody>
                     </table>
                     <div id="paginationIF" style="margin:10px;"></div>
                 </div>
-            </div>                    	
-		</div>	
+            </div>
+		</div>
 
-<!--  
+<!--
 |||||||||| PAGE: Dashboard
 -->
 		<input class="tabInput"  name="tabs" type="radio" id="dashboard"/>
 		<label class="tabLabel" onClick="updateTab('dashboard',false)" for="dashboard"></label>
 		<div id="tabPanel" class="tabPanel">
-		<h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Summary Report</h2>	
+		<h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Summary Report</h2>
 		<div style="min-height: 450px;">
 
-<!--  
+<!--
 |||||||||| CARD: Intro text
 -->
         <div style="margin-left: 10px; width: 98%; margin-bottom: 10px;">
-            Testing was conducted between $StartTime and $EndTime to identify network shares configured with excessive privileges hosted on computers joined to the $TargetDomain domain. 
-            In total, $RiskLevelCountCritical critical, $RiskLevelCountHigh high, $RiskLevelCountMedium medium, and  $RiskLevelCountLow low risk <a href="https://en.wikipedia.org/wiki/Security_descriptor">ACE (Access Control Entry)</a> configurations were discovered across $ExcessiveSharesCount shares, hosted by $ComputerWithExcessive computers in the $TargetDomain Active Directory domain. 
-            Overall, $InterestingFilesAllFilesCount interesting files were found accessible to all domain users that could potentially lead to unauthorized data access or remote code execution. The affected shares were found hosting $InterestingFilesAllObjectsSecretCount files that may contain passwords and $InterestingFilesAllObjectsSensitiveCount files that may contain sensitive data. $SecretsRecoveredCount credentials were recovered from $SecretsRecoveredFileCount of the discovered $InterestingFilesAllObjectsSecretCount secrets files. 
+            Testing was conducted between $StartTime and $EndTime to identify network shares configured with excessive privileges hosted on computers joined to the $TargetDomain domain.
+            In total, $RiskLevelCountCritical critical, $RiskLevelCountHigh high, $RiskLevelCountMedium medium, and  $RiskLevelCountLow low risk <a href="https://en.wikipedia.org/wiki/Security_descriptor">ACE (Access Control Entry)</a> configurations were discovered across $ExcessiveSharesCount shares, hosted by $ComputerWithExcessive computers in the $TargetDomain Active Directory domain.
+            Overall, $InterestingFilesAllFilesCount interesting files were found accessible to all domain users that could potentially lead to unauthorized data access or remote code execution. The affected shares were found hosting $InterestingFilesAllObjectsSecretCount files that may contain passwords and $InterestingFilesAllObjectsSensitiveCount files that may contain sensitive data. $SecretsRecoveredCount credentials were recovered from $SecretsRecoveredFileCount of the discovered $InterestingFilesAllObjectsSecretCount secrets files.
 		    <br><br>
 		    The section provides a summary of the affected assets, findings, data exposure, share creation timelines, peer comparison and general recommendations.
-        </div>	
-												
-<!--  
+        </div>
+
+<!--
 |||||||||| CARD: Finding and Data Exposure Summary Cards
 -->
 
@@ -6701,10 +6721,10 @@ input[type="checkbox"]:checked::before {
 
   <!-- Finding Summary Card -->
   <div style="width: 50%; display: flex; justify-content: flex-start;">
- 
-    <div class="LargeCard" style="width:99%;">	
-		 <div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Finding Exposure Summary</strong></div> 	 			
-		 
+
+    <div class="LargeCard" style="width:99%;">
+		 <div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Finding Exposure Summary</strong></div>
+
 		 <!-- count cards  -->
 		 <div style="width: 100%; display: flex; justify-content: space-between;">
 
@@ -6715,10 +6735,10 @@ input[type="checkbox"]:checked::before {
 				Critical
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$RiskLevelCountCritical<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">findings</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$RiskLevelCountCritical<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">findings</span>
 			   </div>
 			</div>
 		  </div>
@@ -6730,14 +6750,14 @@ input[type="checkbox"]:checked::before {
 				High
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$RiskLevelCountHigh<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">findings</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$RiskLevelCountHigh<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">findings</span>
 			   </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- Center aligned card -->
 		  <div style="width: 25%; display: flex; justify-content: flex-center;">
 			<div class="card" style="width: 100%;" onClick="document.getElementById('acefilterInput').value = 'Medium';applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
@@ -6745,40 +6765,40 @@ input[type="checkbox"]:checked::before {
 				Medium
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$RiskLevelCountMedium<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">findings</span>                
-			   </div>
-			</div>
-		  </div>  
-		  
-		  <!-- Right aligned card -->
-		   <div style="width: 25%; display: flex; justify-content: flex-end;">
-			<div class="card" style="width: 100%;" onClick="document.getElementById('acefilterInput').value = 'Low';applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
-			  <div class="cardtitle" style="color:#71808d; font-size: 14px; font-weight: bold;">
-				Low 
-			  </div>
-			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$RiskLevelCountLow<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">findings</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$RiskLevelCountMedium<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">findings</span>
 			   </div>
 			</div>
 		  </div>
 
-		</div>	
-				
+		  <!-- Right aligned card -->
+		   <div style="width: 25%; display: flex; justify-content: flex-end;">
+			<div class="card" style="width: 100%;" onClick="document.getElementById('acefilterInput').value = 'Low';applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
+			  <div class="cardtitle" style="color:#71808d; font-size: 14px; font-weight: bold;">
+				Low
+			  </div>
+			  <div style="text-align: left;">
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$RiskLevelCountLow<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">findings</span>
+			   </div>
+			</div>
+		  </div>
+
+		</div>
+
 			<div class="LargeCard" style="width: 94%;  margin-top: 5px;">
-					
+
 						<div id="ChartDashboardRisk"></div>
 						<div class="chart-controls"></div>
-					
-			</div>					
-			
+
+			</div>
+
 		   <div style="padding: 5px; width: 100%; font-size: 10px; color: gray; display: flex; justify-content: center; align-items: center; text-align: center;">
-				More details available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('SubNets');radiobtn.checked = true;updateLabelColors('tabs', 'btnnetworks');">Networks</a>,&nbsp;<a href="#" onClick="radiobtn = document.getElementById('ComputerInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btncomputers');">Computers</a>,&nbsp; <a href="#" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');">Shares</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');">ACEs</a> &nbsp;sections. 						
+				More details available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('SubNets');radiobtn.checked = true;updateLabelColors('tabs', 'btnnetworks');">Networks</a>,&nbsp;<a href="#" onClick="radiobtn = document.getElementById('ComputerInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btncomputers');">Computers</a>,&nbsp; <a href="#" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');">Shares</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('AceInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btnaces');">ACEs</a> &nbsp;sections.
            </div>
     </div>
   </div>
@@ -6786,9 +6806,9 @@ input[type="checkbox"]:checked::before {
 
   <!-- Data Exposure Summary Card -->
   <div style="width: 50%; display: flex; justify-content: flex-start;">
- 
-    <div class="LargeCard" style="width:100%;">	
-		 <div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Data Exposure Summary</strong></div>	
+
+    <div class="LargeCard" style="width:100%;">
+		 <div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Data Exposure Summary</strong></div>
 
 		 <!-- count cards  -->
 		 <div style="width: 100%; display: flex; justify-content: space-between;">
@@ -6800,10 +6820,10 @@ input[type="checkbox"]:checked::before {
 				Interesting
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$InterestingFilesAllFilesCount<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">files found</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$InterestingFilesAllFilesCount<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">files found</span>
 			   </div>
 			</div>
 		  </div>
@@ -6815,14 +6835,14 @@ input[type="checkbox"]:checked::before {
 				Sensitive
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$InterestingFilesAllObjectsSensitiveCount<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">files found</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$InterestingFilesAllObjectsSensitiveCount<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">files found</span>
 			   </div>
 			</div>
 		  </div>
-		  
+
 		  <!-- Center aligned card -->
 		  <div style="width: 25%; display: flex; justify-content: flex-center;">
 			<div class="card" style="width: 100%;" onClick="document.getElementById('filterInputIF').value = 'Secret'; applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');updateLabelColors('tabs', 'btnif'); radiobtn = document.getElementById('InterestingFiles');radiobtn.checked = true;updateLabelColors('tabs', 'btnif');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
@@ -6830,46 +6850,46 @@ input[type="checkbox"]:checked::before {
 				Secrets
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$InterestingFilesAllObjectsSecretCount<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">files found</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$InterestingFilesAllObjectsSecretCount<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">files found</span>
 			   </div>
 			</div>
-		  </div>  
-		  
+		  </div>
+
 		  <!-- Right aligned card -->
 		   <div style="width: 25%; display: flex; justify-content: flex-end;">
 			<div class="card" style="width: 100%;" onClick="radiobtn = document.getElementById('SecretsPage');radiobtn.checked = true;updateLabelColors('tabs', 'btnSecretsPage');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
 			  <div class="cardtitle" style="color:#71808d; font-size: 14px; font-weight: bold;">
-				Extracted 
+				Extracted
 			  </div>
 			  <div style="text-align: left;">
-				<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-				$SecretsRecoveredCount<Br> 
-				</span>		
-				<span style="font-size: 10px; color: gray;">secrets ($SecretsRecoveredFileCount files)</span>                
+				<span class="percentagetext" style="color:#f29650; text-align: left;">
+				$SecretsRecoveredCount<Br>
+				</span>
+				<span style="font-size: 10px; color: gray;">secrets ($SecretsRecoveredFileCount files)</span>
 			   </div>
 			</div>
 		  </div>
 
 		</div>
-				
-			<div class="LargeCard" style="width: 94%;  margin-top: 5px;">	
+
+			<div class="LargeCard" style="width: 94%;  margin-top: 5px;">
 						<div id="ChartDashboardIF"></div>
-						<div class="chart-controls"></div>		
-			</div>						
-					 
-		
+						<div class="chart-controls"></div>
+			</div>
+
+
 		   <div style="padding: 5px; width: 100%; font-size: 10px; color: gray; display: flex; justify-content: center; align-items: center; text-align: center;">
-				More details are available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('SecretsPage');radiobtn.checked = true;updateLabelColors('tabs', 'btnSecretsPage');">Extracted Secrets</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('InterestingFiles');radiobtn.checked = true;updateLabelColors('tabs', 'btnif');">Interesting Files</a> &nbsp;sections. 						
+				More details are available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('SecretsPage');radiobtn.checked = true;updateLabelColors('tabs', 'btnSecretsPage');">Extracted Secrets</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('InterestingFiles');radiobtn.checked = true;updateLabelColors('tabs', 'btnif');">Interesting Files</a> &nbsp;sections.
            </div>
     </div>
   </div>
 
-</div>	
+</div>
 
-<!--  
+<!--
 |||||||||| CARD: Asset Information Cards
 -->
 
@@ -6877,16 +6897,16 @@ input[type="checkbox"]:checked::before {
 
   <!--  Asset Counts -->
   <div style="width: 50%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 		<div class="chart-container">
 		<div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Asset Exposure Summary</strong></div>
 		<div style="margin-left: 10px; margin-right: 10px;  background-color: #faf7f7; border: .5px  solid #ebe8e8; padding: 10px; border-radius: 6px;">
-		$ExcessiveSharePrivsCount ACL entries, on $ExcessiveSharesCount shares, hosted by $ComputerWithExcessive computers were found configured with excessive privileges on the $TargetDomain domain.		
+		$ExcessiveSharePrivsCount ACL entries, on $ExcessiveSharesCount shares, hosted by $ComputerWithExcessive computers were found configured with excessive privileges on the $TargetDomain domain.
         $LLMCleanAppSummary
-		</div>		
+		</div>
 			<! -- top -->
-			<div style="width: 99%; display: flex; margin-top: 10px;">			
-			  
+			<div style="width: 99%; display: flex; margin-top: 10px;">
+
 			  <!-- Center aligned card -->
 			  <div style="width: 50%; display: flex; justify-content: flex-start;">
 				<div class="card" style="width: 100%;" onClick="radiobtn = document.getElementById('SubNets');radiobtn.checked = true;updateLabelColors('tabs', 'btnnetworks');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
@@ -6894,34 +6914,34 @@ input[type="checkbox"]:checked::before {
 					Networks
 				  </div>
 				  <div style="text-align: left;">
-					<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-					$SubnetsCount<Br> 
-					</span>		
-					<span style="font-size: 10px; color: gray;">affected</span>                
+					<span class="percentagetext" style="color:#f29650; text-align: left;">
+					$SubnetsCount<Br>
+					</span>
+					<span style="font-size: 10px; color: gray;">affected</span>
 				   </div>
 				</div>
-			  </div>  
-			  
+			  </div>
+
 			  <!-- Right aligned card -->
 			   <div style="width: 50%; display: flex; justify-content: flex-end;">
 				<div class="card" style="width: 100%;" onClick="radiobtn = document.getElementById('ComputerInsights');radiobtn.checked = true;updateLabelColors('tabs', 'btncomputers');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
 				  <div class="cardtitle" style="color:#71808d; font-size: 14px; font-weight: bold;">
-					Computers 
+					Computers
 				  </div>
 				  <div style="text-align: left;">
-					<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-					$ComputerWithExcessive<Br> 
-					</span>		
-					<span style="font-size: 10px; color: gray;">affected</span>                
+					<span class="percentagetext" style="color:#f29650; text-align: left;">
+					$ComputerWithExcessive<Br>
+					</span>
+					<span style="font-size: 10px; color: gray;">affected</span>
 				   </div>
 				</div>
 			  </div>
 
 			</div>
-			
+
 			<! -- bottom -->
-			<div style="width: 99%; display: flex; ">			
-			  
+			<div style="width: 99%; display: flex; ">
+
 			  <!-- Center aligned card -->
 			  <div style="width: 50%; display: flex; justify-content: flex-start;">
 				<div class="card" style="width: 100%;" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
@@ -6929,14 +6949,14 @@ input[type="checkbox"]:checked::before {
 					Shares
 				  </div>
 				  <div style="text-align: left;">
-					<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-					$ExcessiveSharesCount<Br> 
-					</span>		
-					<span style="font-size: 10px; color: gray;">affected</span>                
+					<span class="percentagetext" style="color:#f29650; text-align: left;">
+					$ExcessiveSharesCount<Br>
+					</span>
+					<span style="font-size: 10px; color: gray;">affected</span>
 				   </div>
 				</div>
-			  </div>  
-			  
+			  </div>
+
 			  <!-- Right aligned card -->
 			   <div style="width: 50%; display: flex; justify-content: flex-end;" >
 				<div class="card" style="width: 100%;" onClick="radiobtn = document.getElementById('AceInsights');radiobtn.checked = true; updateLabelColors('tabs', 'btnaces');" onmousedown="this.style.transition = 'none'; this.style.outline = '2px solid gray';"   onmouseup="this.style.outline = '';">
@@ -6944,71 +6964,71 @@ input[type="checkbox"]:checked::before {
 					ACEs
 				  </div>
 				  <div style="text-align: left;">
-					<span class="percentagetext" style="color:#f29650; text-align: left;">                    
-					$ExcessiveSharePrivsCount<Br> 
-					</span>		
-					<span style="font-size: 10px; color: gray;">affected</span>                
+					<span class="percentagetext" style="color:#f29650; text-align: left;">
+					$ExcessiveSharePrivsCount<Br>
+					</span>
+					<span style="font-size: 10px; color: gray;">affected</span>
 				   </div>
-				</div>                
-			  </div>              
-			</div>		
+				</div>
+			  </div>
+			</div>
 	        <div style="margin-left:10px;">$LLMOutputWarning</div>
-		</div>							  							
+		</div>
     </div>
-  </div>  
+  </div>
 
  <!--  Peer Comparison -->
 
   <div style="width: 50%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 		<div class="chart-container">
 		<div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Affected Asset Peer Comparison</strong></div>
-		<div style="margin-left: 10px; margin-right: 10px;  background-color: #faf7f7; border: .5px  solid #ebe8e8; padding: 10px; border-radius: 6px;">	
-		Below is a comaprison between the percent of affected assets in this environment and the average percent of 
-		affected assets observed in other environments. The percentage is calculated based on the total number of 
+		<div style="margin-left: 10px; margin-right: 10px;  background-color: #faf7f7; border: .5px  solid #ebe8e8; padding: 10px; border-radius: 6px;">
+		Below is a comaprison between the percent of affected assets in this environment and the average percent of
+		affected assets observed in other environments. The percentage is calculated based on the total number of
 		live assets discovered for each asset type. Based on the volume of ACEs configured with excessive privileges, this is environment was $EnvironmentStatus compared to the average.
 		</div>
 		<div class="LargeCard" style="width: 94%;  margin-top: 20px; ">
 			<div id="ChartDashboardPeerCompare" style=" border-radius: 6px; ">
-			</div>	
+			</div>
 		</div>
-		</div>							  							
+		</div>
     </div>
   </div>
 
-</div>		
+</div>
 
-<!--  
+<!--
 |||||||||| CARD: Share Creation Timeline
 -->
-<div class="LargeCard" style="width:96%;">	
+<div class="LargeCard" style="width:96%;">
 	<div style="margin-left: 10px; width: 99%; margin-bottom: 10px;">
-		<div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Share Creation Timeline</strong></div>		
+		<div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Share Creation Timeline</strong></div>
 		<div style="width: 97%; margin-left: 10px; margin-right: 10px;  background-color: #faf7f7; border: .5px  solid #ebe8e8; padding: 10px; border-radius: 6px;">
 		Below is a time series chart to help provide a sense of when shares were created and at what point critical and high risk shares were introduced into the environment.
-		By reading the chart left to right, you can see that shares were created in this environment between $ShareFirstDate and $ShareLastDate. You can zoom into any section of the chart by clicking or using the chart controls in the upper right hand corner of the chart.    
+		By reading the chart left to right, you can see that shares were created in this environment between $ShareFirstDate and $ShareLastDate. You can zoom into any section of the chart by clicking or using the chart controls in the upper right hand corner of the chart.
 		$ShareCriticalTime
-        $ShareHighTime    
-        $ShareCriticalHighLine   		
+        $ShareHighTime
+        $ShareCriticalHighLine
 		The chart also includes two horizontal lines. The "avg" line shows the average number of created shares and everything above the "+2 Std Dev" line is considered anomolous in the context of this report. $DataSeriessharesAnomalyCount anomalies were found that represent days when share creation counts were twice the standard deviation.
 
 		</div>
 	 </div>
-	 
-	 <div class="LargeCard" style="width:96%;margin-left: 20px;">	
+
+	 <div class="LargeCard" style="width:96%;margin-left: 20px;">
 			<a href="#" id="DashLink" style="text-decoration:none;">
-			</a>																	
+			</a>
 			<div class="chart-container">
 				<div id="TimelinCreationChart"></div>
 			<div class="chart-controls"></div>
-		</div>								  							
+		</div>
 	</div>
-</div>			
+</div>
 
-<!--  
+<!--
 |||||||||| CARD: Remediation Recommendations
 -->
-<div class="LargeCard" style="width:96%;">	
+<div class="LargeCard" style="width:96%;">
                      <div style="margin-left: 10px; width: 99%; margin-bottom: 10px;">
                         <div style="color:#4A4A4A;font-size: 16px; margin-top: 10px; margin-left: 10px; margin-bottom: 10px;"><strong>Remediation & Prioritization Recommendations</strong></div>
                         <div style="width: 97%; margin-left: 10px; margin-right: 10px;  background-color: #faf7f7; border: .5px  solid #ebe8e8; padding: 10px; border-radius: 6px; height:165px;">
@@ -7019,46 +7039,46 @@ input[type="checkbox"]:checked::before {
 							<li style="color: black;">Group ACE remediation tasks by <a style="cursor: pointer;" onClick="radiobtn = document.getElementById('ShareFolders');radiobtn.checked = true;updateLabelColors('tabs', 'btnfgs');">folder groups</a>, which contain exactly the same file listing.</li>
 							<li style="color: black;">Group ACE remediation tasks by <a style="cursor: pointer;" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');">share names</a> with a high similarity scores.</li>
 						</ul>
-						       
-					    Remediating ACEs by group may reduce remediation tasks by as much as <strong>$RemediationSavings%</strong> for this environment. The chart below shows the task savings.						
+
+					    Remediating ACEs by group may reduce remediation tasks by as much as <strong>$RemediationSavings%</strong> for this environment. The chart below shows the task savings.
                      </div>
 					 </div>
 
-		            <div class="LargeCard" style="width:96%; margin-left: 20px;">	
+		            <div class="LargeCard" style="width:96%; margin-left: 20px;">
 							<a href="#" id="DashLink" style="text-decoration:none;">
 							</a>
-																	
+
 									<div class="chart-container" style="justify-content: center; align-items: center;">
 									<div id="ChartDashboardRemediate" ></div>
 										<div class="chart-controls"></div>
-									</div>								  							
-							
+									</div>
+
 					</div>
 					 <div style="padding: 5px; width: 100%; font-size: 10px; color: gray; display: flex; justify-content: center; align-items: center; text-align: center;">
-					More details are available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('ShareFolders');radiobtn.checked = true;updateLabelColors('tabs', 'btnfgs');">Folder Group</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');">Share Names</a> &nbsp;sections. 						
+					More details are available in the &nbsp;<a href="#" onClick="radiobtn = document.getElementById('ShareFolders');radiobtn.checked = true;updateLabelColors('tabs', 'btnfgs');">Folder Group</a>, and &nbsp; <a href="#" onClick="radiobtn = document.getElementById('ShareName');radiobtn.checked = true;updateLabelColors('tabs', 'btnshares');">Share Names</a> &nbsp;sections.
 					</div>
 </div>
-	
+
 <div style="height:.5px;width:100%;position:relative;float:left;"></div>
-	
+
 <!-- end here -->
- 
+
 </div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: COMPUTER INSIGHTS
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="ComputerInsights"/> 
+<input class="tabInput"  name="tabs" type="radio" id="ComputerInsights"/>
 <label class="tabLabel" onClick="updateTab('ComputerInsights',false)" for="ComputerInsights"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Computers</h2>
 <div style="margin-left:10px;margin-top:3px; margin-bottom: 3px;width:95%">
-This section provides information for computers hosting shares configured with excessive privileges. $ComputerCount computers were found in the $TargetDomain Active Directory domain, $ComputerPingableCount responded to ping requests, $Computers445OpenCount had port 445 open, and $ComputerWithExcessive were found hosting shares configured with excessive privileges.  
+This section provides information for computers hosting shares configured with excessive privileges. $ComputerCount computers were found in the $TargetDomain Active Directory domain, $ComputerPingableCount responded to ping requests, $Computers445OpenCount had port 445 open, and $ComputerWithExcessive were found hosting shares configured with excessive privileges.
 <br><br>
-</div>		
-		    
+</div>
+
 <div style="width: 96.5%; display: flex; justify-content: space-between;">
 
   <!-- Left aligned card -->
@@ -7068,8 +7088,8 @@ This section provides information for computers hosting shares configured with e
         Affected Computers
       </div>
       <div style="text-align: left;">
-        <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-        $ComputerWithExcessive&nbsp;                 
+        <span class="percentagetext" style="color:#f29650; text-align: left;">
+        $ComputerWithExcessive&nbsp;
         </span>
      </div>
     </div>
@@ -7077,53 +7097,53 @@ This section provides information for computers hosting shares configured with e
 
   <!-- Center aligned card -->
   <div style="width: 33.33%; display: flex; justify-content: center;">
-    <div class="LargeCard" style="width:100%;">	
+    <div class="LargeCard" style="width:100%;">
         <div class="chart-container">
 		    <div id="ChartComputersRisk"></div>
 		    <div class="chart-controls"></div>
-		</div>		
+		</div>
     </div>
   </div>
 
   <!-- Right aligned card -->
   <div style="width: 33.33%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartComputersDisco"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
-</div>	
+</div>
 
 <div style="width: 96.5%; display: flex; justify-content: space-between;margin-top: -10px;">
     <!-- left -->
   <div style="width: 100%; display: flex; justify-content: flex;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartComputersOs"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
-</div>				
+</div>
 
-<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >		
-        <div id="computerfilterCounter" style="margin-top:0px;">Loading...</div>      
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('ComputersTable', 2)">Export</a> &nbsp;&nbsp;| 	
+<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
+        <div id="computerfilterCounter" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('ComputersTable', 2)">Export</a> &nbsp;&nbsp;|
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('computerfilterInput').value = '';applyFiltersAndSort('ComputersTable', 'computerfilterInput', 'computerfilterCounter', 'computerpagination');">Clear</a>
 </div>
-				
+
 <div class="searchbar" style="text-align:left; display: flex;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
         <input type="text" id="computerfilterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
-</div>		
+</div>
 
 <table id="ComputersTable" class="table table-striped table-hover tabledrop" style="width: 95%; margin-top: 0px;">
   <thead>
     <tr>
-    
+
     <th class="NamesTh" onclick="sortTable('ComputersTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Computer<br>Name&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
@@ -7131,7 +7151,7 @@ This section provides information for computers hosting shares configured with e
         <strong>Computer Name</strong><br>is the name of the computer.
     </span>
     </div>
-    </th>        
+    </th>
 
     <th class="NamesTh" onclick="sortTable('ComputersTable',1,'alpha')" style="vertical-align: middle;text-align: left;">Operating<br>System
     <div class="tooltip">
@@ -7141,7 +7161,7 @@ This section provides information for computers hosting shares configured with e
     </span>
     </div>
     </th>
-                              
+
     <th class="NamesTh" onclick="sortTable('ComputersTable',2,'number')" style="vertical-align: middle;text-align: left;">Risk<br>Level&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
@@ -7150,7 +7170,7 @@ This section provides information for computers hosting shares configured with e
     </span>
     </div>
     </th>
-                          
+
     <th class="NamesTh"  onclick="sortTable('ComputersTable',3,'number')" style="vertical-align: middle;text-align: left;">Share<br>Count&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
@@ -7159,15 +7179,15 @@ This section provides information for computers hosting shares configured with e
     </span>
     </div>
     </th>
-      
+
     <th class="NamesTh"  onclick="sortTable('ComputersTable',4,'number')" style="vertical-align: middle;text-align: left;">Interesting<br>Files&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
     <span class="tooltiptext">
         <strong>Interesting Files</strong><br>are filenames that<br>may be sensitive.
     </span>
-    </div> 
-    </th>	 	        
+    </div>
+    </th>
 
     </tr>
     </thead>
@@ -7179,22 +7199,22 @@ This section provides information for computers hosting shares configured with e
 <div id="computerpagination" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: IDENTITY INSIGHTS
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="IdentityInsights"/> 
+<input class="tabInput"  name="tabs" type="radio" id="IdentityInsights"/>
 <label class="tabLabel" onClick="updateTab('IdentityInsights',false)" for="IdentityInsights"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Identities</h2>
 <div style="margin-left:10px;margin-top:3px; margin-bottom: 3px;width:95%">
-The section provides the affected identities.$IdentityCombinedListCount identities were discovered across shares in the $TargetDomain Active Directory domain. $IdentityOwnerListCount were owners and $IdentityReferenceListCount were assigned privileges. 
+The section provides the affected identities.$IdentityCombinedListCount identities were discovered across shares in the $TargetDomain Active Directory domain. $IdentityOwnerListCount were owners and $IdentityReferenceListCount were assigned privileges.
 <br><br>
-</div>		
+</div>
 <div style="margin-left:10px; width:95%;">
-Note: Within the context of this report, all read and write access the "Everyone", "Authenticated Users", "BUILTIN\Users", "Domain Users", or "Domain Computers" groups are considered excessive privileges, because all provide domain users access to the affected shares due to privilege inheritance. 				
+Note: Within the context of this report, all read and write access the "Everyone", "Authenticated Users", "BUILTIN\Users", "Domain Users", or "Domain Computers" groups are considered excessive privileges, because all provide domain users access to the affected shares due to privilege inheritance.
 <br><br>
-</div>     
+</div>
 
 <div style="width: 96.5%; display: flex; justify-content: space-between;">
 
@@ -7205,8 +7225,8 @@ Note: Within the context of this report, all read and write access the "Everyone
         Affected Identities
       </div>
       <div style="text-align: left;">
-          <span class="percentagetext" style="color:#f29650;">                    
-            $IdentityCombinedListCount&nbsp;                   
+          <span class="percentagetext" style="color:#f29650;">
+            $IdentityCombinedListCount&nbsp;
           </span>
       </div>
     </div>
@@ -7219,8 +7239,8 @@ Note: Within the context of this report, all read and write access the "Everyone
         Identities Assigned Ownership
       </div>
       <div style="text-align: left;">
-          <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-             $IdentityOwnerListCount&nbsp;                     
+          <span class="percentagetext" style="color:#f29650; text-align: left;">
+             $IdentityOwnerListCount&nbsp;
           </span>
       </div>
     </div>
@@ -7233,8 +7253,8 @@ Note: Within the context of this report, all read and write access the "Everyone
         Identities Assigned Privileges
       </div>
       <div style="text-align: left;">
-          <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-            $IdentityReferenceListCount&nbsp;                    
+          <span class="percentagetext" style="color:#f29650; text-align: left;">
+            $IdentityReferenceListCount&nbsp;
           </span>
       </div>
     </div>
@@ -7242,27 +7262,27 @@ Note: Within the context of this report, all read and write access the "Everyone
 
 </div>
 
-<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >	
-        <div id="IdentityfilterCounter" style="margin-top:0px;">Loading...</div>      
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('IdentityTable', 2)">Export</a> &nbsp;&nbsp;| 
+<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
+        <div id="IdentityfilterCounter" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('IdentityTable', 2)">Export</a> &nbsp;&nbsp;|
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('IdentityfilterInput').value = '';applyFiltersAndSort('IdentityTable', 'IdentityfilterInput', 'IdentityfilterCounter', 'Identitypagination');">Clear</a>
 </div>
 <div class="searchbar" style="margin-top:12px; text-align:left; display: flex;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="IdentityfilterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">							        
-</div>		
+        <input type="text" id="IdentityfilterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
+</div>
 <table id="IdentityTable" class="table table-striped table-hover tabledrop" style="width: 95%; margin-top: 0px;">
   <thead>
     <tr>
-    
+
     <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Identity</th>
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Owned Shares</th> 
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Accessible Shares</th> 
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Low Risk Shares</th> 
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Medium Risk Shares</th> 
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">High Risk Shares</th> 
-    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Critical Risk Shares</th>         
-                          
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Owned Shares</th>
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Accessible Shares</th>
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Low Risk Shares</th>
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Medium Risk Shares</th>
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">High Risk Shares</th>
+    <th class="NamesTh" onclick="sortTable('IdentityTable',0,'alpha')" style="vertical-align: middle;text-align: left;">Critical Risk Shares</th>
+
     </tr>
     </thead>
 
@@ -7273,18 +7293,18 @@ Note: Within the context of this report, all read and write access the "Everyone
 <div id="Identitypagination" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: INSECURE ACEs
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="AceInsights"/> 
+<input class="tabInput"  name="tabs" type="radio" id="AceInsights"/>
 <label class="tabLabel" onClick="updateTab('AceInsights',false)" for="AceInsights"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Insecure ACEs</h2>
 <div style="margin-left:10px;margin-top:3px; margin-bottom: 3px;width:95%">
-This section provides the ACE (access control entries) configured with excessive privileges found in the $TargetDomain Active Directory domain. 
+This section provides the ACE (access control entries) configured with excessive privileges found in the $TargetDomain Active Directory domain.
 <br><br>
-</div>		
+</div>
 
 <div style="width: 96.5%; display: flex; justify-content: space-between;">
 
@@ -7295,8 +7315,8 @@ This section provides the ACE (access control entries) configured with excessive
         Affected ACEs
       </div>
       <div style="text-align: left;">
-        <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-        $ExcessiveSharePrivsCount &nbsp;                  
+        <span class="percentagetext" style="color:#f29650; text-align: left;">
+        $ExcessiveSharePrivsCount &nbsp;
         </span>
      </div>
     </div>
@@ -7304,54 +7324,54 @@ This section provides the ACE (access control entries) configured with excessive
 
   <!-- Center aligned card -->
   <div style="width: 33.33%; display: flex; justify-content: center;">
-    <div class="LargeCard" style="width:100%;">	
+    <div class="LargeCard" style="width:100%;">
         <div class="chart-container">
 		    <div id="ChartAceRisk"></div>
 		    <div class="chart-controls"></div>
-		</div>		
+		</div>
     </div>
   </div>
 
   <!-- Right aligned card -->
   <div style="width: 33.33%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartAceType"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
 </div>
 
-<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >		
-        <div id="acefilterCounter" style="margin-top:0px;">Loading...</div>      
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('aceTable', 2)">Export</a> &nbsp;&nbsp;| 
+<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
+        <div id="acefilterCounter" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('aceTable', 2)">Export</a> &nbsp;&nbsp;|
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('acefilterInput').value = '';applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');">Clear</a>
 </div>
 
 <div class="searchbar" style="text-align:left; display: flex;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="acefilterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">							
-</div>		
+        <input type="text" id="acefilterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
+</div>
 
 <table id="aceTable" class="table table-striped table-hover tabledrop" style="width: 95%; margin-top: 0px;">
   <thead>
     <tr>
-    
+
     <th class="NamesTh" onclick="sortTable('aceTable',0,'number')" style="vertical-align: middle;text-align: left;">Risk Level</th>
-    <th class="NamesTh" onclick="sortTable('aceTable',1,'alpha')" style="vertical-align: middle;text-align: left;">Computer</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',2,'alpha')" style="vertical-align: middle;text-align: left;">Share Name</th>                
-    <th class="NamesTh" onclick="sortTable('aceTable',3,'alpha')" style="vertical-align: middle;text-align: left;">FileSystemRight</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',4,'alpha')" style="vertical-align: middle;text-align: left;">Identity</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',5,'alpha')" style="vertical-align: middle;text-align: left;">Share Owner</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',6,'number')" style="vertical-align: middle;text-align: left;">Creation Date</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',7,'number')" style="vertical-align: middle;text-align: left;">Last Modified</th>        
-    <th class="NamesTh" onclick="sortTable('aceTable',8,'number')" style="vertical-align: middle;text-align: left;">Files</th>                
-                          
+    <th class="NamesTh" onclick="sortTable('aceTable',1,'alpha')" style="vertical-align: middle;text-align: left;">Computer</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',2,'alpha')" style="vertical-align: middle;text-align: left;">Share Name</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',3,'alpha')" style="vertical-align: middle;text-align: left;">FileSystemRight</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',4,'alpha')" style="vertical-align: middle;text-align: left;">Identity</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',5,'alpha')" style="vertical-align: middle;text-align: left;">Share Owner</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',6,'number')" style="vertical-align: middle;text-align: left;">Creation Date</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',7,'number')" style="vertical-align: middle;text-align: left;">Last Modified</th>
+    <th class="NamesTh" onclick="sortTable('aceTable',8,'number')" style="vertical-align: middle;text-align: left;">Files</th>
+
     </tr>
     </thead>
-    
+
     <tbody>
     $AceTableRows
     </tbody>
@@ -7359,24 +7379,24 @@ This section provides the ACE (access control entries) configured with excessive
 <div id="acepagination" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: COMPUTER SUMMARY
 -->
 
 <input class="tabInput"  name="tabs" type="radio" id="computersummary"/>
 <label class="tabLabel" onClick="updateTab('computersummary',false)" for="computersummary"></label>
 <div id="tabPanel" class="tabPanel">
-<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Computer Summary</h2>		
+<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Computer Summary</h2>
 <div style="margin-left:10px;margin-top:3px">
 This section provides a summary of the domain computers that were targeted, connectivity to them, and the number that are hosting potentially insecure SMB shares.
 <br><br>
 </div>
-	
+
 <table class="table table-striped table-hover tabledrop">
   <thead>
     <tr>
       <th>Description</th>
-      <th align="left">Percent Chart</th>	  
+      <th align="left">Percent Chart</th>
 	  <th align="left">Percent</th>
 	  <th align="left">Computers</th>
 	  <th align="left">Details</th>
@@ -7388,76 +7408,76 @@ This section provides a summary of the domain computers that were targeted, conn
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: 100%;"></div></div></td>
 	  <td>100.00%</td>
 	  <td>$ComputerCount</td>
-      <td><a href="$SubDir/$DomainComputersFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$DomainComputersFileH"><span class="cardsubtitle">HTML</span></a></td>	  
+      <td><a href="$SubDir/$DomainComputersFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$DomainComputersFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>PING RESPONSE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerPingP;"></div></div></td>
-      <td>$PercentComputerPingP</td>	
-	  <td>$ComputerPingableCount</td>  
-      <td><a href="$SubDir/$ComputersPingableFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ComputersPingableFileH"><span class="cardsubtitle">HTML</span></a></td>		  
+      <td>$PercentComputerPingP</td>
+	  <td>$ComputerPingableCount</td>
+      <td><a href="$SubDir/$ComputersPingableFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ComputersPingableFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>PORT 445 OPEN</td>
       <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerPortP;"></div></div></td>
 	  <td>$PercentComputerPortP</td>
 	  <td>$Computers445OpenCount</td>
-      <td><a href="$SubDir/$Computers445OpenFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$Computers445OpenFileH"><span class="cardsubtitle">HTML</span></a></td>  
+      <td><a href="$SubDir/$Computers445OpenFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$Computers445OpenFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>HOST SHARE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerWitShareP;"></div></div></td>
-      <td>$PercentComputerWitShareP</td>	
-	  <td>$AllComputersWithSharesCount</td>  
-      <td><a href="$SubDir/$ShareACLsFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsFileH"><span class="cardsubtitle">HTML</span></a></td> 
+      <td>$PercentComputerWitShareP</td>
+	  <td>$AllComputersWithSharesCount</td>
+      <td><a href="$SubDir/$ShareACLsFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>HOST NON-DEFAULT SHARE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerNonDefaultP;"></div></div></td>
-      <td>$PercentComputerNonDefaultP</td>	
-	  <td>$ComputerwithNonDefaultCount</td>  
-      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>  
-    </tr>	
+      <td>$PercentComputerNonDefaultP</td>
+	  <td>$ComputerwithNonDefaultCount</td>
+      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
     <tr>
       <td>HOST POTENTIALLY INSECURE SHARE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width:$PercentComputerExPrivP;"></div></div></td>
-      <td>$PercentComputerExPrivP</td>	
-	  <td>$ComputerWithExcessive</td>  
-      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>  
-    </tr>	
+      <td>$PercentComputerExPrivP</td>
+	  <td>$ComputerWithExcessive</td>
+      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
     <tr>
       <td>HOST READABLE SHARE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerReadP;"></div></div></td>
-      <td>$PercentComputerReadP</td>	  
-	  <td>$ComputerWithReadCount</td>	  
-      <td><a href="results/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>  
+      <td>$PercentComputerReadP</td>
+	  <td>$ComputerWithReadCount</td>
+      <td><a href="results/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>HOST WRITEABLE SHARE</td>
       <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerWriteP;"></div></div></td>
 	  <td>$PercentComputerWriteP</td>
-	  <td>$ComputerWithWriteCount</td>	  	  
-	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td> 
+	  <td>$ComputerWithWriteCount</td>
+	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>HOST HIGH RISK SHARE</td>
-	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerHighRiskP;"></div></div></td>     
+	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentComputerHighRiskP;"></div></div></td>
 	  <td>$PercentComputerHighRiskP</td>
-	  <td>$ComputerwithHighRisk</td>	  	 
-	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td> 
-    </tr>	
+	  <td>$ComputerwithHighRisk</td>
+	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: SHARE SUMMARY
 -->
 
 <input class="tabInput"  name="tabs" type="radio" id="sharesum"/>
 <label class="tabLabel" onClick="updateTab('sharesum,false)" for="sharesum"></label>
 <div id="tabPanel" class="tabPanel">
-<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Share Summary</h2>		
+<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Share Summary</h2>
 <div style="border-bottom: 1px solid #DEDFE1 ;margin-left:-200px;background-color:#f0f3f5; height:5px; width:120%; margin-bottom:10px;"></div>
 <div style="margin-left:10px;margin-top:3px">
 Below is a summary of the SMB shares discovered on domain computers that may provide excessive privileges to standard domain users.
@@ -7467,7 +7487,7 @@ Below is a summary of the SMB shares discovered on domain computers that may pro
   <thead>
     <tr>
       <th>Description</th>
-      <th align="left">Percent Chart</th>	  
+      <th align="left">Percent Chart</th>
 	  <th align="left">Percent</th>
 	  <th align="left">Shares</th>
 	  <th align="left">Details</th>
@@ -7479,43 +7499,43 @@ Below is a summary of the SMB shares discovered on domain computers that may pro
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: 100%;"></div></div></td>
 	  <td>100.00%</td>
 	  <td>$AllSMBSharesCount</td>
-      <td><a href="$SubDir/$AllSMBSharesFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$AllSMBSharesFileH"><span class="cardsubtitle">HTML</span></a></td>   
+      <td><a href="$SubDir/$AllSMBSharesFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$AllSMBSharesFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>NON-DEFAULT</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesNonDefaultP;"></div></div></td>
-      <td>$PercentSharesNonDefaultP</td>	
-	  <td>$SharesNonDefaultCount</td>  
-      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>  	  
-    </tr>	
+      <td>$PercentSharesNonDefaultP</td>
+	  <td>$SharesNonDefaultCount</td>
+      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
     <tr>
       <td>POTENTIALLY EXCESSIVE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesExPrivP;"></div></div></td>
-      <td>$PercentSharesExPrivP</td>	
-	  <td>$ExcessiveSharesCount</td>  
-      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>    
+      <td>$PercentSharesExPrivP</td>
+	  <td>$ExcessiveSharesCount</td>
+      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>READ ACCESS</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesReadP;"></div></div></td>
-      <td>$PercentSharesReadP</td>	  
-	  <td>$SharesWithReadCount</td>	  
-      <td><a href="$SubDir/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>   
+      <td>$PercentSharesReadP</td>
+	  <td>$SharesWithReadCount</td>
+      <td><a href="$SubDir/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>WRITE ACCESS</td>
-	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesWriteP;"></div></div></td>     
+	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesWriteP;"></div></div></td>
 	  <td>$PercentSharesWriteP</td>
-	  <td>$SharesWithWriteCount</td>	  	 
-	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td> 	  
+	  <td>$SharesWithWriteCount</td>
+	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>HIGH RISK</td>
-	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesHighRiskP;"></div></div></td>     
+	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentSharesHighRiskP;"></div></div></td>
 	  <td>$PercentSharesHighRiskP</td>
-	  <td>$SharesHighRiskCount</td>	  	 
-	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td> 
-    </tr>	
+	  <td>$SharesHighRiskCount</td>
+	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
   </tbody>
 </table>
     <div class="pageDescription">
@@ -7523,7 +7543,7 @@ Below is a summary of the SMB shares discovered on domain computers that may pro
     </div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: ACL SUMMARY
 -->
 
@@ -7534,13 +7554,13 @@ Below is a summary of the SMB shares discovered on domain computers that may pro
 <div style="border-bottom: 1px solid #DEDFE1 ;margin-left:-200px;background-color:#f0f3f5; height:5px; width:120%; margin-bottom:10px;"></div>
 <div style="margin-left:10px;margin-top:3px">
 Below is a summary of the SMB share ACL entries discovered on domain computers that may provide excessive privileges to standard domain users.
-</div> 	
+</div>
 
 <table class="table table-striped table-hover tabledrop">
   <thead>
     <tr>
       <th>Description</th>
-      <th align="left">Percent Chart</th>	  
+      <th align="left">Percent Chart</th>
 	  <th align="left">Percent</th>
 	  <th align="left">ACLs</th>
 	  <th align="left">Details</th>
@@ -7552,59 +7572,59 @@ Below is a summary of the SMB share ACL entries discovered on domain computers t
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: 100%;"></div></div></td>
 	  <td>100.00%</td>
 	  <td>$ShareACLsCount</td>
-      <td><a href="$SubDir/$ShareACLsFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsFileH"><span class="cardsubtitle">HTML</span></a></td> 	  
-    </tr>	
+      <td><a href="$SubDir/$ShareACLsFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
     <tr>
       <td>NON-DEFAULT</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclNonDefaultP;"></div></div></td>
-      <td>$PercentAclNonDefaultP</td>	
-	  <td>$AclNonDefaultCount</td>  
-      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>   
-    </tr>		
+      <td>$PercentAclNonDefaultP</td>
+	  <td>$AclNonDefaultCount</td>
+      <td><a href="$SubDir/$ShareACLsNonDefaultFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsNonDefaultFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
     <tr>
       <td>POTENTIALLY EXCESSIVE</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclExPrivP;"></div></div></td>
-      <td>$PercentAclExPrivP</td>	
-	  <td>$ExcessiveSharePrivsCount</td>  
-      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>  
+      <td>$PercentAclExPrivP</td>
+	  <td>$ExcessiveSharePrivsCount</td>
+      <td><a href="$SubDir/$ShareACLsExFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsExFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
     <tr>
       <td>READ ACCESS</td>
 	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclReadP;"></div></div></td>
-      <td>$PercentAclReadP</td>	  
-	  <td>$AclWithReadCount</td>	  
-      <td><a href="$SubDir/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>  	  
+      <td>$PercentAclReadP</td>
+	  <td>$AclWithReadCount</td>
+      <td><a href="$SubDir/$ShareACLsReadFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsReadFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>WRITE ACCESS</td>
       <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclWriteP;"></div></div></td>
 	  <td>$PercentAclWriteP</td>
-	  <td>$AclWithWriteCount</td>	  	  
-	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td> 
+	  <td>$AclWithWriteCount</td>
+	  <td><a href="$SubDir/$ShareACLsWriteFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsWriteFileH"><span class="cardsubtitle">HTML</span></a></td>
     </tr>
 	<tr>
       <td>HIGH RISK</td>
-	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclHighRiskP;"></div></div></td>     
+	  <td><div class="divbarDomain"><div class="divbarDomainInside" style="width: $PercentAclHighRiskP;"></div></div></td>
 	  <td>$PercentAclHighRiskP</td>
-	  <td>$AclHighRiskCount</td>	  	 
-	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td> 
-    </tr>	
+	  <td>$AclHighRiskCount</td>
+	  <td><a href="$SubDir/$ShareACLsHRFile"><span class="cardsubtitle">CSV</a> | </span><a href="$SubDir/$ShareACLsHRFileH"><span class="cardsubtitle">HTML</span></a></td>
+    </tr>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: GROUP STATS
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="accounts"/> 
+<input class="tabInput"  name="tabs" type="radio" id="accounts"/>
 <label class="tabLabel" onClick="updateTab('accounts',false)" for="accounts"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Group ACL Summary</h2>
 <div style="border-bottom: 1px solid #DEDFE1 ;margin-left:-200px;background-color:#f0f3f5; height:5px; width:120%; margin-bottom:10px;"></div>
 <div style="margin-left:10px;margin-top:3px;width:90%">
 In the context of this report, excessive read and write share permissions have been defined as any network share ACL containing an explicit entry for the "Everyone", "Authenticated Users", "BUILTIN\Users", "Domain Users", or "Domain Computers" groups. All provide domain users access to the affected shares due to privilege inheritance.
-Below is a summary of the exposure associated with each of those groups. 
+Below is a summary of the exposure associated with each of those groups.
 </div>
 
 <table class="table table-striped table-hover tabledrop">
@@ -7614,216 +7634,216 @@ Below is a summary of the exposure associated with each of those groups.
       <th align="left">Excessive ACL Entries</th>
       <th align="left">Affected Computers</th>
 	  <th align="left">Affected Shares</th>
-	  <th align="left">Affected ACLs</th>	 	 
+	  <th align="left">Affected ACLs</th>
     </tr>
   </thead>
   <tbody>
 	<tr>
-	  <td>Everyone</td>	
+	  <td>Everyone</td>
       <td>
  	  <span class="tablecolinfo">
 		  <div class="AclEntryWrapper">
 			<div class="AclEntryLeft">
-			Read<br> 
-			Write<br> 
-			High Risk<br> 
+			Read<br>
+			Write<br>
+			High Risk<br>
 			</div>
 			<div class="AclEntryRight">
-			 : $AceEveryoneAclReadCount <br> 
+			 : $AceEveryoneAclReadCount <br>
 			 : $AceEveryoneAclWriteCount <br>
-			 : $AceEveryoneAclHRCount 
+			 : $AceEveryoneAclHRCount
 			</div>
 		  </div>
 	  </span>
-      </td>		  
+      </td>
 	  <td>
 		  <span class="dashboardsub2">$AceEveryoneComputerCountPS ($AceEveryoneComputerCount of $ComputerCount)</span>
 		  <br>
 		  <div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceEveryoneComputerCountPS;"></div>
 		  </div>
-      </td>     	 	  
+      </td>
 	  <td>
 		<span class="dashboardsub2">$AceEveryoneShareCountPS ($AceEveryoneShareCount of $AllSMBSharesCount)</span>
 		<br>
 		<div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceEveryoneShareCountPS;"></div>
 		</div>
-      </td>  	  
+      </td>
 	  <td>
 	  <span class="dashboardsub2">$AceEveryoneAclPS ($AceEveryoneAclCount of $ShareACLsCount)</span>
       <br>
       <div class="divbarDomain"><div class="divbarDomainInside" style="width: $AceEveryoneAclPS;"></div></div>
-      </td>    	  
-    </tr>	
+      </td>
+    </tr>
 	<tr>
-	  <td>BUILTIN\Users</td>		
+	  <td>BUILTIN\Users</td>
       <td>
  	  <span class="tablecolinfo">
 		  <div class="AclEntryWrapper">
 			<div class="AclEntryLeft">
-			Read<br> 
-			Write<br> 
-			High Risk<br> 
+			Read<br>
+			Write<br>
+			High Risk<br>
 			</div>
 			<div class="AclEntryRight">
-			 : $AceUsersAclReadCount <br> 
+			 : $AceUsersAclReadCount <br>
 			 : $AceUsersAclWriteCount <br>
-			 : $AceUsersAclHRCount 
+			 : $AceUsersAclHRCount
 			</div>
 		  </div>
 	  </span>
-      </td>  
+      </td>
 	  <td>
 		  <span class="dashboardsub2">$AceUsersComputerCountPS ($AceUsersComputerCount of $ComputerCount)</span>
 		  <br>
 		  <div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceUsersComputerCountPS;"></div>
 		  </div>
-      </td>     	 	  
+      </td>
 	  <td>
 		<span class="dashboardsub2">$AceUsersShareCountPS ($AceUsersShareCount of $AllSMBSharesCount)</span>
 		<br>
 		<div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceUsersShareCountPS;"></div>
 		</div>
-      </td>  	  
+      </td>
 	  <td>
 	  <span class="dashboardsub2">$AceUsersAclPS ($AceUsersAclCount of $ShareACLsCount)</span>
       <br>
       <div class="divbarDomain"><div class="divbarDomainInside" style="width: $AceUsersAclPS;"></div></div>
-      </td>    	  
-    </tr>	
+      </td>
+    </tr>
 	<tr>
 	  <td>Authenticated Users</td>
       <td>
  	  <span class="tablecolinfo">
 		  <div class="AclEntryWrapper">
 			<div class="AclEntryLeft">
-			Read<br> 
-			Write<br> 
-			High Risk<br> 
+			Read<br>
+			Write<br>
+			High Risk<br>
 			</div>
 			<div class="AclEntryRight">
-			 : $AceAuthenticatedUsersAclReadCount <br> 
+			 : $AceAuthenticatedUsersAclReadCount <br>
 			 : $AceAuthenticatedUsersAclWriteCount <br>
-			 : $AceAuthenticatedUsersAclHRCount 
+			 : $AceAuthenticatedUsersAclHRCount
 			</div>
 		  </div>
 	  </span>
-      </td>		  
+      </td>
 	  <td>
 		  <span class="dashboardsub2">$AceAuthenticatedUsersComputerCountPS ($AceAuthenticatedUsersComputerCount of $ComputerCount)</span>
 		  <br>
 		  <div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceAuthenticatedUsersComputerCountPS;"></div>
 		  </div>
-      </td>     	 	  
+      </td>
 	  <td>
 		<span class="dashboardsub2">$AceAuthenticatedUsersShareCountPS ($AceAuthenticatedUsersShareCount of $AllSMBSharesCount)</span>
 		<br>
 		<div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceAuthenticatedUsersShareCountPS;"></div>
 		</div>
-      </td>  	  
+      </td>
 	  <td>
 	  <span class="dashboardsub2">$AceAuthenticatedUsersAclPS ($AceAuthenticatedUsersAclCount of $ShareACLsCount)</span>
       <br>
       <div class="divbarDomain"><div class="divbarDomainInside" style="width: $AceAuthenticatedUsersAclPS;"></div></div>
-      </td>    	  
-    </tr>	
+      </td>
+    </tr>
 	<tr>
-	  <td>Domain Users</td>	
+	  <td>Domain Users</td>
       <td>
  	  <span class="tablecolinfo">
 		  <div class="AclEntryWrapper">
 			<div class="AclEntryLeft">
-			Read<br> 
-			Write<br> 
-			High Risk<br> 
+			Read<br>
+			Write<br>
+			High Risk<br>
 			</div>
 			<div class="AclEntryRight">
-			 : $AceDomainUsersAclReadCount <br> 
+			 : $AceDomainUsersAclReadCount <br>
 			 : $AceDomainUsersAclWriteCount <br>
-			 : $AceDomainUsersAclHRCount 
+			 : $AceDomainUsersAclHRCount
 			</div>
 		  </div>
 	  </span>
-      </td>	  
+      </td>
 	  <td>
 		  <span class="dashboardsub2">$AceDomainUsersComputerCountPS ($AceDomainUsersComputerCount of $ComputerCount)</span>
 		  <br>
 		  <div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceDomainUsersComputerCountPS;"></div>
 		  </div>
-      </td>     	 	  
+      </td>
 	  <td>
 		<span class="dashboardsub2">$AceDomainUsersShareCountPS ($AceDomainUsersShareCount of $AllSMBSharesCount)</span>
 		<br>
 		<div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceDomainUsersShareCountPS;"></div>
 		</div>
-      </td>  	  
+      </td>
 	  <td>
 	  <span class="dashboardsub2">$AceDomainUsersAclPS ($AceDomainUsersAclCount of $ShareACLsCount)</span>
       <br>
       <div class="divbarDomain"><div class="divbarDomainInside" style="width: $AceDomainUsersAclPS;"></div></div>
-      </td>    	  
+      </td>
     </tr>
 	<tr>
-	  <td>Domain Computers</td>	
+	  <td>Domain Computers</td>
       <td>
  	  <span class="tablecolinfo">
 		  <div class="AclEntryWrapper">
 			<div class="AclEntryLeft">
-			Read<br> 
-			Write<br> 
-			High Risk<br> 
+			Read<br>
+			Write<br>
+			High Risk<br>
 			</div>
 			<div class="AclEntryRight">
-			 : $AceDomainComputersAclReadCount <br> 
+			 : $AceDomainComputersAclReadCount <br>
 			 : $AceDomainComputersAclWriteCount <br>
-			 : $AceDomainComputersAclHRCount 
+			 : $AceDomainComputersAclHRCount
 			</div>
 		  </div>
 	  </span>
-      </td>	  
+      </td>
 	  <td>
 		  <span class="dashboardsub2">$AceDomainComputersComputerCountPS ($AceDomainComputersComputerCount of $ComputerCount)</span>
 		  <br>
 		  <div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceDomainComputersComputerCountPS;"></div>
 		  </div>
-      </td>     	 	  
+      </td>
 	  <td>
 		<span class="dashboardsub2">$AceDomainComputersShareCountPS ($AceDomainComputersShareCount of $AllSMBSharesCount)</span>
 		<br>
 		<div class="divbarDomain">
 			<div class="divbarDomainInside" style="width: $AceDomainComputersShareCountPS;"></div>
 		</div>
-      </td>  	  
+      </td>
 	  <td>
 	  <span class="dashboardsub2">$AceDomainComputersAclPS ($AceDomainComputersAclCount of $ShareACLsCount)</span>
       <br>
       <div class="divbarDomain"><div class="divbarDomainInside" style="width: $AceDomainComputersAclPS;"></div></div>
-      </td>    	  
+      </td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: SHARE NAMES
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="ShareName"/> 
+<input class="tabInput"  name="tabs" type="radio" id="ShareName"/>
 <label class="tabLabel" onClick="updateTab('ShareName',false)" for="ShareName"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Share Names</h2>
 <div style="margin-left:10px;margin-top:3px; margin-bottom: 3px;width:95%">
-This section provide a summary and list of the affected shares grouped by name. $AllSMBSharesCount shares were discovered across $ComputerPingableCount live computers in the $TargetDomain Active Directory domain. $ExcessiveSharesCount of those shares were found configured with excessive privileges across $ComputerWithExcessive computers. 
+This section provide a summary and list of the affected shares grouped by name. $AllSMBSharesCount shares were discovered across $ComputerPingableCount live computers in the $TargetDomain Active Directory domain. $ExcessiveSharesCount of those shares were found configured with excessive privileges across $ComputerWithExcessive computers.
 <br><br>
-</div>	
+</div>
 
 <div style="width: 96.5%; display: flex; justify-content: space-between;">
 
@@ -7834,12 +7854,12 @@ This section provide a summary and list of the affected shares grouped by name. 
        Affected Shares Names
       </div>
       <div style="text-align: left;">
-        <span class="percentagetext" style = "color:#f29650;">                    
-        $ExcessiveSharesCount  &nbsp;                     
-        </span>	
+        <span class="percentagetext" style = "color:#f29650;">
+        $ExcessiveSharesCount  &nbsp;
+        </span>
         <Br>
         <div style="padding-right: 10px;">
-        ($ShareNameChartCount unique names)	
+        ($ShareNameChartCount unique names)
         </div>
       </div>
     </div>
@@ -7847,27 +7867,27 @@ This section provide a summary and list of the affected shares grouped by name. 
 
   <!-- Right aligned card -->
   <div style="width: 77%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartShareNameRiska"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
-</div>	
+</div>
 
-<div style="display: flex; margin-left:12px; font-size:11; text-align:left; margin-top: -10px; margin-bottom: 10px;" >			
-        <div id="filterCounter" style="margin-top:0px;">Loading...</div>      
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('sharenametable', 0)">Export</a> &nbsp; | 
+<div style="display: flex; margin-left:12px; font-size:11; text-align:left; margin-top: -10px; margin-bottom: 10px;" >
+        <div id="filterCounter" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('sharenametable', 0)">Export</a> &nbsp; |
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('filterInput').value = '';applyFiltersAndSort('sharenametable', 'filterInput', 'filterCounter', 'pagination');">Clear</a>
 </div>
-				
+
 <div class="searchbar" style="text-align:left; display: flex; height: 75px;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="filterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 200px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">	
+        <input type="text" id="filterInput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 200px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
 			<div style="margin-top: 35px; margin-left: -195px; margin-right: 5px; margin-bottom: 20px; color: gray; width: 660px; border-top: 1px solid #e3e1e1;">
-			Quick Filters: 
+			Quick Filters:
 			<span style = "color: #71808d; margin-top: 25px;  ">
 			<label><input type="checkbox" class="filter-checkbox" name="h"> Exploitable</label>
 			<label><input type="checkbox" class="filter-checkbox" name="w"> Write</label>
@@ -7890,7 +7910,7 @@ This section provide a summary and list of the affected shares grouped by name. 
     </span>
     </div>
     </th>
-                          
+
     <th class="NamesTh" onclick="sortTable('sharenametable',1,'alpha')" style="vertical-align: middle;text-align: left;">Share<br>Name&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
@@ -7898,7 +7918,7 @@ This section provide a summary and list of the affected shares grouped by name. 
     </span>
     </div>
     </th>
-          
+
     <th class="NamesTh" onclick="sortTable('sharenametable',2,'number')" style="vertical-align: middle;text-align: left;">Risk<br>Level&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
@@ -7907,57 +7927,57 @@ This section provide a summary and list of the affected shares grouped by name. 
     </span>
     </div>
     </th>
-                      
+
     <th class="NamesTh" onclick="sortTable('sharenametable',3,'number')" style="vertical-align: middle;text-align: left;">Share<br>Similarity&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
     <span class="tooltiptext">
         <strong>Share Similarity</strong><br>scores reflect how likely it is that the shares are related to each other.
-    </span>    
+    </span>
     </div>
     </th>
-         
+
     <th class="NamesTh"  onclick="sortTable('sharenametable',4,'number')" style="vertical-align: middle;text-align: left;">Folder<br>Groups&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" /></span>
     <span class="tooltiptext">
         <strong>Folder Groups</strong><br>are groups of shares<br>that have the same<br>name and file listing.
     </div>
-    </th>            
-	  
+    </th>
+
     <th class="NamesTh"  onclick="sortTable('sharenametable',5,'number')" style="vertical-align: middle;text-align: left;">Common<br>Files&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
     <span class="tooltiptext">
     <strong>Common Files</strong><br>are file names that<br>exist in 10% or more<br>of the file groups.
     </span>
-    </div> 
-    </th>	 	 
-	  
+    </div>
+    </th>
+
     <th class="NamesTh"  onclick="sortTable('sharenametable',6,'number')" style="vertical-align: middle;text-align: left;">Interesting<br>Files&nbsp;&nbsp;
     <div class="tooltip">
     <img src="data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9Ii0wLjUgLTAuNSAxNSAxNSIgaWQ9IkluZm9ybWF0aW9uLUNpcmNsZS0tU3RyZWFtbGluZS1VbHRpbWF0ZS5zdmciIGhlaWdodD0iMTUiIHdpZHRoPSIxNSI+PGRlc2M+SW5mb3JtYXRpb24gQ2lyY2xlIFN0cmVhbWxpbmUgSWNvbjogaHR0cHM6Ly9zdHJlYW1saW5laHEuY29tPC9kZXNjPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNyAxMy40MTY2NjY2NjY2NjY2NjhjMy41NDM4MDgzMzMzMzMzMzM3IDAgNi40MTY2NjY2NjY2NjY2NjcgLTIuODcyODU4MzMzMzMzMzMzNyA2LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjcgMCAtMy41NDM4MjU4MzMzMzMzMzM1IC0yLjg3Mjg1ODMzMzMzMzMzMzcgLTYuNDE2NjY2NjY2NjY2NjY3IC02LjQxNjY2NjY2NjY2NjY2NyAtNi40MTY2NjY2NjY2NjY2NjdDMy40NTYxNzQxNjY2NjY2NjcgMC41ODMzMzMzMzMzMzMzMzM0IDAuNTgzMzMzMzMzMzMzMzMzNCAzLjQ1NjE3NDE2NjY2NjY2NyAwLjU4MzMzMzMzMzMzMzMzMzQgN2MwIDMuNTQzODA4MzMzMzMzMzMzNyAyLjg3Mjg0MDgzMzMzMzMzMzUgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjcgNi40MTY2NjY2NjY2NjY2NjdaIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48cGF0aCBzdHJva2U9IiNjNGM0YzgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTYuOTY1NzAwMDAwMDAwMDAxIDkuODI5ODY2NjY2NjY2NjY2di0zLjU4MTQzMzMzMzMzMzMzMzVjMCAtMC4xMzU3NDE2NjY2NjY2NjY2OCAtMC4wNTM5IC0wLjI2NTgyNTAwMDAwMDAwMDAzIC0wLjE0OTg1ODMzMzMzMzMzMzM0IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjA5NTk1ODMzMzMzMzMzMzM0IC0wLjA5NTk3IC0wLjIyNjEwMDAwMDAwMDAwMDAyIC0wLjE0OTg3NTgzMzMzMzMzMzM1IC0wLjM2MTc4MzMzMzMzMzMzMzM1IC0wLjE0OTg3NTgzMzMzMzMzMzM1aC0wLjUxMTY0MTY2NjY2NjY2NjciIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk4NSA0LjYzNjA1MzMzMzMzMzMzNGMtMC4xNDEyODMzMzMzMzMzMzMzNCAwIC0wLjI1NTc5MTY2NjY2NjY2NjcgLTAuMTE0NTMxNjY2NjY2NjY2NjcgLTAuMjU1NzkxNjY2NjY2NjY2NyAtMC4yNTU4MTVzMC4xMTQ1MDgzMzMzMzMzMzMzNCAtMC4yNTU4MjA4MzMzMzMzMzMzMyAwLjI1NTc5MTY2NjY2NjY2NjcgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNNi43MDk5MDgzMzMzMzMzMzQgNC42MzYwNTMzMzMzMzMzMzRjMC4xNDEyODMzMzMzMzMzMzMzNCAwIDAuMjU1ODUgLTAuMTE0NTMxNjY2NjY2NjY2NjcgMC4yNTU4NSAtMC4yNTU4MTVzLTAuMTE0NTY2NjY2NjY2NjY2NjYgLTAuMjU1ODIwODMzMzMzMzMzMzMgLTAuMjU1ODUgLTAuMjU1ODIwODMzMzMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPjxwYXRoIHN0cm9rZT0iI2M0YzRjOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIGQ9Ik01Ljk0MjQxNjY2NjY2NjY2NjUgOS44Mjk4NjY2NjY2NjY2NjZoMi4xMTUxNjY2NjY2NjY2NjY2IiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD48L3N2Zz4=" />
     <span class="tooltiptext">
         <strong>Interesting Files</strong><br>are filenames that<br>may be sensitive.
     </span>
-    </div> 
-    </th>	 	        
+    </div>
+    </th>
 
     </tr>
     </thead>
 
     <tbody>
-    $CommonShareNamesTopStringT    
+    $CommonShareNamesTopStringT
     </tbody>
 </table>
 <div id="pagination" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Networks
 -->
 
-<input class="tabInput" name="tabs" type="radio" id="SubNets"> 
+<input class="tabInput" name="tabs" type="radio" id="SubNets">
 <label class="tabLabel" onclick="updateTab(&#39;SubNets#39;,false)" for="SubNets"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Networks</h2>
@@ -7976,8 +7996,8 @@ This section provides an overview of the affected networks. $SubnetsCount networ
        Affected Networks
       </div>
       <div style="text-align: left;">
-          <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-          $SubnetsCount &nbsp;                  
+          <span class="percentagetext" style="color:#f29650; text-align: left;">
+          $SubnetsCount &nbsp;
           </span>
       </div>
     </div>
@@ -7985,67 +8005,67 @@ This section provides an overview of the affected networks. $SubnetsCount networ
 
   <!-- Right aligned card -->
   <div style="width: 77%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartNetworkRisk"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
-</div>	
+</div>
 
 <!-- Export Buttons -->
-<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >		
-        <div id="networkcounter" style="margin-top:0px;">Loading...</div>        
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('networktable', 1)">Export</a> &nbsp;&nbsp;| 
+<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
+        <div id="networkcounter" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('networktable', 1)">Export</a> &nbsp;&nbsp;|
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('networkinput').value = '';applyFiltersAndSort('networktable', 'networkinput', 'networkcounter', 'networkpagination');">Clear</a>
-</div>	
+</div>
 
 <!-- search -->
 <div class="searchbar" style="text-align:left; display: flex; margin-bottom: -10px;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="networkinput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">							
-</div>	
+        <input type="text" id="networkinput" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
+</div>
 
 <!-- table -->
 $SubnetSummaryHTML
 <div id="networkpagination" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: SHARE OWNERS
 -->
-<input class="tabInput"  name="tabs" type="radio" id="ShareOwner"/> 
+<input class="tabInput"  name="tabs" type="radio" id="ShareOwner"/>
 <label class="tabLabel" onClick="updateTab('ShareOwner',false)" for="ShareOwner"></label>
 <div id="tabPanel" class="tabPanel">
-<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Share Owners</h2>	
+<h2 style="margin-top: 6px;margin-left:10px;margin-bottom: 17px;">Share Owners</h2>
 <div style="border-bottom: 1px solid #DEDFE1 ;margin-left:-200px;background-color:#f0f3f5; height:5px; width:120%; margin-bottom:10px;"></div>
 <div style="margin-left:10px;margin-top:3px">
-This section lists the most common share owners. 
+This section lists the most common share owners.
 </div>
 
 <table class="table table-striped table-hover tabledrop">
   <thead>
     <tr>
-      <th align="left">Share Count</th> 
+      <th align="left">Share Count</th>
       <th align="left">Owner</th>
       <th align="left">Affected Computers</th>
 	  <th align="left">Affected Shares</th>
-	  <th align="left">Affected ACLs</th>	 	 
+	  <th align="left">Affected ACLs</th>
     </tr>
   </thead>
   <tbody>
-  $CommonShareOwnersTop5StringT	
+  $CommonShareOwnersTop5StringT
   </tbody>
   </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: FOLDER GROUPS
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="ShareFolders"/> 
+<input class="tabInput"  name="tabs" type="radio" id="ShareFolders"/>
 <label class="tabLabel" onClick="updateTab('ShareFolders',false)" for="ShareFolders"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Folder Groups</h2>
@@ -8063,8 +8083,8 @@ Folder groups are SMB shares that contain the exact same file listing. Each fold
        Affected Folder Groups
       </div>
       <div style="text-align: left;">
-          <span class="percentagetext" style="color:#f29650; text-align: left;">                    
-          $FolderGroupChartCount &nbsp;                  
+          <span class="percentagetext" style="color:#f29650; text-align: left;">
+          $FolderGroupChartCount &nbsp;
           </span>
       </div>
     </div>
@@ -8072,50 +8092,50 @@ Folder groups are SMB shares that contain the exact same file listing. Each fold
 
   <!-- Right aligned card -->
   <div style="width: 77%; display: flex; justify-content: flex-end;">
-    <div class="LargeCard" style="width:100%;">									
+    <div class="LargeCard" style="width:100%;">
 	    <div class="chart-container">
 		    <div id="ChartFGRiska"></div>
 			<div class="chart-controls"></div>
-        </div>								  							
+        </div>
     </div>
   </div>
 
-</div>				
+</div>
 
-<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >		
-        <div id="filterCounterTwo" style="margin-top:0px;">Loading...</div>        
-        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('foldergrouptable', 1)">Export</a> &nbsp;&nbsp;| 
+<div style="display: flex; margin-left:12px; margin-bottom: 10px; margin-top: -10px; font-size:11; text-align:left;" >
+        <div id="filterCounterTwo" style="margin-top:0px;">Loading...</div>
+        <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('foldergrouptable', 1)">Export</a> &nbsp;&nbsp;|
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('filterInputTwo').value = '';applyFiltersAndSort('foldergrouptable', 'filterInputTwo', 'filterCounterTwo', 'paginationfg');">Clear</a>
-</div>	
-					
+</div>
+
 <div class="searchbar" style="text-align:left; display: flex;" >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="filterInputTwo" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">							
-</div>		
+        <input type="text" id="filterInputTwo" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
+</div>
 
 <table class="table table-striped table-hover tabledrop" id="foldergrouptable" style="width:95%; margin-top: 0px;">
   <thead>
-    <tr>  
+    <tr>
       <th onclick="sortTable('foldergrouptable',0,'number')" align="left" style="cursor: pointer;">Unique Share Names</th>
-      <th onclick="sortTable('foldergrouptable',1,'number')" align="left" style="cursor: pointer;">Share Count</th> 
+      <th onclick="sortTable('foldergrouptable',1,'number')" align="left" style="cursor: pointer;">Share Count</th>
       <th onclick="sortTable('foldergrouptable',2,'number')" align="left" style="cursor: pointer;">File Count</th>
-      <th onclick="sortTable('foldergrouptable',3,'number')" align="left" style="cursor: pointer;">Risk Level</th>            
-      <th onclick="sortTable('foldergrouptable',4,'alpha')"  align="left" style="cursor: pointer;">Folder Group</th>   
-      <th onclick="sortTable('foldergrouptable',5,'alpha')"  align="left" style="cursor: pointer;">Related App</th>   	 	 
+      <th onclick="sortTable('foldergrouptable',3,'number')" align="left" style="cursor: pointer;">Risk Level</th>
+      <th onclick="sortTable('foldergrouptable',4,'alpha')"  align="left" style="cursor: pointer;">Folder Group</th>
+      <th onclick="sortTable('foldergrouptable',5,'alpha')"  align="left" style="cursor: pointer;">Related App</th>
     </tr>
   </thead>
   <tbody>
-  $CommonShareFileGroupTopString	
+  $CommonShareFileGroupTopString
   </tbody>
 </table>
 <div id="paginationfg" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Extracted Secrets
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="SecretsPage"/> 
+<input class="tabInput"  name="tabs" type="radio" id="SecretsPage"/>
 <label class="tabLabel" onClick="updateTab('SecretsPage',false)" for="SecretsPage"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Extracted Secrets</h2>
@@ -8124,74 +8144,74 @@ This section includes a list of the credentials that were recovered during data 
 <br><br>
 </div>
 <div style="width: 96.5%; display: flex; justify-content: space-between;">
-                    <div class="card" style="width: 20%">	
+                    <div class="card" style="width: 20%">
 	                    <div class="cardtitle" style="color:gray;font-size: 16px; font-weight: bold;">
 		                   Extracted Secrets Found
-	                    </div>		
+	                    </div>
                         <div style="text-align: left;">
-				                    <span class="percentagetext" style = "color:#f29650;">                    
-					                    $SecretsRecoveredCount &nbsp;                     
-				                    </span>	
+				                    <span class="percentagetext" style = "color:#f29650;">
+					                    $SecretsRecoveredCount &nbsp;
+				                    </span>
 			            </div>
                     </div>
-</div>					
+</div>
 
-<div style="display: flex; margin-left:12px; font-size:11; text-align:left; margin-top: -10px; margin-bottom: 10px;" >			
-        <div id="secretsCounterTwo" style="margin-top:0px;">Loading...</div>        
+<div style="display: flex; margin-left:12px; font-size:11; text-align:left; margin-top: -10px; margin-bottom: 10px;" >
+        <div id="secretsCounterTwo" style="margin-top:0px;">Loading...</div>
         <a style="font-size:11; margin-left: 5px; color:#71808d;" href="#" onclick="extractAndDownloadCSV('recoveredsecretstable', 1)">Export</a> &nbsp; |
         <a style="font-size:11; margin-left: 5px; color:#71808d; cursor: pointer;" onclick="document.getElementById('secretsInputTwo').value = '';applyFiltersAndSort('recoveredsecretstable', 'secretsInputTwo', 'secretsCounterTwo', 'paginationsecrets');">Clear</a>
-</div>	
-					
+</div>
+
 <div class="searchbar" style="text-align:left; display: flex; " >
         <img style = "margin-left: 10px; margin-top: 10px; width: 20px; height: 20px; opacity: 0.5;" src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAA63pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjajVFtDsMgCP3vKXYEBKpyHPuV7AY7/p4V23XJkpFA4UHx+Qzb67mHRzMuHHTKJVlKBFNT44qkULf5iJH0iL0w78U7Hs4GAxJ8pZfGjm/AkUevzQ+JY34sOk+qyKarUavj8x2ffSGX70XOQGI/mVb/wRcJOyPt9eKMkpV8u9q60N3K5SqZ05RiVkRlyjkZ8sKkGXqujSj3ddBodqoOjHqMMjjxJlEIUUQ7S2muUhveY8AgSUYxoVXhdghPeEpQuF5pr3SK+anNpdEP++da4Q2MtHXnU4cTLQAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZE9SMNAGIbfpkqlVBzaQcQhQ3WyixVxLFUsgoXSVmjVweTSP2jSkKS4OAquBQd/FqsOLs66OrgKguAPiLODk6KLlPhdUmgR4x3HPbz3vS933wFCu85UcyABqJplZFNJsVBcFQOvCNIMIY6wxEw9nVvMw3N83cPH97sYz/Ku+3MMKyWTAT6ROMF0wyLeIJ7dtHTO+8QRVpUU4nPiKYMuSPzIddnlN84VhwWeGTHy2XniCLFY6WO5j1nVUIlniKOKqlG+UHBZ4bzFWa03Wfee/IWhkraS4zqtcaSwhDQyECGjiRrqsBCjXSPFRJbOkx7+McefIZdMrhoYORbQgArJ8YP/we/emuX4tJsUSgKDL7b9MQEEdoFOy7a/j227cwL4n4ErredvtIG5T9JbPS16BIxsAxfXPU3eAy53gNEnXTIkR/LTEspl4P2MvqkIhG+B4Jrbt+45Th+APPVq+QY4OAQmK5S97vHuof6+/VvT7d8PvKxyxAQ5Z2gAAA12aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmYzOTExMWJjLTMyZDUtNDRjMi1iZDIzLWViZGY2ODIyZjk1MSIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoyYzc0NGFmMy1iZWIwLTQwN2QtYTc3Yy1jMTllNTJiMWUyNjkiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjZTBkZDFmNC01YzViLTQ0NzMtODljNC1lYzI5NjAxM2RlYTAiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJXaW5kb3dzIgogICBHSU1QOlRpbWVTdGFtcD0iMTcyODU2NDc1MDg1MTg0MyIKICAgR0lNUDpWZXJzaW9uPSIyLjEwLjM0IgogICB0aWZmOk9yaWVudGF0aW9uPSIxIgogICB4bXA6Q3JlYXRvclRvb2w9IkdJTVAgMi4xMCIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNDoxMDoxMFQwNzo1MjoyOS0wNTowMCIKICAgeG1wOk1vZGlmeURhdGU9IjIwMjQ6MTA6MTBUMDc6NTI6MjktMDU6MDAiPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iLyIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo1YWQ3NWQwMS1hZGM1LTQ5YmEtYjBiZC0xYWUwMzc2NjQ2ZTMiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkdpbXAgMi4xMCAoV2luZG93cykiCiAgICAgIHN0RXZ0OndoZW49IjIwMjQtMTAtMTBUMDc6NTI6MzAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+STJFVQAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAPYQAAD2EBqD+naQAAAAd0SU1FB+gKCgw0Hlvx/HoAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACK0lEQVRIx9WWO2hUURCGv/FJGgk+kBSCoo02phDSKLpNFINYRBAJWogmiEFsLExAfxYsLBQDihuxiCixUFCwEHzANdj6KARBU2mWiIgmgkEsdmxm5RL23uyuQfA05865c+53zpl/5lz4B83qdZS0GugFuoCO1Ksy8Ai4IelZU5BisWiVSmUAGARa3D17xWaPgSOSPtQNkbQIuOXu++MjAK+Ap8A40OruHcAuoCV8JoFOSW/qhZTcvS8mvwOOShqr4bcSuODuh8K3DGyR9AlgYQ5gt7tfjEnPgW2Sxmv5JkkykyTJ/UKh8DlitszM1iZJcgdgQc5GzgVgGjgg6Ucd4rhqZrfD3CepPRMiaZO7t4d5XtJEA4o9ZWYeAunJ20kh9TzSSE5IKocwADrzIJvjqGYkTTaRf1VlbcyDVJNhqskknwq5L86DfIy+rUnImui/5EFeA7i7SdrRBGR7BP5FHuRJSBegv8HAdwEbwnyYJ+GfwPUwuyXtrRPQCgy5ezW/RuZKxok4MoBRSXvmALQBD4D1MXRW0nRm7ZLUCwzPrrhmdhO4JOllyncFcBAYAFbFLkYl9WQWSEl9QCmvpAPfgffAcmBdahEAw8AJSb9qQrIAZnY5iulhd19a4x4BeAsMSrqXeWnlAIYknUwFdiewNRLNInZjWbfiH4ikbne/W2N1VyT185etqq7TNQCl+QCkIUtmjV+TdGy+/laqkONm9tXMvpnZmYjP/9V+A1Vj2qntT1EIAAAAAElFTkSuQmCC">
-        <input type="text" id="secretsInputTwo" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">							
-</div>		
+        <input type="text" id="secretsInputTwo" placeholder="Search" style="margin-top: 5px; height: 30px; font-size: 14px; margin-left: 5px; width: 300px; border: .0px solid #BDBDBD;outline: none;color:#345367; padding-left: 5px;">
+</div>
 
 <table class="table table-striped table-hover tabledrop" id="recoveredsecretstable" style="width:95%; margin-top: 0px;">
   <thead>
-    <tr>  
+    <tr>
       <th onclick="sortTable('recoveredsecretstable',0,'alpha')" align="left" style="cursor: pointer;">ComputerName</th>
-      <th onclick="sortTable('recoveredsecretstable',1,'alpha')" align="left" style="cursor: pointer;">ShareName</th> 
+      <th onclick="sortTable('recoveredsecretstable',1,'alpha')" align="left" style="cursor: pointer;">ShareName</th>
       <th onclick="sortTable('recoveredsecretstable',2,'alpha')" align="left" style="cursor: pointer;">FileName</th>
-      <th onclick="sortTable('recoveredsecretstable',3,'alpha')" align="left" style="cursor: pointer;  width:50px;">FilePath</th>         	 	 
-      <th onclick="sortTable('recoveredsecretstable',4,'alpha')"  align="left" style="cursor: pointer; ">Username</th>      	 	 
+      <th onclick="sortTable('recoveredsecretstable',3,'alpha')" align="left" style="cursor: pointer;  width:50px;">FilePath</th>
+      <th onclick="sortTable('recoveredsecretstable',4,'alpha')"  align="left" style="cursor: pointer; ">Username</th>
       <th onclick="sortTable('recoveredsecretstable',5,'alpha')"  align="left" style="cursor: pointer;">Password</th>
       <th onclick="sortTable('recoveredsecretstable',6,'alpha')"  align="left" style="cursor: pointer;">PasswordEnc</th>
-      <th onclick="sortTable('recoveredsecretstable',7,'alpha')"  align="left" style="cursor: pointer;  width:50px;">KeyfilePath</th>         
-      <th onclick="sortTable('recoveredsecretstable',8,'alpha')" align="left" style="cursor: pointer;">Details</th>         
+      <th onclick="sortTable('recoveredsecretstable',7,'alpha')"  align="left" style="cursor: pointer;  width:50px;">KeyfilePath</th>
+      <th onclick="sortTable('recoveredsecretstable',8,'alpha')" align="left" style="cursor: pointer;">Details</th>
     </tr>
   </thead>
   <tbody>
-  $SecretsRecoveredString	
+  $SecretsRecoveredString
   </tbody>
 </table>
 <div id="paginationsecrets" style="margin:10px;"></div>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: ShareGraph
 -->
 
-<input class="tabInput" name="tabs" type="radio" id="ShareGraph"/> 
+<input class="tabInput" name="tabs" type="radio" id="ShareGraph"/>
 <label class="tabLabel" onClick="updateTab('ShareGraph',false)" for="ShareGraph"></label>
 <div id="tabPanel" class="tabPanel">
-    <h2 style="margin-top: 65px; margin-left: 10px; margin-bottom: 17px;">ShareGraph</h2>    
+    <h2 style="margin-top: 65px; margin-left: 10px; margin-bottom: 17px;">ShareGraph</h2>
     <div style="margin-left: 10px; margin-top: 7px;">
-		
+
 		<!-- Header Text, Selected Node -->
 		<div  style="width: 100%; display: flex; align-items: left; margin-left: -1px;">
 			<div style="flex: 1;">
 			This sectin include an experimental interactive graph for exploring share relationships.
 			</div>
-			<div style="text-align: right; margin-right: 10px;color:gray;">			
-				<div id="buttonsright" style="text-align: right;">						
+			<div style="text-align: right; margin-right: 10px;color:gray;">
+				<div id="buttonsright" style="text-align: right;">
 					<span id="node-count">Nodes: 0</span>&nbsp;&nbsp;
-					<span id="edge-count">Edges: 0</span><br>	
-                    &nbsp;Selected Node:&nbsp;<span id="selected-node" style="color:gray;">None</span>		
+					<span id="edge-count">Edges: 0</span><br>
+                    &nbsp;Selected Node:&nbsp;<span id="selected-node" style="color:gray;">None</span>
 				</div>
 			</div>
 		</div>
-		
+
 <!-- SHAREGRAPH CONTAINER START -->
 <div style="width: 100%; height: 800px; position: relative; display: flex;">
 
@@ -8207,7 +8227,7 @@ This section includes a list of the credentials that were recovered during data 
 				</svg>
 			</button>
 		</div>
-		
+
         <!-- Tab Buttons -->
 		<div id="toolbarTabs" style="margin-bottom: 5px; width: 180px; white-space: nowrap;">
 			<button id="tab1Button" class="modern-button" style="border: .5px solid #e3e4e6; background-color: #d4d5d6; color: #345367; font-size: 12px; width: 50px; height: 30px; padding: 0px; display: inline-block; margin-right: 2px; justify-content: center; align-items: center;" onclick="showTab(1)">Search</button>
@@ -8218,23 +8238,23 @@ This section includes a list of the credentials that were recovered during data 
 
         <!-- Tab 1 Content (Toolbar Content) -->
         <div id="tab1Content" class="tab-content">
-		
+
 			<div style="color: #345367; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Seach Nodes</div>
-            <input type="text" id="search-input" placeholder="Search nodes..." class="modern-input" style="width: 180px;">			
+            <input type="text" id="search-input" placeholder="Search nodes..." class="modern-input" style="width: 180px;">
 			<input type="range" min="0" max="5" value="0" class="modern-slider" id="mySlider" style="width:160px; margin-top: 12px;">&nbsp;<span id="sliderValue">0</span>
-			
+
 			<div style="border-bottom: none; height: 5px; width: 100%; margin-bottom: 4px;"></div>
-			
+
 			<div style="color: #345367; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Find Paths</div>
             <input type="text" id="src-node" placeholder="source node..." class="modern-input" style="width: 180px;">
             <input type="text" id="dst-node" placeholder="target node..." class="modern-input" style="width: 180px;">
             <button id="find-path" class="modern-button" style="width: 176px;margin-top: 8px;">Find Path</button>
-			
+
 			<div style="border-bottom: .5px solid #e3e4e6; height: 5px; width: 100%; margin-bottom: 4px;"></div>
-			
+
             <div id="buttonsleft" style="">
-                <button id="save-button" class="modern-button" style="width: 176px;" style="font-size: 11px;">Save as Image</button><br>				
-            </div>	
+                <button id="save-button" class="modern-button" style="width: 176px;" style="font-size: 11px;">Save as Image</button><br>
+            </div>
         </div>
 
 		<!-- Tab 2 Content -->
@@ -8243,7 +8263,7 @@ This section includes a list of the credentials that were recovered during data 
 			<div style="color: #345367; font-size: 10px; display: flex; flex-wrap: wrap; background-color: #e6e6e6; border-radius: 4px; margin-bottom: 10px;">
 				<div style="flex: 1 0 50%;">
 					<label><input type="checkbox" id="FilterNodeIdentity" checked style="transform: scale(0.8);margin-left: 8px;">Identity</label>
-				</div>		
+				</div>
 				<div style="flex: 1 0 50%;">
 					<label><input type="checkbox" id="FilterNodeComputer" checked style="transform: scale(0.8);margin-left: 8px;">Computer</label>
 				</div>
@@ -8271,9 +8291,9 @@ This section includes a list of the credentials that were recovered during data 
 					<div style="flex: 1 0 50%;">
 						<label><input type="checkbox" id="FilterEdgeChild" checked style="transform: scale(0.8); margin-left: 8px;">child_of</label>
 					</div>
-				</div>                 
+				</div>
 		</div>
-		
+
         <!-- Tab 3 Content (Hello) -->
         <div id="tab3Content" class="tab-content" style="display: none;">
             <select id="layout-select" class="modern-dropdown" style="width: 180px;">
@@ -8310,9 +8330,9 @@ This section includes a list of the credentials that were recovered during data 
                 <button id="clear-selection" class="modern-button" onclick="ResetGraph();" style="font-size: 12px">&nbsp;&nbsp;&nbsp;Reset&nbsp;&nbsp;&nbsp;</button>
                 <button id="removeFadedClassButton" class="modern-button" style="font-size: 11px">&nbsp;Show All&nbsp;&nbsp;</button><br>
                 <button id="zoom-in" class="modern-button" style="font-size: 12px">&nbsp;Zoom In&nbsp;</button>
-                <button id="zoom-out" class="modern-button" style="font-size: 11px">Zoom Out&nbsp;</button>						
-            </div>				
-        </div>		
+                <button id="zoom-out" class="modern-button" style="font-size: 11px">Zoom Out&nbsp;</button>
+            </div>
+        </div>
 
     </div>
 
@@ -8368,7 +8388,7 @@ This section includes a list of the credentials that were recovered during data 
         // Function to handle mouse up event
         function handleMouseUp() {
             isDragging = false;
-		
+
             //targetDiv.style.cursor = 'grab'; // Change cursor back to 'grab' after releasing the mouse
 
             // Remove the mousemove and mouseup listeners when dragging ends
@@ -8414,9 +8434,9 @@ This section includes a list of the credentials that were recovered during data 
         var tab2Content = document.getElementById("tab2Content");
 		var tab3Content = document.getElementById("tab3Content");
 		var toolbarTabs = document.getElementById("toolbarTabs");
-		var tab1Button = document.getElementById("tab1Button");		
-		var tab2Button = document.getElementById("tab2Button");	
-		var tab3Button = document.getElementById("tab3Button");	
+		var tab1Button = document.getElementById("tab1Button");
+		var tab2Button = document.getElementById("tab2Button");
+		var tab3Button = document.getElementById("tab3Button");
 
         if (toolbar.style.height === "345px" || toolbar.style.height === "") {
             // Collapse the toolbar to 40px
@@ -8437,7 +8457,7 @@ This section includes a list of the credentials that were recovered during data 
         } else {
             // Expand the toolbar back to its original height
             toolbar.style.height = "345px";
-            toolbar.style.transition = "height 0.5s ease";			
+            toolbar.style.transition = "height 0.5s ease";
 			toolbarTabs.style.display = "block";
 
             // Show the content
@@ -8456,45 +8476,45 @@ This section includes a list of the credentials that were recovered during data 
 				case 1:
 					tab1Content.style.display = "block";
 					tab2Content.style.display = "none";
-					tab3Content.style.display = "none";											
+					tab3Content.style.display = "none";
 					break;
 				case 2:
 					tab1Content.style.display = "none";
 					tab2Content.style.display = "block";
-					tab3Content.style.display = "none";											
+					tab3Content.style.display = "none";
 					break;
 				case 3:
 					tab1Content.style.display = "none";
 					tab2Content.style.display = "none";
-					tab3Content.style.display = "block";									
+					tab3Content.style.display = "block";
 					break;
 				default:
 					// If none are active, you can handle a default case if needed
 					tab1Content.style.display = "block";
 					tab2Content.style.display = "none";
-					tab3Content.style.display = "none";					
+					tab3Content.style.display = "none";
 					break;
 			}
-				
+
             }, 500); // Delay to sync with height transition
-				
+
 			button.innerHTML = ``
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path d="M18 15L12 9L6 15" stroke="#f29650" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-				</svg>``;				
+				</svg>``;
         }
     }
 
     function showTab(tabNumber) {
-	
+
 	    var tab1Button = document.getElementById("tab1Button");
         var tab1Content = document.getElementById("tab1Content");
-		
+
 		var tab2Button = document.getElementById("tab2Button");
         var tab2Content = document.getElementById("tab2Content");
-		
+
         var tab3Button = document.getElementById("tab3Button");
-        var tab3Button = document.getElementById("tab3Button");		
+        var tab3Button = document.getElementById("tab3Button");
 
         if (tabNumber === 1) {
             tab1Content.style.display = "block";
@@ -8503,54 +8523,54 @@ This section includes a list of the credentials that were recovered during data 
 			tab2Content.style.display = "none";
 			tab3Button.classList.remove("active");
 			tab3Content.style.display = "none";
-			
+
 					tab1Button.style.border = ".5px solid #e3e4e6";
 					tab2Button.style.border = "none";
 					tab3Button.style.border = "none";
-					
+
 					tab1Button.style.backgroundColor = "#d4d5d6";
 					tab2Button.style.backgroundColor = "lightgray";
-					tab3Button.style.backgroundColor = "lightgray";				
-        } 
-		
+					tab3Button.style.backgroundColor = "lightgray";
+        }
+
 		if (tabNumber === 2) {
             tab1Content.style.display = "none";
             tab1Button.classList.remove("active");
 			tab2Content.style.display = "block";
             tab2Button.classList.add("active");
 			tab3Button.classList.remove("active");
-			tab3Content.style.display = "none";		
+			tab3Content.style.display = "none";
 
 								tab1Button.style.border = "none";
 					tab2Button.style.border = ".5px solid #e3e4e6";
 					tab3Button.style.border = "none";
-					
+
 					tab1Button.style.backgroundColor = "lightgray";
 					tab2Button.style.backgroundColor = "#d4d5d6";
-					tab3Button.style.backgroundColor = "lightgray";	
+					tab3Button.style.backgroundColor = "lightgray";
         }
-		
+
 		if (tabNumber === 3) {
 		    tab1Button.classList.remove("active");
             tab1Content.style.display = "none";
-			tab2Button.classList.remove("active");			
+			tab2Button.classList.remove("active");
 			tab2Content.style.display = "none";
 			tab3Button.classList.add("active");
 			tab3Content.style.display = "block";
-					
+
 					tab1Button.style.border = "none";
 					tab2Button.style.border = "none";
 					tab3Button.style.border = ".5px solid #e3e4e6";
-					
+
 					tab1Button.style.backgroundColor = "lightgray";
 					tab2Button.style.backgroundColor = "lightgray";
-					tab3Button.style.backgroundColor = "#d4d5d6";				
-        }		
+					tab3Button.style.backgroundColor = "#d4d5d6";
+        }
     }
 </script>
 
-			
-				</div>				
+
+				</div>
 			<!-- Hidden Menu - right-click -->
 				<label href="#" class="dropbtn" id="tbrearrange" onClick="">
 					<div id="nodemenu" class="dropdown-content">
@@ -8563,24 +8583,24 @@ This section includes a list of the credentials that were recovered during data 
 						<a href="#" id="setspsrc" class="" style="text-decoration:none; font-weight: normal;">Set Src</a>
 						<a href="#" id="setspdst" class="" style="text-decoration:none; font-weight: normal;">Set Dest</a>
 					</div>
-				</label>	
-						
+				</label>
+
 				<!-- Hidden Menu - node data  -->
 				<div id="popup" class="modern-popup">
-					<div id="resizer" class="modern-resizer"></div>	
+					<div id="resizer" class="modern-resizer"></div>
 					<p id="popup-content">Content goes here...</p>
 					<button id="close-popup" class="modern-button">Close</button>
 				</div>
-							
+
 				<!-- Hidden Menu - edge data -->
 				<div id="popup2" class="modern-popup">
 					<div id="resizer2" class="modern-resizer"></div>
 					<h2 id="popup-title">Edge Details</h2>
 					<p id="popup-content">Content goes here...</p>
 					<button id="close-popup" class="modern-button">Close</button>
-				</div>			
+				</div>
 	   <script>
-	   	   
+
         // Custom Organic Layout
         (function() {
             'use strict';
@@ -8819,7 +8839,7 @@ This section includes a list of the credentials that were recovered during data 
         // Declare cy as a global variable
         var cy;
 
-        // cy creation function 
+        // cy creation function
         function initializeCytoscape(containerId) {
             var cy = cytoscape({
                 container: document.getElementById(containerId),
@@ -8829,11 +8849,11 @@ This section includes a list of the credentials that were recovered during data 
                 // Nodes
 
                 $ShareGraphNodesFinal
-				
+
                 // Edges
 
 				$ShareGraphEdgesFinal
-				
+
                 ],
 
                 style: [
@@ -9043,7 +9063,7 @@ This section includes a list of the credentials that were recovered during data 
         // #################################
 
         cy = initializeCytoscape('cy');
-		
+
         // #################################
         // RESET CYTOSCAPE
         // #################################
@@ -9103,9 +9123,9 @@ This section includes a list of the credentials that were recovered during data 
 
         // #################################
         // MISC FUNCTIONS
-        // #################################	
-        
-        // Update counts	
+        // #################################
+
+        // Update counts
 		function updateCounts() {
 			const visibleNodes = cy.nodes().filter(node => !node.hasClass('faded') && !node.hasClass('invisible'));
 			const visibleEdges = cy.edges().filter(edge => !edge.hasClass('faded') && !edge.hasClass('invisible'));
@@ -9116,21 +9136,21 @@ This section includes a list of the credentials that were recovered during data 
 
 		// Update counts
 		updateCounts();
-		
+
 		// Function for selecting a node from another form
 		function applyFadedClassAndUpdate(cy, selectNodeId) {
 
 				// Call reset function
 				// ResetGraph();
-	
+
 				// Select the node by its ID
 				var selectedNode = cy.getElementById(selectNodeId);
-				
+
 				// Check if the selected node exists
 				if (selectedNode.empty()) {
 					console.error("Node with ID '" + selectNodeId + "' not found");
 					return;
-				}   
+				}
 
 				// Apply faded class to all nodes and edges
 				cy.nodes().addClass('faded');
@@ -9138,14 +9158,14 @@ This section includes a list of the credentials that were recovered during data 
 
 				// Remove the faded and invisible classes from the selected node
 				selectedNode.removeClass('faded');
-				selectedNode.removeClass('invisible');   
-				  
+				selectedNode.removeClass('invisible');
+
 				// Center the view on the selected node first
-				cy.center(selectedNode);					
+				cy.center(selectedNode);
 
 				// Update counts
-				updateCounts();				
-		}				
+				updateCounts();
+		}
 
         // #################################
         // START CYTOSCAPE EVENT LISTENERS
@@ -9308,13 +9328,13 @@ This section includes a list of the credentials that were recovered during data 
 				updateLabelsVisibility();
 			});
 
-			// Update count 
+			// Update count
 			updateCounts();
 		}
 
             // ##############################
-			// Select node using the "Select" option from the nodemenu	
-			// ##############################			
+			// Select node using the "Select" option from the nodemenu
+			// ##############################
 			document.getElementById('select-node').addEventListener('click', function () {
 				// Hide the dropdown menu
 				document.getElementById('nodemenu').style.display = 'none';
@@ -9575,45 +9595,45 @@ This section includes a list of the credentials that were recovered during data 
                 updateLabelsVisibility();
 
 				// Update counts
-				updateCounts();				
+				updateCounts();
             });
-			
+
 			// Show node using the "Show" option from the menu
 			document.getElementById('Show').addEventListener('click', function() {
 				if (selectedNode) {
-				
+
 					// Hide the dropdown menu
 					document.getElementById('nodemenu').style.display = 'none'
-					
+
 					// Remove 'faded' class from the selected node
 					selectedNode.removeClass('faded');;
-					
+
 					// Get all nodes connected to the selected node
 					var connectedNodes = selectedNode.connectedNodes();
 
 					// Filter nodes to get those that do not have the 'faded' class
 					var nonFadedNodes = connectedNodes.filter(function(node) {
 						return !node.hasClass('faded');
-					});		
+					});
 
                     /*
-					
+
 					// Find edges connected to non-faded nodes
 					var edgesToUpdate = cy.edges().filter(function(edge) {
 						return nonFadedNodeIds.includes(edge.source().id()) || nonFadedNodeIds.includes(edge.target().id());
 					});
 
 					// Remove 'faded' class from these edges
-					edgesToUpdate.removeClass('faded');		
-					edgesToUpdate.removeClass('invisible');	
+					edgesToUpdate.removeClass('faded');
+					edgesToUpdate.removeClass('invisible');
 
-                    */	
+                    */
 
 					// Update counts
 					updateCounts();
 				}
 			});
-	
+
 
             // Hide the menu when clicking elsewhere
             document.addEventListener('click', function (event) {
@@ -9694,9 +9714,9 @@ This section includes a list of the credentials that were recovered during data 
 
                 // Ensure labels are correctly updated
                 updateLabelsVisibility();
-				
+
 				// Update counts
-				updateCounts();				
+				updateCounts();
             });
 
             // Set using the "set src" option from the nodemenu
@@ -9796,8 +9816,8 @@ This section includes a list of the credentials that were recovered during data 
             function updateLabelsVisibility() {
                 var showEdgeLabels = document.getElementById('toggle-edge-labels').checked;
                 var showNodeLabels = document.getElementById('toggle-node-labels').checked;
-				var showHideUnselected = document.getElementById('toggle-visibility').checked;	
-				
+				var showHideUnselected = document.getElementById('toggle-visibility').checked;
+
 				// Apply faded and invisible class styles
                 cy.edges().forEach(function (edge) {
                     if (edge.hasClass('faded') || edge.hasClass('invisible')) {
@@ -9814,13 +9834,13 @@ This section includes a list of the credentials that were recovered during data 
                         node.style('text-opacity', showNodeLabels ? 1 : 0);  // Show or hide based on the checkbox
                     }
                 });
-				
+
 				// Get filter settings
 				var FilterNodeIdentity      = document.getElementById('FilterNodeIdentity').checked;
 				var FilterNodeComputer      = document.getElementById('FilterNodeComputer').checked;
 				var FilterNodeShareName     = document.getElementById('FilterNodeShareName').checked;
-				var FilterNodeSharePath     = document.getElementById('FilterNodeSharePath').checked; 
-				var FilterNodeFolderGroup 	= document.getElementById('FilterNodeFolderGroup').checked; 
+				var FilterNodeSharePath     = document.getElementById('FilterNodeSharePath').checked;
+				var FilterNodeFolderGroup 	= document.getElementById('FilterNodeFolderGroup').checked;
 				var FilterEdgeOwner  		= document.getElementById('FilterEdgeOwner').checked;
 				var FilterEdgePriv   		= document.getElementById('FilterEdgePriv').checked;
 				var FilterEdgeHosted 		= document.getElementById('FilterEdgeHosted').checked;
@@ -9846,13 +9866,13 @@ This section includes a list of the credentials that were recovered during data 
 					// Get the checkbox element and check if it's unchecked
 					var isChecked = document.getElementById(filter.id).checked;
 					if (!isChecked) {
-						
+
 						// Add invisible class to nodes or edges based on filter type
 						cy.elements("[type = '" + filter.type + "']").addClass('invisible')
-						 .connectedEdges().addClass('invisible');  
+						 .connectedEdges().addClass('invisible');
 					}
 				});
-			
+
             }
 
             // Toggle faded visibility
@@ -10181,49 +10201,49 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 
 
 			// ----------------------------
-			// Filter Option Listeners 
+			// Filter Option Listeners
 			// ----------------------------
-			
-			// Function to update nodes and edges based on applied filter 
+
+			// Function to update nodes and edges based on applied filter
 			function applyNodeFilter(filterElementName, type) {
-			
+
 				// Get visibility settings
 				var showEdgeLabels = document.getElementById('toggle-edge-labels').checked;
                 var showNodeLabels = document.getElementById('toggle-node-labels').checked;
-				var showHideUnselected = document.getElementById('toggle-visibility').checked;	
-			
+				var showHideUnselected = document.getElementById('toggle-visibility').checked;
+
 				// Get the checkbox element and check if it's unchecked
 				var isChecked = document.getElementById(filterElementName).checked;
-				
+
 				if (isChecked) {
-				
+
 					// Remove hide unselected class or faded as needed
 					if(!showHideUnselected){
 						cy.nodes("[type = '" + type + "']").removeClass('invisible')
-						.connectedEdges().removeClass('invisible');  					
+						.connectedEdges().removeClass('invisible');
 					}else{
 						cy.nodes("[type = '" + type + "']").removeClass('faded')
-						.connectedEdges().removeClass('faded'); 					
-					}						
-						
+						.connectedEdges().removeClass('faded');
+					}
+
 				} else {
-				
+
 					// Add hide unselected class or faded as needed
 					cy.nodes("[type = '" + type + "']").addClass('invisible')
-						.connectedEdges().addClass('invisible');  // Also add classes to connected edges					
+						.connectedEdges().addClass('invisible');  // Also add classes to connected edges
 				}
-				
+
 				 // Update counts
 				updateCounts();
 			}
-			
-			// Function to update edges and connected nodes based on applied filter 
+
+			// Function to update edges and connected nodes based on applied filter
 			function applyEdgeFilter(filterElementName, type) {
-				
+
 				// Get visibility settings
 				var showEdgeLabels = document.getElementById('toggle-edge-labels').checked;
 				var showNodeLabels = document.getElementById('toggle-node-labels').checked;
-				var showHideUnselected = document.getElementById('toggle-visibility').checked;	
+				var showHideUnselected = document.getElementById('toggle-visibility').checked;
 
 				// Get the checkbox element and check if it's unchecked
 				var isChecked = document.getElementById(filterElementName).checked;
@@ -10231,84 +10251,84 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 				if (isChecked) {
 					// Remove hide unselected class or faded as needed
 					if(!showHideUnselected){
-						cy.edges("[label = '" + type + "']").removeClass('invisible')					
+						cy.edges("[label = '" + type + "']").removeClass('invisible')
 					} else {
 						cy.edges("[label = '" + type + "']").removeClass('faded')
-							.connectedNodes().removeClass('faded'); 					
-					}						
-					
+							.connectedNodes().removeClass('faded');
+					}
+
 				} else {
 					cy.edges("[label = '" + type + "']").addClass('invisible');
 				}
-				
+
 				// Update counts
-				updateCounts();				
+				updateCounts();
 			}
-						
+
 			// Computer Filter Listener
 			document.getElementById('FilterNodeComputer').addEventListener('change', function () {
-				
-				// Apply the filter 
-				applyNodeFilter('FilterNodeComputer', 'computer');
-			});		
 
-			// Identity Filter Listener 
+				// Apply the filter
+				applyNodeFilter('FilterNodeComputer', 'computer');
+			});
+
+			// Identity Filter Listener
 			document.getElementById('FilterNodeIdentity').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyNodeFilter('FilterNodeIdentity', 'user');
 				applyNodeFilter('FilterNodeIdentity', 'owner');
-			});	
+			});
 
 			// Share Name Filter Listener
 			document.getElementById('FilterNodeShareName').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyNodeFilter('FilterNodeShareName', 'sharename');
-			});	
+			});
 
 			// Share Path Filter Listener
 			document.getElementById('FilterNodeSharePath').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyNodeFilter('FilterNodeSharePath', 'sharepath');
-			});	
+			});
 
 			// Folder Group Filter Listener
 			document.getElementById('FilterNodeFolderGroup').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyNodeFilter('FilterNodeFolderGroup', 'Folder Group');
-			});			
+			});
 
 			// Owner Edge Filter Listener
 			document.getElementById('FilterEdgeOwner').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyEdgeFilter('FilterEdgeOwner', 'owner_of');
-			});		
+			});
 
 			// Has_privilege_on Filter Listener
 			document.getElementById('FilterEdgePriv').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyEdgeFilter('FilterEdgePriv', 'has_privilege_on');
-			});	
-			
+			});
+
 			// Hosted_on Edge Filter Listener
 			document.getElementById('FilterEdgeHosted').addEventListener('change', function () {
-				
-				// Apply the filter 
+
+				// Apply the filter
 				applyEdgeFilter('FilterEdgeHosted', 'hosted_on');
-			});	
+			});
 
 			// Child_of Edge Filter Listener
 			document.getElementById('FilterEdgeChild').addEventListener('change', function () {
-		
-				// Apply the filter 
+
+				// Apply the filter
 				applyEdgeFilter('FilterEdgeChild', 'child_of');
-			});	
-		    
+			});
+
 			// Filter Option Listeners  -  END
 
 
@@ -10356,7 +10376,7 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
                     'z-compound-depth': 'below'
                 })
                 .update();
-            
+
 			// ###########################
 			// Shortest Path Finder
 			// ###########################
@@ -10427,7 +10447,7 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 				// Ensure labels are correctly updated
 				updateLabelsVisibility();
 
-				// Update count 
+				// Update count
 				updateCounts();
 			});
 
@@ -10468,7 +10488,7 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
             slider.addEventListener('input', function () {
                 sliderValue.textContent = slider.value;
             });
-			
+
 			document.getElementById('removeFadedClassButton').addEventListener('click', function() {
 			// Access the Cytoscape instance (assumed to be stored in a variable 'cy')
 			if (typeof cy !== 'undefined') {
@@ -10479,13 +10499,13 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 
                     // Set the 'Hide Unselected' checkbox to unchecked
                     document.getElementById('toggle-visibility').checked = false;
-                    	
-                    updateCounts();				
+
+                    updateCounts();
 				} else {
 					console.error('Cytoscape instance is not available.');
 				}
 			});
-			
+
 			function debounce(func, wait) {
 				let timeout;
 				return function(...args) {
@@ -10505,8 +10525,8 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 						updateEdgeColors(selectedNode, sliderValue);
 					}
 				}
-			}, 100)); // Adjust debounce delay as needed	
-			
+			}, 100)); // Adjust debounce delay as needed
+
 			function escapeCyId(id) {
 				return id.replace(/([#;&,.+*~':"!^$[\]()=>|/@])/g, "\\$1");
 			}
@@ -10519,7 +10539,7 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
 
         // #################################
         // START CYTOSCAPE INITIAL LAYOUT
-        // #################################		
+        // #################################
         // Flag to track if the layout has been applied
         let layoutApplied = false;
 
@@ -10548,7 +10568,7 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
                     },
                     stop: function() {
                         // This function is called after the layout has been completely applied
-                
+
                         // Set the initial zoom level to 0.4 (40% of the original size)
                         cy.zoom(0.4);
 
@@ -10562,14 +10582,14 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
                         layoutApplied = true;
                     }
                 }).run();
-		
+
                 // If the layout has already been applied, just re-center and zoom the graph
                 cy.zoom(0.4);
                 cy.center(selectedNodes);
-                cy.fit(selectedNodes, 50);		
+                cy.fit(selectedNodes, 50);
             } else {
             }
-    
+
             // Zoom-in functionality
             document.getElementById('zoom-in').addEventListener('click', function() {
                 const zoomLevel = cy.zoom();
@@ -10580,37 +10600,37 @@ document.querySelector('#nodemenu a:nth-child(2)').addEventListener('click', fun
     </script>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Exploit Shares
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="Attacks"/> 
+<input class="tabInput"  name="tabs" type="radio" id="Attacks"/>
 <label class="tabLabel" onClick="updateTab('Attacks',false)" for="Attacks"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Exploit</h2>
 <div style="margin-left:10px;margin-top:7px">
-This section provides some tips for exploiting share access.	Consider reviewing <a href="https://www.netspi.com/blog/technical-blog/adversary-simulation/network-share-permissions-powerhuntshares/"  target="_blank">this blog</a> for more attack references. 
+This section provides some tips for exploiting share access.	Consider reviewing <a href="https://www.netspi.com/blog/technical-blog/adversary-simulation/network-share-permissions-powerhuntshares/"  target="_blank">this blog</a> for more attack references.
 <br><br>
 </div>
 
 <table class="table table-striped table-hover tabledrop">
   <thead>
-    <tr>	  
+    <tr>
 	  <th align="left">Share</th>
-	  <th align="left">Access</th>	  
-	  <th align="left">Instructions</th>	
+	  <th align="left">Access</th>
+	  <th align="left">Instructions</th>
     </tr>
   </thead>
-  <tbody>  			
-    <tr>	
+  <tbody>
+    <tr>
 	  <td>C$, admin$</td>
 	  <td>READ</td>
 	  <td>
 	  Read OS and Application password files and log in.<br>
 	  Identify non-public information disclosure.
-	  </td>  
-    </tr>	
-    <tr>	
+	  </td>
+    </tr>
+    <tr>
 	  <td>C$, admin$</td>
 	  <td>WRITE</td>
 	  <td>Read OS and Application password files and log in.<br>
@@ -10620,15 +10640,15 @@ This section provides some tips for exploiting share access.	Consider reviewing 
 	  All Users folders<br>
 	  Other file based autoruns<br>
 	  EXE Replacement<br>
-	  </td>  
-    </tr>	
+	  </td>
+    </tr>
    <tr>
 	  <td>wwwroot,inetpub,webroot</td>
 	  <td>READ</td>
 	  <td>Read connection strings and escalation through database. <br>
 	  <span class="code">Code - search for file types</span><br>
 	  <span class="code">Code - search for file contents</span><br>
-     </td>    
+     </td>
    </tr>
    <tr>
 	  <td>wwwroot,inetpub,webroot</td>
@@ -10636,17 +10656,17 @@ This section provides some tips for exploiting share access.	Consider reviewing 
 	  <td>
 	  Read connection strings and escalation through database.<br>
 	  Upload webshell to execute as web server service account.
-	  </td> 	  
-    </tr>				
+	  </td>
+    </tr>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Detect Share Scans
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="Detections"/> 
+<input class="tabInput"  name="tabs" type="radio" id="Detections"/>
 <label class="tabLabel" onClick="updateTab('Detections',false)" for="Detections"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Detect</h2>
@@ -10657,12 +10677,12 @@ This section provides some tips for detecting potentially malicious share scanni
 
 <table class="table table-striped table-hover tabledrop">
   <thead>
-    <tr>	  
+    <tr>
 	  <th align="left">Action</th>
-	  <th align="left">Detection Guidance</th>	  
+	  <th align="left">Detection Guidance</th>
     </tr>
   </thead>
-  <tbody>  	    
+  <tbody>
    <tr>
 	  <td>Detect Share Scanning</td>
 	  <td>
@@ -10696,22 +10716,22 @@ If network shares are not required, disable them or block access using host-base
 Ensure that sensitive information is not available on these shares. To restrict access under Windows, open Explorer, right-click on each of the shares, go to the 'Sharing' tab, and click on 'Permissions'. From here, add or remove permissions for various users and groups.
 Guest access to the system should also be revoked and ensure that adequate access controls are in place for each shared resource. NULL sessions should be disabled.
 
-	  </td>  	  
+	  </td>
     </tr>
    <tr>
 	  <td>Detect Canaries</td>
 	  <td>Build detections for authenticated share access read/write access.
-	  </td>  	  
-    </tr>				
+	  </td>
+    </tr>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Remediate
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="Remediation"/> 
+<input class="tabInput"  name="tabs" type="radio" id="Remediation"/>
 <label class="tabLabel" onClick="updateTab('Remediation',false)" for="Remediation"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Remediate</h2>
@@ -10722,133 +10742,133 @@ This section provides some tips for prioritizing the remediation of shares confi
 
 <table class="table table-striped table-hover tabledrop">
   <thead>
-    <tr>	  
+    <tr>
 	  <th align="left">Share Access</th>
-	  <th align="left">Impact</th>	  
+	  <th align="left">Impact</th>
 	  <th align="left">Description</th>
     </tr>
   </thead>
-  <tbody>  	
+  <tbody>
     <tr>
 	  <td>High Risk Shares</td>
 	  <td>Confidentiality, Integrity, Availability, Code Execution<br>
 	   High likelihood.
 	  </td>
-	  <td>Remediate high risk shares. In the context of this report, high risk shares have been defined as shares that provide unauthorized remote access to systems or applications. By default, that includes wwwroot, inetpub, c$, and admin$ shares. However, additional exposures may exist that are not called out beyond that.</td>  
-    </tr>	
+	  <td>Remediate high risk shares. In the context of this report, high risk shares have been defined as shares that provide unauthorized remote access to systems or applications. By default, that includes wwwroot, inetpub, c$, and admin$ shares. However, additional exposures may exist that are not called out beyond that.</td>
+    </tr>
     <tr>
 	  <td>Write Access Shares</td>
 	  <td>Confidentiality, Integrity, Availability, Code Execution</td>
-	  <td>Remediate shares with write access. Write access to shares may allow an attacker to modify data, insert their own users into configuration files to access applications, or leverage write access to execute code on remote systems.  Folders that provide write access could also fall victem to ransomware attacks.</td>  
-    </tr>		
+	  <td>Remediate shares with write access. Write access to shares may allow an attacker to modify data, insert their own users into configuration files to access applications, or leverage write access to execute code on remote systems.  Folders that provide write access could also fall victem to ransomware attacks.</td>
+    </tr>
     <tr>
 	  <td>Read Access Shares</td>
 	  <td>Confidentiality,Code Execution</td>
-	  <td>Remediate shares with read access. Read access may provide an attacker with unauthorized access to sensitive data and stored secrets such as passwords and private keys that could be used to gain unauthorized access to systems, applications, and databases.</td>  
+	  <td>Remediate shares with read access. Read access may provide an attacker with unauthorized access to sensitive data and stored secrets such as passwords and private keys that could be used to gain unauthorized access to systems, applications, and databases.</td>
     </tr>
     <tr>
 	  <td>Top Share Names</td>
 	  <td>NA</td>
-	  <td>Sub prioritize remediation based on top groups of share names(most common share names). When a large number of systems are configured with the same share, they often represent weak configurations associated with applications and processes.</td>  	  
+	  <td>Sub prioritize remediation based on top groups of share names(most common share names). When a large number of systems are configured with the same share, they often represent weak configurations associated with applications and processes.</td>
     </tr>
    <tr>
 	  <td>Top Share Groups</td>
 	  <td>NA</td>
 	  <td>Sub prioritize remediation based on top share groups that have the same list of files in their directory.  This is another way to identify systems that are configured with the same share are associated with the same insecure application deployment or process.
-	  </td>  	  
-    </tr>		
-      <tr>	
+	  </td>
+    </tr>
+      <tr>
 	  <td>Sub Prioritzation Tips</td>
 	  <td>NA</td>
 	  <td>
 	  Use the detailed .csv files to:<br><br>
-	  1. Identify share owners with the ShareOwner field. Filter out "BUILTIN\Administrators", "NT AUTHORITY\SYSTEM", and "NT SERVICE\TrustedInstaller" to identify potential asset owners.<br><br> 
-	  2. Filter out shares with a FileCount of 0.<br><br> 
-	  3. Sort shares by LastModifiedDate.<br><br> 
+	  1. Identify share owners with the ShareOwner field. Filter out "BUILTIN\Administrators", "NT AUTHORITY\SYSTEM", and "NT SERVICE\TrustedInstaller" to identify potential asset owners.<br><br>
+	  2. Filter out shares with a FileCount of 0.<br><br>
+	  3. Sort shares by LastModifiedDate.<br><br>
 	  4. Filter for keywords in the FileList.<br><br>
 	  For example, simple keywords like sql, database, backup, password, etc can help identify additional high risk exposures quickly. <br>
-	  </td>  				
+	  </td>
   </tbody>
 </table>
 </div>
 
-<!--  
+<!--
 |||||||||| PAGE: Scan Information
 -->
 
-<input class="tabInput"  name="tabs" type="radio" id="home"/> 
+<input class="tabInput"  name="tabs" type="radio" id="home"/>
 <label class="tabLabel" onClick="updateTab('home',false)" for="home"></label>
 <div id="tabPanel" class="tabPanel">
 <h2 style="margin-top: 65px;margin-left:10px;margin-bottom: 17px;">Scan Information</h2>
-<div style="min-height: 670px">	 
-	  <div style="margin-left:10px;margin-top:3px">	  
+<div style="min-height: 670px">
+	  <div style="margin-left:10px;margin-top:3px">
 	  The <a href="https://github.com/netspi/powerhuntshares">PowerHuntShares</a> audit script was run against the $TargetDomain Active Directory domain to collect SMB Share data, generate this HTML summary report, and generate the associated csv files that detail potentially excessive share configurations. Below is a the scan summary and an overview of how to use this report.
-	  </div>	
+	  </div>
 
-<!--  
+<!--
 |||||||||| CARD: SCAN SUMMARY
 -->
 
  <a href="#" id="DashLink" onClick="radiobtn = document.getElementById('dashboard');radiobtn.checked = true;">
- <div class="card" style="position:absolute;margin-top:20px;width:400px;">	
-	<div class="cardtitle" align="left">		
-        <div style="text-align:left; font-size: 12px; margin-left: 5px;">The scan context and run time information have been provided below.<br><br></div>	
-	</div>		
+ <div class="card" style="position:absolute;margin-top:20px;width:400px;">
+	<div class="cardtitle" align="left">
+        <div style="text-align:left; font-size: 12px; margin-left: 5px;">The scan context and run time information have been provided below.<br><br></div>
+	</div>
 	<table>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Domain</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$TargetDomain</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$TargetDomain</span>
 			</td>
 		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">DC</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$DomainController</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$DomainController</span>
 			</td>
-		 </tr>	
+		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align: top;">Start Time</td>
-			<td>					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$StartTime</span>				
+			<td>
+				<span class="AclEntryRight" style="word-wrap: break-word;">$StartTime</span>
 			</td>
 		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Stop Time</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$EndTime</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$EndTime</span>
 			</td>
 		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Duration</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$RunTime</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$RunTime</span>
 			</td>
 		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Src Host</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$SourceHost</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$SourceHost</span>
 			</td>
 		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Src IPs</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$SourceIps</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$SourceIps</span>
 			</td>
-		 </tr>		
+		 </tr>
 		 <tr>
 			<td class="cardsubtitle" style="vertical-align:top">Src User</td>
-			<td >					
-				<span class="AclEntryRight" style="word-wrap: break-word;">$username</span>				
+			<td >
+				<span class="AclEntryRight" style="word-wrap: break-word;">$username</span>
 			</td>
-		 </tr>		 
-		</table> 		  
+		 </tr>
+		</table>
  </div>
 </a>
 
 <!-- home text -->
-<div style="margin-left:450px;"> 
+<div style="margin-left:450px;">
 <br>
 <div style="float:left;display:block;position:relative;">
 <h4>How do I use this report?</h4>
@@ -10860,7 +10880,7 @@ Follow the guidance below to get the most out of this report. Click each step fo
 Review the reports and data insights to get a quick feel for the level of SMB share exposure in your environment.
 <br><br>
 <strong style="color:#333">Reports</strong><br>
-The <em>Scan, Computer, Share, and ACL</em> summary sections will provide a  summary of the results.  
+The <em>Scan, Computer, Share, and ACL</em> summary sections will provide a  summary of the results.
 <br>
 <br>
 <strong style="color:#333">Data Insights</strong><br>
@@ -10881,8 +10901,8 @@ Review potentially excessive share ACL entry details in the associated HTML and 
 Review the definitions below to ensure you understand what was targeted and how privileges have been qualified as excessive.
 <br><br>
 <strong style="color:#333">Excessive Privileges</strong><br>
-In the context of this report, excessive read and write share permissions have been defined as any network share ACL containing an explicit entry for the <em>"Everyone", "Authenticated Users", "BUILTIN\Users", "Domain Users", or "Domain Computers"</em> groups. 
-All provide domain users access to the affected shares due to privilege inheritance. 
+In the context of this report, excessive read and write share permissions have been defined as any network share ACL containing an explicit entry for the <em>"Everyone", "Authenticated Users", "BUILTIN\Users", "Domain Users", or "Domain Computers"</em> groups.
+All provide domain users access to the affected shares due to privilege inheritance.
 <Br><br>
 Please note that share permissions can be overruled by NTFS permissions. Also, be aware that testing excluded share names containing the following keywords: <em>"print$", "prnproc$", "printer", "netlogon",and "sysvol"</em>.
 <br><br>
@@ -10903,18 +10923,18 @@ Follow the guidance in the Exploit Share Access, Detect Share Access, and Priori
 <div class="content">
 <div class="landingtext" style="">
 Collect SMB Share data and generate this HTML report by running <a href="https://github.com/NetSPI/PowerShell/blob/master/Invoke-HuntSMBShares.ps1">Invoke-HuntSMBShares.ps1</a> audit script.<br>
-The command examples below can be used to identify potentially malicious share permissions. 
+The command examples below can be used to identify potentially malicious share permissions.
 <br><br>
 <strong style="color:#333">From Domain System</strong>
 <div style="border: 2px solid #CCC;margin-top:5px;padding: 5px;padding-left: 15px;width:95%;background-color:white;color:#757575;font-family:Lucida, Grande, sans-serif;">
-Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ 
+Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\
 </div>
 <br>
 <strong style="color:#333">From Non-Domain System</strong>
 <div style="border: 2px solid #CCC;margin-top:5px;padding: 5px;padding-left: 15px;width:95%;background-color:white;color:#757575;font-family:Lucida, Grande, sans-serif;">
 runas /netonly /user:domain\user PowerShell.exe<Br>
 Import-Module Invoke-HuntSMBShares.ps1<br>
-Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -Username domain\user -Password password 
+Invoke-HuntSMBShares -Threads 20 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -Username domain\user -Password password
 </div>
 </div>
 </div>
@@ -10952,7 +10972,7 @@ function toggleMenuSection(headerId) {
         arrow.style.transform = "rotate(45deg)";
         arrow.style.transition = "transform 0.3s ease";
         arrow.style.position = "absolute";
-        arrow.style.right = "8px"; 
+        arrow.style.right = "8px";
 
         // Append the arrow to the header and mark it as set
         header.appendChild(arrow);
@@ -10963,19 +10983,19 @@ function toggleMenuSection(headerId) {
         if (arrow.style.opacity === "0") {
             //arrow.style.transform = "rotate(-135deg)";
 			arrow.style.opacity = "1";
-        } else {		
+        } else {
             //arrow.style.transform = "rotate(45deg)";
 			arrow.style.opacity = "0";
-			
+
         }
     }
 
     labels.forEach(label => {
         if (label.classList.contains("tabLabel")) {
-            showLabels = false;			
+            showLabels = false;
         }
         if (showLabels) {
-            label.style.display = label.style.display === "none" ? "flex" : "none";			
+            label.style.display = label.style.display === "none" ? "flex" : "none";
         }
     });
 }
@@ -10995,16 +11015,16 @@ function toggleMenuSection(headerId) {
         cancelable: true,
         view: window
       });
-      
+
       // Dispatch the click event on the selected element
       legendItem.dispatchEvent(clickEvent);
-      
+
       console.log(``Simulated click on the legend item: `${seriesName}``);
     } else {
       console.log(``Legend item with series name '`${seriesName}' not found.``);
     }
   }
-  
+
    // Use an interval to check if the legend item exists, then execute
   window.addEventListener('load', function() {
     const intervalId = setInterval(() => {
@@ -11015,11 +11035,11 @@ function toggleMenuSection(headerId) {
 	 if (document.querySelector(``.apexcharts-legend-series[seriesname='Computers']``)) {
         simulateLegendClick('Computers');
         clearInterval(intervalId); // Clear the interval once executed
-      }	  
+      }
 	if (document.querySelector(``.apexcharts-legend-series[seriesname='Shares']``)) {
         simulateLegendClick('Shares');
         clearInterval(intervalId); // Clear the interval once executed
-      }	  
+      }
     }, 100); // Check every 100 milliseconds
    });
 
@@ -11041,7 +11061,7 @@ var pattern = ``
         <line x1="0" y1="5" x2="10" y2="5" stroke="#772400" stroke-width=".5" stroke-opacity="0.5"/>
         <!-- Vertical line -->
         <line x1="5" y1="0" x2="5" y2="10" stroke="#772400" stroke-width=".5" stroke-opacity="0.5" />
-      </pattern>	  
+      </pattern>
     </defs>
   </svg>
 ``;
@@ -11080,13 +11100,13 @@ var TimelineCreationOptions = {
             type: 'column',
             data: $DataSeriesShares,
             color: '#f29650'
-        },      
+        },
         {
             name: 'Total High Risk Shares',
             type: 'line',
-            data: $DataSeriesHigh, 
+            data: $DataSeriesHigh,
             // color: 'url(#striped-pattern)' // or #772400 or striped-pattern
-            color: '#772400' 
+            color: '#772400'
         },
         {
             name: 'Total Critical Risk Shares',
@@ -11109,7 +11129,7 @@ var TimelineCreationOptions = {
                     text: 'avg'
                 },
                 strokeDashArray: 4
-            },            
+            },
             {
                 y: upperBound,
                 borderColor: '#FF0000',
@@ -11207,7 +11227,7 @@ var TimelineCreationOptions = {
 
 var TimelineCreationChartVar = new ApexCharts(document.querySelector("#TimelinCreationChart"), TimelineCreationOptions);
 TimelineCreationChartVar.render();
-        
+
 
 
 // --------------------------
@@ -11228,12 +11248,12 @@ TimelineCreationChartVar.render();
 			} else {
 				icon.innerHTML = '<span style="font-size: 16px; color:#F56A00; transition: color 0.3s ease;" onmouseover="this.style.color=\'white\'" onmouseout="this.style.color=\'#F56A00\'"><i class="fas fa-times"></i></span>';
                 main.style.marginLeft = '200px';
-				main.style.transition = "margin-left 0.5s ease";	
+				main.style.transition = "margin-left 0.5s ease";
 				setTimeout(() => {
 					mytabs.style.opacity= "1";
-				}, 300); // Adjust delay here 				
-				
-			}	
+				}, 300); // Adjust delay here
+
+			}
         }
 
 // --------------------------
@@ -11250,7 +11270,7 @@ const ChartAceTypeOptions = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11303,7 +11323,7 @@ const ChartAceRiskOptions = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11358,7 +11378,7 @@ const ChartAcesIFOptions = {
           height: 200
         },
         plotOptions: {
-          bar: {		 
+          bar: {
             borderRadius: 0,
             borderRadiusApplication: 'end',
             horizontal: true,
@@ -11411,7 +11431,7 @@ const ChartComputersDiscoOptions = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11451,17 +11471,17 @@ const ChartComputersDisco = new ApexCharts(document.querySelector("#ChartCompute
 ChartComputersDisco.render();
 
 // --------------------------
-// Computers Page - Computers Count by OS 
+// Computers Page - Computers Count by OS
 // --------------------------
 
-// Calculate the total sum of the series 
+// Calculate the total sum of the series
 const total = $DomainComputerOSListJsValues
 
 // Map the OS names and values into a combined array and sort by values in descending order
 const sortedData = $DomainComputerOSListJsNames.map((name, index) => ({
   name: name,
   value: $DomainComputerOSListJsValues[index]
-})).sort((a, b) => b.value - a.value);  
+})).sort((a, b) => b.value - a.value);
 
 // Extract the sorted names and values back into separate arrays
 const sortedNames = sortedData.map(item => item.name);
@@ -11479,7 +11499,7 @@ const ChartComputersOSOptions = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11576,7 +11596,7 @@ const ChartComputersRiskOptionsa = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11631,7 +11651,7 @@ const ChartFGPageIFOptions = {
           height: 200
         },
         plotOptions: {
-          bar: {		 
+          bar: {
             borderRadius: 0,
             borderRadiusApplication: 'end',
             horizontal: true,
@@ -11687,7 +11707,7 @@ const ChartFGRiskOptionsa = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11711,7 +11731,7 @@ const ChartFGRiskOptionsa = {
   xaxis: {
     min: 0, // Set minimum value to 0
     max: Math.max(...dataSeriesfg), // Set maximum value to the largest count from the data series
-    tickAmount: dataSeriesfg.length, // Ensure unique labels by setting the number of ticks equal to the number of data points  
+    tickAmount: dataSeriesfg.length, // Ensure unique labels by setting the number of ticks equal to the number of data points
     categories: ['Critical','High','Medium','Low']
   },
 		  title: {
@@ -11749,7 +11769,7 @@ const ChartNetworkRiskOptions = {
           height: 200
         },
         plotOptions: {
-          bar: {		 
+          bar: {
             borderRadius: 0,
             borderRadiusApplication: 'end',
             horizontal: true,
@@ -11804,7 +11824,7 @@ const ChartSharePageIFOptions = {
           height: 200
         },
         plotOptions: {
-          bar: {		 
+          bar: {
             borderRadius: 0,
             borderRadiusApplication: 'end',
             horizontal: true,
@@ -11859,7 +11879,7 @@ const ChartShareNameRiskOptionsa = {
     height: 200
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true,
@@ -11929,7 +11949,7 @@ const ChartDashboardIFOptions = {
     stacked: true  // Enable stacked bars
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       borderRadius: 0,
       borderRadiusApplication: 'end',
       horizontal: true
@@ -11939,7 +11959,7 @@ const ChartDashboardIFOptions = {
     enabled: true,
 	style: {
       fontSize: '12px',
-      colors: ['#345367', '#f29650'] 
+      colors: ['#345367', '#f29650']
     },
   },
   grid: {
@@ -11952,7 +11972,7 @@ const ChartDashboardIFOptions = {
     },
     labels: {
       show: false  // Hide the x-axis labels
-    }	
+    }
   },
   colors: ['#f29650','#345367'],  // Orange for discovered, Blue for verified
   title: {
@@ -11980,7 +12000,7 @@ ChartDashboardIF.render();
 // --------------------------
 
 //  Set data series
-var DataSeriesNetwork   = [$AllNetworksWithLowCount,  $AllNetworksWithMediumCount, $AllNetworksWithHighCount, $AllNetworksWithCriticalCount];  
+var DataSeriesNetwork   = [$AllNetworksWithLowCount,  $AllNetworksWithMediumCount, $AllNetworksWithHighCount, $AllNetworksWithCriticalCount];
 var DataSeriesComputers = [$AllComputersWithLowCount, $AllComputersWithMediumCount, $AllComputersWithHighCount, $AllComputersWithCriticalCount];
 var DataSeriesShares    = [$AllSharesWithLowCount, $AllSharesWithMediumCount, $AllSharesWithHighCount, $AllSharesWithCriticalCount];
 var DataSeriesACEs      = [$RiskLevelCountLow, $RiskLevelCountMedium, $RiskLevelCountHigh,$RiskLevelCountCritical];
@@ -12011,14 +12031,14 @@ const ChartDashboardRiskOptions = {
     data: DataSeriesShares
   }, {
     name: 'ACEs',
-    data: DataSeriesACEs 
+    data: DataSeriesACEs
   }],
   chart: {
     type: 'bar',
     height: 300
   },
   plotOptions: {
-    bar: {		 
+    bar: {
       horizontal: true,
       barHeight: '90%',  // Reduce bar height for more space
 	  borderWidth: 0      // Remove borders around bars
@@ -12073,9 +12093,9 @@ ChartDashboardRisk.render();
 // --------------------------
 
 	//  Set data series
-	var DataSeriesAverage = $RemediationBase;		
-	var DataSeriesActual  = $RemediationSave;		
-		
+	var DataSeriesAverage = $RemediationBase;
+	var DataSeriesActual  = $RemediationSave;
+
     // Find max values
     var maxValueAverage = Math.max(...DataSeriesAverage);
     var maxValueActual = Math.max(...DataSeriesActual);
@@ -12178,9 +12198,9 @@ RemCompareOptionschart.render();
 // --------------------------
 
 		//  Set data series
-		var DataSeriesAverage = $PeerCompareAverageP;		
-		var DataSeriesActual  = $PeerCompareActuaP;		
-		
+		var DataSeriesAverage = $PeerCompareAverageP;
+		var DataSeriesActual  = $PeerCompareActuaP;
+
         // Find max values
         var maxValueAverage = Math.max(...DataSeriesAverage);
         var maxValueActual = Math.max(...DataSeriesActual);
@@ -12293,26 +12313,26 @@ for (i = 0; i < coll.length; i++) {
 
       content.style.maxHeight = null;
 
-      // Adjust width  
+      // Adjust width
       content.style.width = 0;
 
     } else {
       content.style.Height = content.scrollHeight + "px";
       content.style.maxHeight = "100%";
-      
-      // Adjust width  
-      content.style.width = "auto";  
-    } 
+
+      // Adjust width
+      content.style.width = "auto";
+    }
   });
 }
 
 function toggleDiv(TargetObjectId) {
     var content = document.getElementById(TargetObjectId);
     if (content.style.display === "none") {
-        content.style.display = "block";        
+        content.style.display = "block";
     } else {
-        content.style.display = "none";  
-        content.style.width = 0;    
+        content.style.display = "none";
+        content.style.width = 0;
     }
 }
 
@@ -12516,7 +12536,7 @@ function applyFiltersAndSort(tableId, searchInputId, filterCounterId, pagination
 
     currentFilteredRows = rows.filter(row => { // Update filtered rows
         const cells = Array.from(row.cells);
-        const matchesTextFilter = columnId !== null 
+        const matchesTextFilter = columnId !== null
             ? cells[columnId].innerText.toLowerCase().includes(filterInputValue)
             : cells.some(cell => cell.innerText.toLowerCase().includes(filterInputValue));
         const matchesCheckboxFilter = checkedFilters.every(filter => row.getAttribute(filter) === "Yes");
@@ -12647,26 +12667,26 @@ function paginationIdForTable(tableId) {
     return null;
 }
 
-// Initialize share name table 
+// Initialize share name table
 document.getElementById('filterInput').addEventListener("keyup", () => applyFiltersAndSort('sharenametable', 'filterInput', 'filterCounter', 'pagination'));
 document.querySelectorAll('.filter-checkbox').forEach(checkbox => checkbox.addEventListener('change', () => applyFiltersAndSort('sharenametable', 'filterInput', 'filterCounter', 'pagination')));
 applyFiltersAndSort('sharenametable', 'filterInput', 'filterCounter', 'pagination');
 
-// Initialize network table 
+// Initialize network table
 document.getElementById('networkinput').addEventListener("keyup", () => applyFiltersAndSort('networktable', 'networkinput', 'networkcounter', 'networkpagination'));
 applyFiltersAndSort('networktable', 'networkinput', 'networkcounter', 'networkpagination');
 
-// Initialize folder group table    
+// Initialize folder group table
 document.getElementById('filterInputTwo').addEventListener("keyup", () => applyFiltersAndSort('foldergrouptable', 'filterInputTwo', 'filterCounterTwo', 'paginationfg'));
-applyFiltersAndSort('foldergrouptable', 'filterInputTwo', 'filterCounterTwo', 'paginationfg');	
+applyFiltersAndSort('foldergrouptable', 'filterInputTwo', 'filterCounterTwo', 'paginationfg');
 
-// Initialize secrets name table 
+// Initialize secrets name table
 document.getElementById('secretsInputTwo').addEventListener("keyup", () => applyFiltersAndSort('recoveredsecretstable', 'secretsInputTwo', 'secretsCounterTwo', 'paginationsecrets'));
 applyFiltersAndSort('recoveredsecretstable', 'secretsInputTwo', 'secretsCounterTwo', 'paginationsecrets');
 
 // Initialize interesting files table
 document.getElementById('filterInputIF').addEventListener("keyup", () => applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF'));
-applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');	
+applyFiltersAndSort('InterestingFileTable', 'filterInputIF', 'filterCounterIF', 'paginationIF');
 
 // Initialize computers table
 document.getElementById('computerfilterInput').addEventListener("keyup", () => applyFiltersAndSort('ComputersTable', 'computerfilterInput', 'computerfilterCounter', 'computerpagination'));
@@ -12674,11 +12694,11 @@ applyFiltersAndSort('ComputersTable', 'computerfilterInput', 'computerfilterCoun
 
 // Initialize ace table
 document.getElementById('acefilterInput').addEventListener("keyup", () => applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination'));
-applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');	
+applyFiltersAndSort('aceTable', 'acefilterInput', 'acefilterCounter', 'acepagination');
 
 // Initialize identity table
 document.getElementById('IdentityfilterInput').addEventListener("keyup", () => applyFiltersAndSort('IdentityTable', 'IdentityfilterInput', 'IdentityfilterCounter', 'Identitypagination'));
-applyFiltersAndSort('IdentityTable', 'IdentityfilterInput', 'IdentityfilterCounter', 'Identitypagination');	
+applyFiltersAndSort('IdentityTable', 'IdentityfilterInput', 'IdentityfilterCounter', 'Identitypagination');
 
 // CSV export function
 function extractAndDownloadCSV(tableId, columnIndex) {
@@ -12716,7 +12736,7 @@ function extractAndDownloadCSV(tableId, columnIndex) {
     csvContent += cleanUncPaths.join('\n');
 
     // Set output file name
-    let CombinedName = tableId + '_unc_paths.csv' 
+    let CombinedName = tableId + '_unc_paths.csv'
 
     // Create a link to download the CSV file
     const encodedUri = encodeURI(csvContent);
@@ -12740,7 +12760,7 @@ function updateLabelColors(divId, objectId) {
     if (divElement) {
         // Get all label elements that are children of the div
         var labels = divElement.getElementsByTagName('label');
-        
+
 		// Loop through all label elements
         for (var i = 0; i < labels.length; i++) {
             var label = labels[i];
@@ -12764,12 +12784,12 @@ function updateLabelColors(divId, objectId) {
     } else {
         console.error("Div with id '" + divId + "' not found.");
     }
-	
+
     // Check if the div element exists
     if (divElement) {
         // Get all label elements that are children of the div
         var labels = divElement.getElementsByTagName('label');
-        
+
         // Loop through all label elements and clear their classes and inline styles, then reapply
         for (var i = 0; i < labels.length; i++) {
             // Save the class name and inline styles
@@ -12803,14 +12823,14 @@ function updateLabelColors(divId, objectId) {
         console.error("Element with id '" + objectId + "' not found.");
     }
 }
-	
+
 </script>
 
 </div>
 </div>
 </div>
 </div>
-<!--  
+<!--
 |||||||||| FOOTER
 -->
 </body>
@@ -12819,32 +12839,32 @@ function updateLabelColors(divId, objectId) {
 
 $NewHtmlReport | Out-File "$OutputDirectoryBase\Summary-Report-$TargetDomain.html"
 Write-Output " [*][$Time]   - All files written to $OutputDirectoryBase"
-Write-Output " [*][$Time]   - Done." 
+Write-Output " [*][$Time]   - Done."
 Write-Output ""
-Write-Output ""  
-# Write-Output " [*] Saving results to $OutputDirectory\_Report-$TargetDomain-Share-Inventory-Summary.html"     
-                
+Write-Output ""
+# Write-Output " [*] Saving results to $OutputDirectory\_Report-$TargetDomain-Share-Inventory-Summary.html"
+
         # ----------------------------------------------------------------------
         # Generate Excessive Privilege Findings
         # ----------------------------------------------------------------------
-        if($ExportFindings){ 
-                      
-             $Time =  Get-Date -UFormat "%m/%d/%Y %R"           
-             Write-Output " [*][$Time]   - Generating exccessive privileges export."                    
+        if($ExportFindings){
 
-            # Define excessive priv fields           
+             $Time =  Get-Date -UFormat "%m/%d/%Y %R"
+             Write-Output " [*][$Time]   - Generating exccessive privileges export."
+
+            # Define excessive priv fields
             $ExcessivePrivID = "M:2989294"
             $ExcessivePrivName = "Excessive Privileges - Network Shares"
             $ExcessivePrivFinding = "At least one network share has been configured with excessive privileges.  Excessive privileges include shares that are configured to provide the Everyone, BUILTIN\Users, Authenticated Users, or Domain Users groups with access that is not required."
             $ExcessivePrivRecommmend = "Practice the principle of least privileges and only allow users with a defined business need to access the affected shares."
-            
+
             # Create a finding for each instance
-            $PrivExport = $ExcessiveSharePrivs |  
+            $PrivExport = $ExcessiveSharePrivs |
             Foreach {
 
                 # Grab default fields
                 $ComputerName      =  $_.ComputerName
-                $IpAddress         =  $_.IpAddress 
+                $IpAddress         =  $_.IpAddress
                 $ShareName         =  $_.ShareName
                 $SharePath         =  $_.SharePath
                 $ShareDescription  =  $_.ShareDescription
@@ -12857,18 +12877,18 @@ Write-Output ""
                 $AccessControlType =  $_.AccessControlType
                 $LastModifiedDate  =  $_.LastModifiedDate
                 $FileCount         =  $_.FileCount
-                $FileList          =  $_.FileList 
+                $FileList          =  $_.FileList
 
                 # Create new finding object
                 $object = New-Object psobject
                 $object | add-member noteproperty $rMasterFindingId $ExcessivePrivID
                 $object | add-member noteproperty $rFindingName            "Excessive Share ACL"
-                $object | add-member noteproperty $rAssetName               $ComputerName       
+                $object | add-member noteproperty $rAssetName               $ComputerName
                 if(-not $ExportNova){$object | add-member noteproperty IssueFirstFoundDate     $EndTime}
-                $object | add-member noteproperty VerificationCaption01   "$IdentityReference has $FileSystemRights privileges on $SharePath." 
+                $object | add-member noteproperty VerificationCaption01   "$IdentityReference has $FileSystemRights privileges on $SharePath."
                 $ShareDetails = @"
 Computer Name: $ComputerName
-IP Address: $IpAddress 
+IP Address: $IpAddress
 Share Name: $ShareName
 Share Path: $SharePath
 Share Description: $ShareDescription
@@ -12881,36 +12901,36 @@ Identity SID: $IdentitySID
 Access Control Type: $AccessControlType
 Last Modification Date: $LastModifiedDate
 File Count: $FileCount
-File List Sample: 
-$FileList 
-"@                
+File List Sample:
+$FileList
+"@
                 if($ExportNova){
                     $object | add-member noteproperty VerificationText01 "<pre><code>$ShareDetails</code></pre>"
                 }else{
                     $object | add-member noteproperty VerificationText01 $ShareDetails
-                }   
+                }
                 $object | add-member noteproperty VerificationCaption02   "caption 2"
                 $object | add-member noteproperty VerificationText02      ""
                 $object | add-member noteproperty VerificationCaption03   "caption 3"
                 $object | add-member noteproperty VerificationText03      ""
                 $object | add-member noteproperty VerificationCaption04   "caption 4"
                 $object | add-member noteproperty VerificationText04      ""
-                $object 
+                $object
             }
 
-            # Write export file            
+            # Write export file
             $PrivExport | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv" -Append
 
             # Create record containing verification summary for domain
             $object = New-Object psobject
             $object | add-member noteproperty $rMasterFindingId       $ExcessivePrivID
             $object | add-member noteproperty $rFindingName           "Domain ACL Summary"
-            $object | add-member noteproperty $rAssetName             $TargetDomain                  
+            $object | add-member noteproperty $rAssetName             $TargetDomain
             if(-not $ExportNova){
                 $object | add-member noteproperty IssueFirstFoundDate     $EndTime
-            }         
-            $object | add-member noteproperty VerificationCaption01   "$ExcessiveSharesCount shares across $ComputerWithExcessive systems are configured with $ExcessiveSharePrivsCount potentially excessive ACLs." 
-            $ShareDetails = $ExcessiveSharePrivs | Select-Object SharePath -Unique -ExpandProperty SharePath | Out-String            
+            }
+            $object | add-member noteproperty VerificationCaption01   "$ExcessiveSharesCount shares across $ComputerWithExcessive systems are configured with $ExcessiveSharePrivsCount potentially excessive ACLs."
+            $ShareDetails = $ExcessiveSharePrivs | Select-Object SharePath -Unique -ExpandProperty SharePath | Out-String
             if($ExportNova){
                 $object | add-member noteproperty VerificationText01      "<pre><code>$ShareDetails</code></pre>"
             }else{
@@ -12930,7 +12950,7 @@ Run Time: $RunTime
 Computer Summary
 $ComputerCount domain computers found
 $ComputerPingableCount domain computers responded to ping
-$Computers445OpenCount domain computers had TCP port 445 accessible         
+$Computers445OpenCount domain computers had TCP port 445 accessible
 
 Share Summary
 $AllSMBSharesCount shares were found.
@@ -12947,8 +12967,8 @@ The 5 most common share names are:
             foreach {
                 $ShareCount = $_.count
                 $ShareName = $_.name
-                Write-Output "- $ShareCount $ShareName"   
-            } | Out-String                
+                Write-Output "- $ShareCount $ShareName"
+            } | Out-String
 
             $SummaryFinal = $Summary1 + $Summary2
 
@@ -12961,7 +12981,7 @@ The 5 most common share names are:
             $object | add-member noteproperty VerificationText03      ""
             $object | add-member noteproperty VerificationCaption04   "caption 4"
             $object | add-member noteproperty VerificationText04      ""
-            
+
             # Write record to file
             $object | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv" -Append
         }
@@ -12971,23 +12991,23 @@ The 5 most common share names are:
         # ----------------------------------------------------------------------
         if($ExportFindings){
 
-            $Time =  Get-Date -UFormat "%m/%d/%Y %R"    
-            Write-Output " [*][$Time]   - Generating HIGH RISK exccessive privileges export." 
+            $Time =  Get-Date -UFormat "%m/%d/%Y %R"
+            Write-Output " [*][$Time]   - Generating HIGH RISK exccessive privileges export."
 
-            # Define excessive priv fields 
+            # Define excessive priv fields
             $ExcessivehighRiskID = "MAN:M:e581ab69-a0fc-4cb1-a7ff-87256c1a9e91"
             $ExcessivehighRiskName = "Excessive Privileges - Network Shares - High Risk"
             $ExcessiveHighRiskFinding = "At least one network share has been configured with high risk excessive privileges.  High risk excessive privileges  provide the Everyone, BUILTIN\Users, Authenticated Users, or Domain Users groups with read/write access to system shares, web roots, or directories containing potentially sensitive data."
             $ExcessiveHighRiskRecommmend = "Practice the principle of least privileges and only allow users with a defined business need to access the affected shares."
-                
+
 
             # Create a finding for each instance
-            $PrivHighExport = $SharesHighRisk | 
+            $PrivHighExport = $SharesHighRisk |
             Foreach {
 
                 # Grab default fields
                 $ComputerName      =  $_.ComputerName
-                $IpAddress         =  $_.IpAddress 
+                $IpAddress         =  $_.IpAddress
                 $ShareName         =  $_.ShareName
                 $SharePath         =  $_.SharePath
                 $ShareDescription  =  $_.ShareDescription
@@ -13000,20 +13020,20 @@ The 5 most common share names are:
                 $AccessControlType =  $_.AccessControlType
                 $LastModifiedDate  =  $_.LastModifiedDate
                 $FileCount         =  $_.FileCount
-                $FileList          =  $_.FileList 
+                $FileList          =  $_.FileList
 
                 # Create new finding object
                 $object = New-Object psobject
                 $object | add-member noteproperty $rMasterFindingId $ExcessivehighRiskID
                 $object | add-member noteproperty $rFindingName            "Excessive Share ACL"
-                $object | add-member noteproperty $rAssetName               $ComputerName       
+                $object | add-member noteproperty $rAssetName               $ComputerName
                 if(-not $ExportNova){
                     $object | add-member noteproperty IssueFirstFoundDate     $EndTime
                 }
-                $object | add-member noteproperty VerificationCaption01   "$IdentityReference has $FileSystemRights privileges on $SharePath." 
+                $object | add-member noteproperty VerificationCaption01   "$IdentityReference has $FileSystemRights privileges on $SharePath."
                 $ShareDetails = @"
 Computer Name: $ComputerName
-IP Address: $IpAddress 
+IP Address: $IpAddress
 Share Name: $ShareName
 Share Path: $SharePath
 Share Description: $ShareDescription
@@ -13026,9 +13046,9 @@ Identity SID: $IdentitySID
 Access Control Type: $AccessControlType
 Last Modification Date: $LastModifiedDate
 File Count: $FileCount
-File List Sample: 
-$FileList 
-"@                
+File List Sample:
+$FileList
+"@
                 $object | add-member noteproperty VerificationText01      $ShareDetails
                 $object | add-member noteproperty VerificationCaption02   "caption 2"
                 $object | add-member noteproperty VerificationText02      "text 2"
@@ -13039,7 +13059,7 @@ $FileList
                 $object
             }
 
-            # Write export file            
+            # Write export file
             $PrivHighExport | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv" -Append
 
 
@@ -13047,12 +13067,12 @@ $FileList
             $object = New-Object psobject
             $object | add-member noteproperty $rMasterFindingId $ExcessivehighRiskID
             $object | add-member noteproperty $rFindingName            "Domain ACL Summary"
-            $object | add-member noteproperty $rAssetName               $TargetDomain       
+            $object | add-member noteproperty $rAssetName               $TargetDomain
             if(-not $ExportNova){
                 $object | add-member noteproperty IssueFirstFoundDate     $EndTime
-            }          
-            $object | add-member noteproperty VerificationCaption01   "$SharesHighRiskCount shares across $ComputerwithHighRisk systems are considered high risk." 
-            $ShareDetails = $SharesHighRisk | Select-Object SharePath -Unique -ExpandProperty SharePath | Out-String            
+            }
+            $object | add-member noteproperty VerificationCaption01   "$SharesHighRiskCount shares across $ComputerwithHighRisk systems are considered high risk."
+            $ShareDetails = $SharesHighRisk | Select-Object SharePath -Unique -ExpandProperty SharePath | Out-String
             if($ExportNova){
                 $object | add-member noteproperty VerificationText01      "<pre><code>$ShareDetails</code></pre>"
             }else{
@@ -13070,7 +13090,7 @@ Run Time: $RunTime
 Computer Summary
 $ComputerCount domain computers found
 $ComputerPingableCount domain computers responded to ping
-$Computers445OpenCount domain computers had TCP port 445 accessible         
+$Computers445OpenCount domain computers had TCP port 445 accessible
 
 Share Summary
 $AllSMBSharesCount shares were found.
@@ -13087,8 +13107,8 @@ The 5 most common share names are:
             foreach {
                 $ShareCount = $_.count
                 $ShareName = $_.name
-                Write-Output "- $ShareCount $ShareName"   
-            } | Out-String                
+                Write-Output "- $ShareCount $ShareName"
+            } | Out-String
 
             $SummaryFinal = $Summary1 + $Summary2
 
@@ -13101,12 +13121,12 @@ The 5 most common share names are:
             $object | add-member noteproperty VerificationText03      ""
             $object | add-member noteproperty VerificationCaption04   "caption 4"
             $object | add-member noteproperty VerificationText04      ""
-            
+
             # Write record to file
             $object | Export-Csv -NoTypeInformation "$OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv" -Append
-        }       
-        
-        #Write-Output " [*] Results exported to $OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv"               
+        }
+
+        #Write-Output " [*] Results exported to $OutputDirectory\$TargetDomain-Excessive-Privileges-EXPORT.csv"
     }
 }
 
@@ -13119,7 +13139,7 @@ The 5 most common share names are:
 # Function: Get-CardCreationTime
 # -------------------------------------------
 function Get-CardCreationTime
-{    
+{
     [CmdletBinding()]
     Param(
        [Parameter(Mandatory = $false,
@@ -13127,7 +13147,7 @@ function Get-CardCreationTime
         $MyDataTable,
         [Parameter(Mandatory = $false,
         HelpMessage = 'Output file path.')]
-        [string]$OutFilePath = "Share-ACL-CreationDate-Monthly-Summary.csv"        
+        [string]$OutFilePath = "Share-ACL-CreationDate-Monthly-Summary.csv"
     )
 
 # Get list of years for CreationdDate
@@ -13155,11 +13175,11 @@ $ExcessivePrivsYears |
 foreach {
 
     $TargetYear = $_.CreationDateYear
-    $TargetYearData = $MyDataTable | where CreationDateYear -like "$TargetYear" 
+    $TargetYearData = $MyDataTable | where CreationDateYear -like "$TargetYear"
 
     # Month looop
     1..12 |
-    foreach {        
+    foreach {
 
         # do last day of month look up here
         $currentMonth = $_
@@ -13170,45 +13190,45 @@ foreach {
 
         # setup start and end dates
         [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
         # get data for the month
         $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.CreationDate.trim() -ge $startDate -and [Datetime]$_.CreationDate.trim() -le $endDate)}
-        
-        # Get acl count & and % of total        
+
+        # Get acl count & and % of total
         $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
         if($MonthAclsCount -eq 0){
             $MonthAclsCountP = 0;
         }else{
-            $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")       
+            $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")
         }
 
         # Get share count
         $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-        # Get computer count        
+
+        # Get computer count
         $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
         # Get read count
         $MonthAclReadCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*Read*") -or ($_.FileSystemRights -like "*Append*") } | Where-Object {($_.FileSystemRights -notlike "*GenericAll*") -and ($_.FileSystemRights -notlike "*Write*")} |  Measure-Object | select count -ExpandProperty count
 
-        # Get write count 
+        # Get write count
         $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
 
-        # Get hr count 
-        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+        # Get hr count
+        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
 
         # Populate table
         $null = $ChartDataSummary.Rows.Add("$TargetYear","$currentmonthname",$MonthComputerCount,$MonthShareCount,$MonthAclsCount,$MonthAclReadCount,$MonthAclWriteCount,$MonthAclHrCount)
 
         # Export Results
         $ChartDataSummary | Export-Csv -NoTypeInformation $OutFilePath
-    
-	} #End Month    
+
+	} #End Month
 } # End year
 
 # Get highest ShareAcl
-$HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl 
+$HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl
 
 # Get highest AclRead
 $HighestAclReadCountinMonth = $ChartDataSummary | Sort-Object {[int]$_.AclRead} -Descending | Select-Object AclRead -First 1 -ExpandProperty AclRead
@@ -13228,9 +13248,9 @@ $HighestTypeCount = $TypeCounts | Sort-Object {[int]$_} -Descending | select -Fi
 
 # Start Table
 $HTML1 = @"
-<div class="LargeCard" style="width: 90.75%;">	
+<div class="LargeCard" style="width: 90.75%;">
 <span style="margin-left: 50px; font-size:18px;font-weight:bold;color:gray;">Share Creation Timeline</span><br>
-		<span style="margin-left: 50px;">for share ACLs configured with excessive privileges</span><br>		
+		<span style="margin-left: 50px;">for share ACLs configured with excessive privileges</span><br>
 
 <div class="container" style="position: relative;float:left;bottom:0;left:0;height:195px;width:50px;">
   <div style="top:5;position:absolute;color:#757575;width:100%;font-size:10;" align="right">$HighestAclCountinMonth <span style="color: #ccc">-</span> </div>
@@ -13241,7 +13261,7 @@ $HTML1 = @"
 	  <div width="100%" align="right" style="padding-right:3px;color:#757575">Read<br></div>
   </div>
 </div>
-<div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">		
+<div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">
 "@
 
 $HTML1
@@ -13251,11 +13271,11 @@ $ExcessivePrivsYears |
 foreach {
 
     $TargetYear = $_.CreationDateYear
-    $TargetYearData = $MyDataTable | where CreationDateYear -like "$TargetYear" 
+    $TargetYearData = $MyDataTable | where CreationDateYear -like "$TargetYear"
 
-    # Start Year 
-    $HTMLYearStart = @'    
-	    <div class="YearItem" >	
+    # Start Year
+    $HTMLYearStart = @'
+	    <div class="YearItem" >
 			<div id="YearWrapper" style="float:left;background-color:#F2F3F4;">
 				<div id="MonthsWrapper" style="position: relative;float:left">
 
@@ -13264,7 +13284,7 @@ foreach {
 
     # Month looop
     1..12 |
-    foreach {        
+    foreach {
 
         # do last day of month look up here
         $currentMonth = $_
@@ -13275,23 +13295,23 @@ foreach {
 
         # setup start and end dates
         [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
         # get data for the month
         $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.CreationDate.trim() -ge $startDate -and [Datetime]$_.CreationDate.trim() -le $endDate)}
-        
-        # Get acl count & and % of total        
+
+        # Get acl count & and % of total
         $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
         if($MonthAclsCount -eq 0){
             $MonthAclsCountP = 0;
         }else{
-            $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")       
+            $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")
         }
 
         # Get share count
         $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-        # Get computer count        
+
+        # Get computer count
         $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
         # Get read count
@@ -13300,92 +13320,92 @@ foreach {
             $MonthAclReadCountP = 0;
             $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:gray;`"></div>"
         }else{
-            $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
+            $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
             $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:Orange;opacity: .25;`"></div>"
         }
 
-        # Get write count 
+        # Get write count
         $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
         if($MonthAclWriteCount -eq 0){
             $MonthAclWriteCountP = 0;
             $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:gray;`"></div>"
         }else{
-            $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")       
+            $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
             $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:Orange;opacity: .5;`"></div>"
         }
 
-        # Get hr count 
-        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+        # Get hr count
+        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
         if($MonthAclHrCount -eq 0){
             $MonthAclHrCountP = 0;
             $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:gray;`"></div>"
         }else{
-            $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
-            $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"  
+            $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
+            $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"
         }
 
         # Debug
         # write-host "$TargetYear - $_ - $startDate to $endDate - a=$MonthAclsCount s=$MonthShareCount c=$MonthComputerCount w=$MonthAclWriteCount r=$MonthAclReadCount hr=$MonthAclHrCount"
-        
+
 
         # build column
         $HTMLMonth = @"
                     <div id="MonthItem" style="position: relative;float:left;padding-left:1px;padding-right:0px">
 						<div class="TimelineBarOutside" >
                             <div class="popwrapper" style="height:90px;position:relative;bottom:0;" >
-                                <div class="TimelinePopup" style="position:absolute;">	
+                                <div class="TimelinePopup" style="position:absolute;">
                                        <div class="TimelineMinicard">
                                             <div class="TimelineMinicardtitle" align="center">
 		                                        $currentmonthname $TargetYear<br>
 	                                        </div>
                                             <div class="TimelineMinicardcontainer" align="left">
 
-                                                <div style="margin-top:2px;padding-bottom:1px;">									          	                                                		                                                
+                                                <div style="margin-top:2px;padding-bottom:1px;">
                                                 <strong>Affected</strong><br>
-                                                &nbsp;&nbsp;Computers:  $MonthComputerCount<br>	
+                                                &nbsp;&nbsp;Computers:  $MonthComputerCount<br>
                                                 &nbsp;&nbsp;Shares:  $MonthShareCount<Br>
-                                                &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>	
-                                                </div>	
+                                                &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>
+                                                </div>
 
-									            <div style="margin-top:1px;padding-bottom:1px;">									          
+									            <div style="margin-top:1px;padding-bottom:1px;">
                                                 <strong>ACL Summary</strong><br>
                                                 &nbsp;&nbsp;Read: $MonthAclReadCount<br>
 									            &nbsp;&nbsp;Write: $MonthAclWriteCount<br>
-									            &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>                                                 
-									            </div>						           
-									    </div>	
-                                    </div>							
+									            &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>
+									            </div>
+									    </div>
+                                    </div>
 								  </div>
-							    <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>								 	                                    
+							    <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>
                             </div>
                             <div style="padding-bottom:15px;">
 							    $ReadDot
 							    $WriteDot
                                 $HrDot
                             </div>
-                              	 
+
 						    <div style="font-size:10;bottom:1;position:absolute;padding-left:3px;">$currentMonth</div>
 						</div>
 					</div>
 
 "@
          $HTMLMonth
-    
+
 	} # END MONTH
 
-    
-     $HTMLYearEnd = @"           
-                </div>    
+
+     $HTMLYearEnd = @"
+                </div>
      			<div id="bottom" align="center">
 				$TargetYear
 				</div>
-			</div>			
-         </div> 
+			</div>
+         </div>
 "@
     $HTMLYearEnd
 
 } # END YEAR
-  
+
 
 $HTMLEND = @'
 </div>
@@ -13400,7 +13420,7 @@ $HTMLEND
 # Function: Get-CardLastAccess
 # -------------------------------------------
 function Get-CardLastAccess
-{    
+{
     [CmdletBinding()]
     Param(
        [Parameter(Mandatory = $false,
@@ -13408,7 +13428,7 @@ function Get-CardLastAccess
         $MyDataTable,
         [Parameter(Mandatory = $false,
         HelpMessage = 'Output file path.')]
-        [string]$OutFilePath = "Share-ACL-LastAccessDate-Monthly-Summary.csv"        
+        [string]$OutFilePath = "Share-ACL-LastAccessDate-Monthly-Summary.csv"
     )
 
 # Get list of years for LastAccessDate - need to actual calculate all years to generate full timeline, even years with no data.
@@ -13436,11 +13456,11 @@ $ExcessivePrivsYears |
 foreach {
 
     $TargetYear = $_.LastAccessDateYear
-    $TargetYearData = $MyDataTable | where LastAccessDateYear -like "$TargetYear" 
+    $TargetYearData = $MyDataTable | where LastAccessDateYear -like "$TargetYear"
 
     # Month looop
     1..12 |
-    foreach {        
+    foreach {
 
         # do last day of month look up here
         $currentMonth = $_
@@ -13451,45 +13471,45 @@ foreach {
 
         # setup start and end dates
         [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
         # get data for the month
         $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.LastAccessDate.trim() -ge $startDate -and [Datetime]$_.LastAccessDate.trim() -le $endDate)}
-        
-        # Get acl count & and % of total        
+
+        # Get acl count & and % of total
         $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
         if($MonthAclsCount -eq 0){
             $MonthAclsCountP = 0;
         }else{
-            $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")       
+            $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")
         }
 
         # Get share count
         $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-        # Get computer count        
+
+        # Get computer count
         $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
         # Get read count
         $MonthAclReadCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*Read*") -or ($_.FileSystemRights -like "*Append*") } | Where-Object {($_.FileSystemRights -notlike "*GenericAll*") -and ($_.FileSystemRights -notlike "*Write*")} |  Measure-Object | select count -ExpandProperty count
 
-        # Get write count 
+        # Get write count
         $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
 
-        # Get hr count 
-        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+        # Get hr count
+        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
 
         # Populate table
         $null = $ChartDataSummary.Rows.Add("$TargetYear","$currentmonthname",$MonthComputerCount,$MonthShareCount,$MonthAclsCount,$MonthAclReadCount,$MonthAclWriteCount,$MonthAclHrCount)
 
         # Export Results
         $ChartDataSummary | Export-Csv -NoTypeInformation $OutFilePath
-    
-	} #End Month    
+
+	} #End Month
 } # End year
 
 # Get highest ShareAcl
-$HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl 
+$HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl
 
 # Get highest AclRead
 $HighestAclReadCountinMonth = $ChartDataSummary | Sort-Object {[int]$_.AclRead} -Descending | Select-Object AclRead -First 1 -ExpandProperty AclRead
@@ -13509,12 +13529,12 @@ $HighestTypeCount = $TypeCounts | Sort-Object {[int]$_} -Descending | select -Fi
 
 # Start Table
 $HTML1 = @"
-<div class="LargeCard">	
+<div class="LargeCard">
 	<div class="LargeCardTitle" style = "background-color: #345367">
 		Last Access Timeline<br>
 		<span class="LargeCardSubtitle2">for share ACLs configured with excessive privileges</span>
 	</div>
-	<div class="LargeCardContainer" align="center">			
+	<div class="LargeCardContainer" align="center">
 
 <div class="container" style="position: relative;float:left;bottom:0;left:0;height:195px;width:50px;">
   <div style="top:5;position:absolute;color:#757575;width:100%;font-size:10;" align="right">$HighestAclCountinMonth <span style="color: #ccc">-</span> </div>
@@ -13525,7 +13545,7 @@ $HTML1 = @"
 	  <div width="100%" align="right" style="padding-right:3px;color:#757575">Read<br></div>
   </div>
 </div>
-<div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">		
+<div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">
 "@
 
 $HTML1
@@ -13535,11 +13555,11 @@ $ExcessivePrivsYears |
 foreach {
 
     $TargetYear = $_.LastAccessDateYear
-    $TargetYearData = $MyDataTable | where LastAccessDateYear -like "$TargetYear" 
+    $TargetYearData = $MyDataTable | where LastAccessDateYear -like "$TargetYear"
 
-    # Start Year 
-    $HTMLYearStart = @'    
-	    <div class="YearItem" >	
+    # Start Year
+    $HTMLYearStart = @'
+	    <div class="YearItem" >
 			<div id="YearWrapper" style="float:left;background-color:#F2F3F4;">
 				<div id="MonthsWrapper" style="position: relative;float:left">
 
@@ -13548,7 +13568,7 @@ foreach {
 
     # Month looop
     1..12 |
-    foreach {        
+    foreach {
 
         # do last day of month look up here
         $currentMonth = $_
@@ -13559,23 +13579,23 @@ foreach {
 
         # setup start and end dates
         [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	    [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
         # get data for the month
         $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.LastAccessDate.trim() -ge $startDate -and [Datetime]$_.LastAccessDate.trim() -le $endDate)}
-        
-        # Get acl count & and % of total        
+
+        # Get acl count & and % of total
         $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
         if($MonthAclsCount -eq 0){
             $MonthAclsCountP = 0;
         }else{
-            $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")       
+            $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")
         }
 
         # Get share count
         $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-        # Get computer count        
+
+        # Get computer count
         $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
         # Get read count
@@ -13584,92 +13604,92 @@ foreach {
             $MonthAclReadCountP = 0;
             $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:gray;`"></div>"
         }else{
-            $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
+            $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
             $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:Orange;opacity: .25;`"></div>"
         }
 
-        # Get write count 
+        # Get write count
         $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
         if($MonthAclWriteCount -eq 0){
             $MonthAclWriteCountP = 0;
             $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:gray;`"></div>"
         }else{
-            $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")       
+            $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
             $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:Orange;opacity: .5;`"></div>"
         }
 
-        # Get hr count 
-        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+        # Get hr count
+        $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
         if($MonthAclHrCount -eq 0){
             $MonthAclHrCountP = 0;
             $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:gray;`"></div>"
         }else{
-            $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
-            $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"  
+            $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
+            $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"
         }
 
         # Debug
         # write-host "$TargetYear - $_ - $startDate to $endDate - a=$MonthAclsCount s=$MonthShareCount c=$MonthComputerCount w=$MonthAclWriteCount r=$MonthAclReadCount hr=$MonthAclHrCount"
-        
+
 
         # build column
         $HTMLMonth = @"
                     <div id="MonthItem" style="position: relative;float:left;padding-left:1px;padding-right:0px">
 						<div class="TimelineBarOutside" >
                             <div class="popwrapper" style="height:90px;position:relative;bottom:0;" >
-                                <div class="TimelinePopup" style="position:absolute;">	
+                                <div class="TimelinePopup" style="position:absolute;">
                                        <div class="TimelineMinicard">
                                             <div class="TimelineMinicardtitle" align="center">
 		                                        $currentmonthname $TargetYear<br>
 	                                        </div>
                                             <div class="TimelineMinicardcontainer" align="left">
 
-                                                <div style="margin-top:2px;padding-bottom:1px;">									          	                                                		                                                
+                                                <div style="margin-top:2px;padding-bottom:1px;">
                                                 <strong>Affected</strong><br>
-                                                &nbsp;&nbsp;Computers:  $MonthComputerCount<br>	
+                                                &nbsp;&nbsp;Computers:  $MonthComputerCount<br>
                                                 &nbsp;&nbsp;Shares:  $MonthShareCount<Br>
-                                                &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>	
-                                                </div>	
+                                                &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>
+                                                </div>
 
-									            <div style="margin-top:1px;padding-bottom:1px;">									          
+									            <div style="margin-top:1px;padding-bottom:1px;">
                                                 <strong>ACL Summary</strong><br>
                                                 &nbsp;&nbsp;Read: $MonthAclReadCount<br>
 									            &nbsp;&nbsp;Write: $MonthAclWriteCount<br>
-									            &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>                                                 
-									            </div>						           
-									    </div>	
-                                    </div>							
+									            &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>
+									            </div>
+									    </div>
+                                    </div>
 								  </div>
-							    <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>								 	                                    
+							    <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>
                             </div>
                             <div style="padding-bottom:15px;">
 							    $ReadDot
 							    $WriteDot
                                 $HrDot
                             </div>
-                              	 
+
 						    <div style="font-size:10;bottom:1;position:absolute;padding-left:3px;">$currentMonth</div>
 						</div>
 					</div>
 
 "@
          $HTMLMonth
-    
+
 	} # END MONTH
 
-    
-     $HTMLYearEnd = @"           
-                </div>    
+
+     $HTMLYearEnd = @"
+                </div>
      			<div id="bottom" align="center">
 				$TargetYear
 				</div>
-			</div>			
-         </div> 
+			</div>
+         </div>
 "@
     $HTMLYearEnd
 
 } # END YEAR
-  
+
 
 $HTMLEND = @'
 </div>
@@ -13685,15 +13705,15 @@ $HTMLEND
 # Function: Get-CardLastModified
 # -------------------------------------------
 function Get-CardLastModified
-{    
+{
     [CmdletBinding()]
     Param(
        [Parameter(Mandatory = $true,
         HelpMessage = 'Data table to parse. This should be the excessive privileges ACL table.')]
-        $MyDataTable,   
+        $MyDataTable,
         [Parameter(Mandatory = $false,
         HelpMessage = 'Output file path.')]
-        [string]$OutFilePath = "Share-ACL-LastModifiedDate-Monthly-Summary.csv"  
+        [string]$OutFilePath = "Share-ACL-LastModifiedDate-Monthly-Summary.csv"
     )
 
     # Get list of years for LastModifiedDate - need to actual calculate all years to generate full timeline, even years with no data.
@@ -13721,11 +13741,11 @@ function Get-CardLastModified
     foreach {
 
         $TargetYear = $_.LastModifiedDateYear
-        $TargetYearData = $MyDataTable | where LastModifiedDateYear -like "$TargetYear" 
+        $TargetYearData = $MyDataTable | where LastModifiedDateYear -like "$TargetYear"
 
         # Month looop
         1..12 |
-        foreach {        
+        foreach {
 
             # do last day of month look up here
             $currentMonth = $_
@@ -13736,45 +13756,45 @@ function Get-CardLastModified
 
             # setup start and end dates
             [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	        [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	        [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
             # get data for the month
             $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.LastModifiedDate.trim() -ge $startDate -and [Datetime]$_.LastModifiedDate.trim() -le $endDate)}
-        
-            # Get acl count & and % of total        
+
+            # Get acl count & and % of total
             $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
             if($MonthAclsCount -eq 0){
                 $MonthAclsCountP = 0;
             }else{
-                $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")       
+                $MonthAclsCountP = [math]::Round($MonthAclsCount/$ExcessivePrivsAclCount,4).tostring("P") -replace(" ","")
             }
 
             # Get share count
             $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-            # Get computer count        
+
+            # Get computer count
             $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
             # Get read count
             $MonthAclReadCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*Read*") -or ($_.FileSystemRights -like "*Append*") } | Where-Object {($_.FileSystemRights -notlike "*GenericAll*") -and ($_.FileSystemRights -notlike "*Write*")} |  Measure-Object | select count -ExpandProperty count
 
-            # Get write count 
+            # Get write count
             $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
 
-            # Get hr count 
-            $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+            # Get hr count
+            $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
 
             # Populate table
             $null = $ChartDataSummary.Rows.Add("$TargetYear","$currentmonthname",$MonthComputerCount,$MonthShareCount,$MonthAclsCount,$MonthAclReadCount,$MonthAclWriteCount,$MonthAclHrCount)
 
             # Export Results
             $ChartDataSummary | Export-Csv -NoTypeInformation $OutFilePath
-    
-	    } #End Month  Loop   
+
+	    } #End Month  Loop
     } # End ear loop
 
     # Get highest ShareAcl
-    $HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl 
+    $HighestAclCountinMonth = $ChartDataSummary | select shareacl | sort {[int]$_.shareacl} -Descending | select shareacl -First 1 -ExpandProperty shareacl
 
     # Get highest AclRead
     $HighestAclReadCountinMonth = $ChartDataSummary | Sort-Object {[int]$_.AclRead} -Descending | Select-Object AclRead -First 1 -ExpandProperty AclRead
@@ -13794,9 +13814,9 @@ function Get-CardLastModified
 
     # Start Table
     $HTML1 = @"
-    <div class="LargeCard" style="width: 90.75%;">	
+    <div class="LargeCard" style="width: 90.75%;">
 	    <span style="margin-left: 50px; font-size:18px;font-weight:bold;color:gray;">Last Modified Timeline</span><br>
-		<span style="margin-left: 50px;">for share ACLs configured with excessive privileges</span><br>	 		
+		<span style="margin-left: 50px;">for share ACLs configured with excessive privileges</span><br>
     <div class="container" style="position: relative;float:left;bottom:0;left:0;height:195px;width:50px;">
       <div style="top:5;position:absolute;color:#757575;width:100%;font-size:10;" align="right">$HighestAclCountinMonth <span style="color: #ccc">-</span> </div>
       <div style="bottom: 98;position:absolute;color:#757575;border-bottom:1px solid #ccc;width:100%;font-size:10;padding-right:1px;" align="right">0 <span style="color: #ccc">-</span></div>
@@ -13806,7 +13826,7 @@ function Get-CardLastModified
 	      <div width="100%" align="right" style="padding-right:3px;color:#757575">Read<br></div>
       </div>
     </div>
-    <div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">		
+    <div class="TimelineChart" Style="grid-template-columns: 1px repeat($ExcessivePrivsYearsCount, 204px) 1px;">
 "@
 
     $HTML1
@@ -13816,11 +13836,11 @@ function Get-CardLastModified
     foreach {
 
         $TargetYear = $_.LastModifiedDateYear
-        $TargetYearData = $MyDataTable | where LastModifiedDateYear -like "$TargetYear" 
+        $TargetYearData = $MyDataTable | where LastModifiedDateYear -like "$TargetYear"
 
-        # Start Year 
-        $HTMLYearStart = @'    
-	        <div class="YearItem" >	
+        # Start Year
+        $HTMLYearStart = @'
+	        <div class="YearItem" >
 			    <div id="YearWrapper" style="float:left;background-color:#F2F3F4;">
 				    <div id="MonthsWrapper" style="position: relative;float:left">
 
@@ -13829,7 +13849,7 @@ function Get-CardLastModified
 
         # Month looop
         1..12 |
-        foreach {        
+        foreach {
 
             # do last day of month look up here
             $currentMonth = $_
@@ -13840,23 +13860,23 @@ function Get-CardLastModified
 
             # setup start and end dates
             [Datetime]$startDate = Get-Date -Year $TargetYear -Month $_ -Day 1
-	        [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays               
+	        [Datetime]$endDate = Get-Date -Year $TargetYear -Month $_ -Day $enddays
 
             # get data for the month
             $MonthAcls = $TargetYearData | Where-Object {([Datetime]$_.LastModifiedDate.trim() -ge $startDate -and [Datetime]$_.LastModifiedDate.trim() -le $endDate)}
-        
-            # Get acl count & and % of total        
+
+            # Get acl count & and % of total
             $MonthAclsCount = $MonthAcls | Measure-Object | select count -ExpandProperty count
             if($MonthAclsCount -eq 0){
                 $MonthAclsCountP = 0;
             }else{
-                $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")       
+                $MonthAclsCountP = [math]::Round($MonthAclsCount/$HighestAclCountinMonth,4).tostring("P") -replace(" ","")
             }
 
             # Get share count
             $MonthShareCount = $MonthAcls | select sharepath -Unique | Measure-Object | select count -ExpandProperty count
-        
-            # Get computer count        
+
+            # Get computer count
             $MonthComputerCount = $MonthAcls | select computername -Unique| Measure-Object | select count -ExpandProperty count
 
             # Get read count
@@ -13865,92 +13885,92 @@ function Get-CardLastModified
                 $MonthAclReadCountP = 0;
                 $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:gray;`"></div>"
             }else{
-                $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
+                $MonthAclReadCountP = [math]::Round($MonthAclReadCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
                 $ReadDot = "<div class=`"TimelineDot`" style=`"bottom:15px;background-color:Orange;opacity: .25;`"></div>"
             }
 
-            # Get write count 
+            # Get write count
             $MonthAclWriteCount = $MonthAcls | Where-Object {($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*")} | Measure-Object | select count -ExpandProperty count
             if($MonthAclWriteCount -eq 0){
                 $MonthAclWriteCountP = 0;
                 $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:gray;`"></div>"
             }else{
-                $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")       
+                $MonthAclWriteCountP = [math]::Round($MonthAclWriteCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
                 $WriteDot = "<div class=`"TimelineDot`" style=`"bottom:30px;background-color:Orange;opacity: .5;`"></div>"
             }
 
-            # Get hr count 
-            $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count            
+            # Get hr count
+            $MonthAclHrCount = $MonthAcls | Where-Object {($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share')} | Measure-Object | select count -ExpandProperty count
             if($MonthAclHrCount -eq 0){
                 $MonthAclHrCountP = 0;
                 $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:gray;`"></div>"
             }else{
-                $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")    
-                $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"  
+                $MonthAclHrCountP = [math]::Round($MonthAclHrCount/$HighestTypeCount,4).tostring("P") -replace(" ","")
+                $HrDot = "<div class=`"TimelineDot`" style=`"bottom:45px;background-color:Orange;opacity: 1;`"></div>"
             }
 
             # Debug
             # write-host "$TargetYear - $_ - $startDate to $endDate - a=$MonthAclsCount s=$MonthShareCount c=$MonthComputerCount w=$MonthAclWriteCount r=$MonthAclReadCount hr=$MonthAclHrCount"
-        
+
 
             # build column
             $HTMLMonth = @"
                         <div id="MonthItem" style="position: relative;float:left;padding-left:1px;padding-right:0px">
 						    <div class="TimelineBarOutside" >
                                 <div class="popwrapper" style="height:90px;position:relative;bottom:0;" >
-                                    <div class="TimelinePopup" style="position:absolute;">	
+                                    <div class="TimelinePopup" style="position:absolute;">
                                            <div class="TimelineMinicard">
                                                 <div class="TimelineMinicardtitle" align="center">
 		                                            $currentmonthname $TargetYear<br>
 	                                            </div>
                                                 <div class="TimelineMinicardcontainer" align="left">
 
-                                                    <div style="margin-top:2px;padding-bottom:1px;">									          	                                                		                                                
+                                                    <div style="margin-top:2px;padding-bottom:1px;">
                                                     <strong>Affected</strong><br>
-                                                    &nbsp;&nbsp;Computers:  $MonthComputerCount<br>	
+                                                    &nbsp;&nbsp;Computers:  $MonthComputerCount<br>
                                                     &nbsp;&nbsp;Shares:  $MonthShareCount<Br>
-                                                    &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>	
-                                                    </div>	
+                                                    &nbsp;&nbsp;ACLs: $MonthAclsCount<Br>
+                                                    </div>
 
-									                <div style="margin-top:1px;padding-bottom:1px;">									          
+									                <div style="margin-top:1px;padding-bottom:1px;">
                                                     <strong>ACL Summary</strong><br>
                                                     &nbsp;&nbsp;Read: $MonthAclReadCount<br>
 									                &nbsp;&nbsp;Write: $MonthAclWriteCount<br>
-									                &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>                                                 
-									                </div>						           
-									        </div>	
-                                        </div>							
+									                &nbsp;&nbsp;High-Risk: $MonthAclHrCount<br>
+									                </div>
+									        </div>
+                                        </div>
 								      </div>
-							        <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>								 	                                    
+							        <div class="TimelineBarInside" style="height:$MonthAclsCountP;width:100%;z-index: 0;"></div>
                                 </div>
                                 <div style="padding-bottom:15px;">
 							        $ReadDot
 							        $WriteDot
                                     $HrDot
                                 </div>
-                              	 
+
 						        <div style="font-size:10;bottom:1;position:absolute;padding-left:3px;">$currentMonth</div>
 						    </div>
 					    </div>
 
 "@
              $HTMLMonth
-    
+
 	    } #END MONTH LOOP
 
-         
-         $HTMLYearEnd = @"           
-                    </div>    
+
+         $HTMLYearEnd = @"
+                    </div>
      			    <div id="bottom" align="center">
 				    $TargetYear
 				    </div>
-			    </div>			
-             </div> 
+			    </div>
+             </div>
 "@
         $HTMLYearEnd
 
     } # End YEAR LOOP
-  
+
 
     # End Page
 
@@ -13959,7 +13979,7 @@ function Get-CardLastModified
     </div>
 '@
 
-    $HTMLEND    
+    $HTMLEND
 }
 
 # -------------------------------------------
@@ -13979,9 +13999,9 @@ function Get-PercentDisplay
     }
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty PercentString         $PercentString
-    $TheCounts | add-member  Noteproperty PercentBarVal         $PercentBarVal    
+    $TheCounts | add-member  Noteproperty PercentBarVal         $PercentBarVal
     $TheCounts
 }
 
@@ -13999,7 +14019,7 @@ function Get-ExPrivSumData
     )
 
     # Get acl counts
-    $UserAcls = $DataTable 
+    $UserAcls = $DataTable
     $UserAclsCount = $UserAcls | measure | select count -ExpandProperty count
     $UserAclsPercent = [math]::Round($UserAclsCount/$AllAclCount,4)
     $UserAclsPercentString = $UserAclsPercent.tostring("P") -replace(" ","")
@@ -14016,16 +14036,16 @@ function Get-ExPrivSumData
 
     # Get computer counts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
-    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count   
+    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
     $UserComputerPercent = [math]::Round($UserComputerCount/$AllComputerCount,4)
     $UserComputerPercentString = $UserComputerPercent.tostring("P") -replace(" ","")
     $UserComputerPercentBarVal = ($UserComputerPercent *2).tostring("P") -replace(" %","px")
     $UserComputerPercentBarCode = "<span class=`"dashboardsub2`">$UserComputerPercentString ($UserComputerCount of $AllComputerCount)</span><br><div class=`"cardbarouter`"><div class=`"cardbarinside`" style=`"width: $UserComputerPercentString;`"></div></div>"
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty ComputerBar   $UserComputerPercentBarCode
-    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode    
+    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode
     $TheCounts | add-member  Noteproperty AclBar        $UserAclsPercentBarCode
     $TheCounts
 }
@@ -14061,16 +14081,16 @@ function Get-GroupOwnerBar
 
     # Get computer counts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
-    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count   
+    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
     $UserComputerPercent = [math]::Round($UserComputerCount/$AllComputerCount,4)
     $UserComputerPercentString = $UserComputerPercent.tostring("P") -replace(" ","")
     $UserComputerPercentBarVal = ($UserComputerPercent *2).tostring("P") -replace(" %","px")
     $UserComputerPercentBarCode = "<span class=`"dashboardsub2`">$UserComputerPercentString ($UserComputerCount of $AllComputerCount)</span><br><div class=`"divbarDomain`"><div class=`"divbarDomainInside`" style=`"width: $UserComputerPercentString;`"></div></div>"
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty ComputerBar   $UserComputerPercentBarCode
-    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode    
+    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode
     $TheCounts | add-member  Noteproperty AclBar        $UserAclsPercentBarCode
     $TheCounts
 }
@@ -14106,16 +14126,16 @@ function Get-GroupNameBar
 
     # Get computer counts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
-    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count   
+    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
     $UserComputerPercent = [math]::Round($UserComputerCount/$AllComputerCount,4)
     $UserComputerPercentString = $UserComputerPercent.tostring("P") -replace(" ","")
     $UserComputerPercentBarVal = ($UserComputerPercent *2).tostring("P") -replace(" %","px")
     $UserComputerPercentBarCode = "<span class=`"dashboardsub2`">$UserComputerPercentString ($UserComputerCount of $AllComputerCount)</span><br><div class=`"divbarDomain`"><div class=`"divbarDomainInside`" style=`"width: $UserComputerPercentString;`"></div></div>"
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty ComputerBar   $UserComputerPercentBarCode
-    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode    
+    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode
     $TheCounts | add-member  Noteproperty AclBar        $UserAclsPercentBarCode
     $TheCounts
 }
@@ -14151,16 +14171,16 @@ function Get-GroupNameNoBar
 
     # Get computer counts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
-    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count   
+    $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
     $UserComputerPercent = [math]::Round($UserComputerCount/$AllComputerCount,4)
     $UserComputerPercentString = $UserComputerPercent.tostring("P") -replace(" ","")
     $UserComputerPercentBarVal = ($UserComputerPercent *2).tostring("P") -replace(" %","px")
     $UserComputerPercentBarCode = "$UserComputerCount of $AllComputerCount ($UserComputerPercentString)"
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty ComputerBar   $UserComputerPercentBarCode
-    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode    
+    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode
     $TheCounts | add-member  Noteproperty AclBar        $UserAclsPercentBarCode
     $TheCounts
 }
@@ -14181,8 +14201,8 @@ function Get-GroupFileBar
     # Get acl counts
     $UserAcls = $DataTable | Where FileListGroup -like "$Name" | Select-Object ComputerName, ShareName, SharePath, FileSystemRights, FileCount, FileList
     $FolderInfo = $UserAcls | select FileCount, FileList -First 1
-    $FileCount = $FolderInfo.FileCount 
-    $FileList = $FolderInfo.FileList 
+    $FileCount = $FolderInfo.FileCount
+    $FileList = $FolderInfo.FileList
     $UserAclsCount = $UserAcls | measure | select count -ExpandProperty count
     $UserAclsPercent = [math]::Round($UserAclsCount/$AllAclCount,4)
     $UserAclsPercentString = $UserAclsPercent.tostring("P") -replace(" ","")
@@ -14200,7 +14220,7 @@ function Get-GroupFileBar
     # Get computer counts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
     $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
-    if($AllComputerCount -ne 0){   
+    if($AllComputerCount -ne 0){
         $UserComputerPercent = [math]::Round($UserComputerCount/$AllComputerCount,4)
     }
     $UserComputerPercentString = $UserComputerPercent.tostring("P") -replace(" ","")
@@ -14208,9 +14228,9 @@ function Get-GroupFileBar
     $UserComputerPercentBarCode = "<span class=`"dashboardsub2`">$UserComputerPercentString ($UserComputerCount of $AllComputerCount)</span><br><div class=`"divbarDomain`"><div class=`"divbarDomainInside`" style=`"width: $UserComputerPercentString;`"></div></div>"
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty ComputerBar   $UserComputerPercentBarCode
-    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode    
+    $TheCounts | add-member  Noteproperty ShareBar      $UserSharePercentBarCode
     $TheCounts | add-member  Noteproperty AclBar        $UserAclsPercentBarCode
     $TheCounts | add-member  Noteproperty FileCount     $FileCount
     $TheCounts | add-member  Noteproperty FileList      $FileList
@@ -14240,41 +14260,41 @@ function Get-UserAceCounts
     $UserComputer = $UserAcls | Select-Object ComputerName -Unique
     $UserComputerCount = $UserComputer | measure | select count -ExpandProperty count
 
-    # Get read counts 
-    $UserReadAcl = $UserAcls | 
+    # Get read counts
+    $UserReadAcl = $UserAcls |
     Foreach {
 
         if(($_.FileSystemRights -like "*read*"))
         {
-            $_ 
+            $_
         }
     }
     $UserReadAclCount = $UserReadAcl | measure | select count -ExpandProperty count
 
     # Get write counts
-    $UserWriteAcl = $UserAcls | 
+    $UserWriteAcl = $UserAcls |
     Foreach {
 
         if(($_.FileSystemRights -like "*GenericAll*") -or ($_.FileSystemRights -like "*Write*"))
         {
-            $_ 
+            $_
         }
     }
     $UserWriteAclCount = $UserWriteAcl | measure | select count -ExpandProperty count
 
     # Get high risk counts
-    $UserHighRiskAcl = $UserAcls | 
+    $UserHighRiskAcl = $UserAcls |
     Foreach {
 
         if(($_.ShareName -like 'c$') -or ($_.ShareName -like 'admin$') -or ($_.ShareName -like "*wwwroot*") -or ($_.ShareName -like "*inetpub*") -or ($_.ShareName -like 'c') -or ($_.ShareName -like 'c_share'))
         {
-            $_ 
+            $_
         }
     }
     $UserHighRiskAclCount = $UserHighRiskAcl | measure | select count -ExpandProperty count
 
     # Return object with all counts
-    $TheCounts = new-object psobject            
+    $TheCounts = new-object psobject
     $TheCounts | add-member  Noteproperty UserAclsCount          $UserAclsCount
     $TheCounts | add-member  Noteproperty UserShareCount         $UserShareCount
     $TheCounts | add-member  Noteproperty UserComputerCount      $UserComputerCount
@@ -14305,7 +14325,7 @@ function Convert-DataTableToHtmlTable
             $Object | Add-Member Noteproperty Name "my name 1"
             $Object | Add-Member Noteproperty Description "my description 1"
             Convert-DataTableToHtmlTable -Verbose -DataTable $object -Outfile ".\MyPsDataTable.html" -Title "MyPage" -Description "My description" -DontExport
-            Convert-DataTableToHtmlTable -Verbose -DataTable $object -Outfile ".\MyPsDataTable.html" -Title "MyPage" -Description "My description"            
+            Convert-DataTableToHtmlTable -Verbose -DataTable $object -Outfile ".\MyPsDataTable.html" -Title "MyPage" -Description "My description"
             .\MyPsDataTable.html
 	        .NOTES
 	        Author: Scott Sutherland (@_nullbind)
@@ -14329,40 +14349,40 @@ function Convert-DataTableToHtmlTable
     )
 
     # Setup HTML begin
-    Write-Verbose "[+] Creating html top." 
+    Write-Verbose "[+] Creating html top."
     $HTMLSTART = @"
     <html>
         <head>
           <title>$Title</title>
-          <style>   
+          <style>
 	        {box-sizing:border-box}
 	        body,html{
-		        font-family:"Open Sans", 
+		        font-family:"Open Sans",
 		        sans-serif;font-weight:400;
 		        min-height:100%;;color:#3d3935;
-		        margin:1px;line-height:1.5;		       
+		        margin:1px;line-height:1.5;
 	        }
-		
+
 	        table{
 		        width:100%;
 		        max-width:100%;
 		        margin-bottom:1rem;
 		        border-collapse:collapse
 	        }
-	
+
 	        table thead th{
 		        vertical-align:bottom;
 		        border-bottom:2px solid #eceeef
 	        }
-	
+
 	        table tbody tr:nth-of-type(odd){
 		        background-color:#f9f9f9
 	        }
-	
+
 	        table tbody tr:hover{
 		        background-color:#f5f5f5
 	        }
-	
+
 	        table td,table th{
 		        padding:.75rem;
 		        line-height:1.5;
@@ -14372,7 +14392,7 @@ function Convert-DataTableToHtmlTable
 		        border-top:1px solid #eceeef
 	        }
 
-	
+
 	        h1,h2,h3,h4,h5,h6{
 		        padding-left: 10px;
 		        font-family:inherit;
@@ -14380,7 +14400,7 @@ function Convert-DataTableToHtmlTable
 		        line-height:1.1;
 		        color:inherit
 	        }
-	
+
 	        code{
 		        padding:.2rem .4rem;
 		        font-size:1rem;
@@ -14388,36 +14408,36 @@ function Convert-DataTableToHtmlTable
 		        background-color:#f7f7f9;
 		        --border-radius:.25rem
 	        }
-	
+
 	        p{
 		        margin-top:0;
 		        margin-bottom:1rem
 	        }
-	
+
 	        a,a:visited{
 		        text-decoration:none;
 		        font-size: 14;
 		        color: gray;
 		        font-weight: bold;
 	        }
-	
+
 	        a:hover{
 		        color:#9B3722;
 		        text-decoration:underline
 	        }
-		
+
 	        .link:hover{
 		        text-decoration:underline
 	        }
-	
+
 	        li{
 		        list-style-type:none
-	        }	
+	        }
 
             .pageDescription {
                 margin: 10px;
             }
-  
+
 	        .divbarDomain{
 		        background:#d9d7d7;
 		        width:200px;
@@ -14425,7 +14445,7 @@ function Convert-DataTableToHtmlTable
 		        height: 25px;
 		        text-align:center;
 	        }
-  
+
 	        .divbarDomainInside{
 		        background:#9B3722;
 		        width:100px;
@@ -14435,7 +14455,7 @@ function Convert-DataTableToHtmlTable
             }
             .pageDescription {
                 padding-left: 0px;
-            }	                       			
+            }
           </style>
         </head>
         <body>
@@ -14444,51 +14464,51 @@ function Convert-DataTableToHtmlTable
         <p class="pageDescription">$Description</p>
             <table class="table table-striped table-hover">
 "@
-    
+
     # Get list of columns
     Write-Verbose "[+] Parsing data table columns."
     $MyCsvColumns = $DataTable | Get-Member | Where-Object MemberType -like "NoteProperty" | Select-Object Name -ExpandProperty Name
 
     # Print columns creation
-    Write-Verbose "[+] Creating html table columns."   
-    $HTMLTableHeadStart= "<thead><tr>" 
+    Write-Verbose "[+] Creating html table columns."
+    $HTMLTableHeadStart= "<thead><tr>"
     $MyCsvColumns |
     ForEach-Object {
 
         # Add column
-        $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"    
+        $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"
     }
-    $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>" 
+    $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>"
 
      # Create table rows
-    Write-Verbose "[+] Creating html table rows."     
+    Write-Verbose "[+] Creating html table rows."
     $HTMLTableRow = $DataTable |
     ForEach-Object {
-    
+
         # Create a value contain row data
         $CurrentRow = $_
         $PrintRow = ""
-        $MyCsvColumns | 
+        $MyCsvColumns |
         ForEach-Object{
 
             try{
                 $GetValue = $CurrentRow | Select-Object $_ -ExpandProperty $_ -ErrorAction SilentlyContinue
                 if($PrintRow -eq ""){
-                    $PrintRow = "<td>$GetValue</td>"               
-                }else{         
+                    $PrintRow = "<td>$GetValue</td>"
+                }else{
                     $PrintRow = "<td>$GetValue</td>$PrintRow"
                 }
-            }catch{}            
+            }catch{}
         }
-        
+
         # Return row
-        $HTMLTableHeadstart = "<tr>" 
-        $HTMLTableHeadend = "</tr>" 
+        $HTMLTableHeadstart = "<tr>"
+        $HTMLTableHeadend = "</tr>"
         "$HTMLTableHeadStart$PrintRow$HTMLTableHeadend"
     }
 
     # Setup HTML end
-    Write-Verbose "[+] Creating html bottom." 
+    Write-Verbose "[+] Creating html bottom."
     $HTMLEND = @"
   </tbody>
 </table>
@@ -14497,7 +14517,7 @@ function Convert-DataTableToHtmlTable
 "@
 
     # Return it
-    "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND" 
+    "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND"
 
     # Write file
     if(-not $DontExport){
@@ -14519,7 +14539,7 @@ function Convert-DataTableToHtmlReport
             $object = New-Object psobject
             $Object | Add-Member Noteproperty Name "my name 1"
             $Object | Add-Member Noteproperty Description "my description 1"
-            Convert-DataTableToHtmlReport -Verbose -DataTable $object 
+            Convert-DataTableToHtmlReport -Verbose -DataTable $object
 	        .NOTES
 	        Author: Scott Sutherland (@_nullbind)
     #>
@@ -14530,67 +14550,67 @@ function Convert-DataTableToHtmlReport
     )
 
     # Setup HTML begin
-    Write-Verbose "[+] Creating html top." 
+    Write-Verbose "[+] Creating html top."
     $HTMLSTART = @"
     <table class="table table-striped table-hover tabledrop">
 "@
-    
+
     # Get list of columns
     $MyCsvColumns = $DataTable | Get-Member | Where-Object MemberType -like "NoteProperty" | Select-Object Name -ExpandProperty Name
 
-    # Print columns creation  
-    $HTMLTableHeadStart= "<thead><tr>" 
+    # Print columns creation
+    $HTMLTableHeadStart= "<thead><tr>"
     $MyCsvColumns |
     ForEach-Object {
 
         # Add column
-        $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"    
+        $HTMLTableColumn = "<th>$_</th>$HTMLTableColumn"
     }
-    $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>" 
+    $HTMLTableColumn = "$HTMLTableHeadStart$HTMLTableColumn</tr></thead>"
 
      # Create table rows
-    Write-Verbose "[+] Creating html table rows."     
+    Write-Verbose "[+] Creating html table rows."
     $HTMLTableRow = $DataTable |
     ForEach-Object {
-    
+
         # Create a value contain row data
         $CurrentRow = $_
         $PrintRow = ""
-        $MyCsvColumns | 
+        $MyCsvColumns |
         ForEach-Object{
 
             try{
                 $GetValue = $CurrentRow | Select-Object $_ -ExpandProperty $_ -ErrorAction SilentlyContinue
                 if($PrintRow -eq ""){
-                    $PrintRow = "<td>$GetValue</td>"               
-                }else{         
+                    $PrintRow = "<td>$GetValue</td>"
+                }else{
                     $PrintRow = "<td>$GetValue</td>$PrintRow"
                 }
-            }catch{}            
+            }catch{}
         }
-        
+
         # Return row
-        $HTMLTableHeadstart = "<tr>" 
-        $HTMLTableHeadend = "</tr>" 
+        $HTMLTableHeadstart = "<tr>"
+        $HTMLTableHeadend = "</tr>"
         "$HTMLTableHeadStart$PrintRow$HTMLTableHeadend"
     }
 
     # Setup HTML end
-    Write-Verbose "[+] Creating html bottom." 
+    Write-Verbose "[+] Creating html bottom."
     $HTMLEND = @"
   </tbody>
 </table>
 "@
 
     # Return it
-    "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND" 
+    "$HTMLSTART $HTMLTableColumn $HTMLTableRow $HTMLEND"
 }
 
 # -------------------------------------------
 # Function: Get-FolderGroupMd5
 # -------------------------------------------
 function Get-FolderGroupMd5{
-    
+
     param (
         [string]$FolderList
     )
@@ -14606,7 +14626,7 @@ function Get-FolderGroupMd5{
 
     $MyMd5Provider = [System.Security.Cryptography.MD5CryptoServiceProvider]::Create()
     $enc = [system.Text.Encoding]::UTF8
-    $FolderListBytes = $enc.GetBytes($FolderList) 
+    $FolderListBytes = $enc.GetBytes($FolderList)
     $MyMd5HashBytes = $MyMd5Provider.ComputeHash($FolderListBytes)
     $MysStringBuilder = new-object System.Text.StringBuilder
     $MyMd5HashBytes|
@@ -14703,7 +14723,7 @@ function Get-LdapQuery
         # Create Create the connection to LDAP
         if ($DomainController)
         {
-           
+
             # Test credentials and grab domain
             try {
 
@@ -14804,7 +14824,7 @@ function Get-DomainSubnet
         HelpMessage="Credentials to use when connecting to a Domain Controller.")]
         [System.Management.Automation.PSCredential]
         [System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty,
-        
+
         [Parameter(Mandatory=$false,
         HelpMessage="Domain controller for Domain and Site that you want to query against.")]
         [string]$DomainController,
@@ -14833,13 +14853,13 @@ function Get-DomainSubnet
         # Create PS Credential object
         if($Password){
             $secpass = ConvertTo-SecureString $Password -AsPlainText -Force
-            $Credential = New-Object System.Management.Automation.PSCredential ($Username, $secpass)                
-        }        
+            $Credential = New-Object System.Management.Automation.PSCredential ($Username, $secpass)
+        }
 
-        # Create Create the connection to LDAP       
+        # Create Create the connection to LDAP
         if ($DomainController -and $Credential.GetNetworkCredential().Password)
         {
-            $objDomain = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$DomainController", $Credential.UserName,$Credential.GetNetworkCredential().Password).distinguishedname           
+            $objDomain = (New-Object System.DirectoryServices.DirectoryEntry "LDAP://$DomainController", $Credential.UserName,$Credential.GetNetworkCredential().Password).distinguishedname
 
             # add ldap path
             if($LdapPath)
@@ -14849,11 +14869,11 @@ function Get-DomainSubnet
             }else{
                 $objDomainPath= New-Object System.DirectoryServices.DirectoryEntry "LDAP://$DomainController", $Credential.UserName,$Credential.GetNetworkCredential().Password
             }
-            
+
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomainPath
         }else{
             $objDomain = ([ADSI]"").distinguishedName
-            
+
             # add ldap path
             if($LdapPath)
             {
@@ -14863,34 +14883,34 @@ function Get-DomainSubnet
             }else{
                 $objDomainPath  = [ADSI]""
             }
-              
+
             $objSearcher = New-Object System.DirectoryServices.DirectorySearcher $objDomainPath
         }
 
         # Create table for object information
         $TableDomainSubnets = New-Object System.Data.DataTable
         $TableDomainSubnets.Columns.Add("Site") | Out-Null
-        $TableDomainSubnets.Columns.Add("Subnet") | Out-Null        
-        $TableDomainSubnets.Columns.Add("Description") | Out-Null                
-        $TableDomainSubnets.Columns.Add("whencreated") | Out-Null  
-        $TableDomainSubnets.Columns.Add("whenchanged") | Out-Null 
-        $TableDomainSubnets.Columns.Add("distinguishedname") | Out-Null      
+        $TableDomainSubnets.Columns.Add("Subnet") | Out-Null
+        $TableDomainSubnets.Columns.Add("Description") | Out-Null
+        $TableDomainSubnets.Columns.Add("whencreated") | Out-Null
+        $TableDomainSubnets.Columns.Add("whenchanged") | Out-Null
+        $TableDomainSubnets.Columns.Add("distinguishedname") | Out-Null
         $TableDomainSubnets.Clear()
     }
 
     Process
-    {        
+    {
         try
         {
             # Get results
-            Get-LdapQuery -DomainController $DomainController -username $username -password $password -Credential $Credential -Verbose -LdapFilter "(objectCategory=subnet)" -LdapPath "CN=Subnets,CN=Sites,CN=Configuration" | 
+            Get-LdapQuery -DomainController $DomainController -username $username -password $password -Credential $Credential -Verbose -LdapFilter "(objectCategory=subnet)" -LdapPath "CN=Subnets,CN=Sites,CN=Configuration" |
             ForEach-Object {
-            
+
                 # Add results to table
-                $TableDomainSubnets.Rows.Add(                     
-                    [string]$_.properties.siteobject.split(",")[0].split("=")[1],   
-                    [string]$_.properties.name,    
-                    [string]$_.properties.description,  
+                $TableDomainSubnets.Rows.Add(
+                    [string]$_.properties.siteobject.split(",")[0].split("=")[1],
+                    [string]$_.properties.name,
+                    [string]$_.properties.description,
                     [string]$_.properties.whencreated,
                     [string]$_.properties.whenchanged,
                     [string]$_.properties.distinguishedname
@@ -14902,7 +14922,7 @@ function Get-DomainSubnet
           #"Error was $_"
           #$line = $_.InvocationInfo.ScriptLineNumber
           #"Error was in Line $line"
-        }                    
+        }
     }
 
     End
@@ -14915,7 +14935,7 @@ function Get-DomainSubnet
             Return $TableDomainSubnets
         }else{
             Write-Verbose "0 subnets were found."
-        } 
+        }
     }
 }
 
@@ -15135,7 +15155,7 @@ function Invoke-Parallel
         else
         {
             $script:MaxQueue = $MaxQueue
-        }        
+        }
 
         #If they want to import variables or modules, create a clean runspace, get loaded items, use those to exclude items
         if ($ImportVariables -or $ImportModules)
@@ -15567,7 +15587,7 @@ function Invoke-Parallel
 
                 #loop through existing runspaces one time
                 if($ShowRunpaceErrors){
-                    Get-RunspaceData 
+                    Get-RunspaceData
                 }else{
                     Get-RunspaceData -ErrorAction SilentlyContinue
                 }
@@ -15628,11 +15648,11 @@ function Convert-BitShift {
 
         [Parameter(ParameterSetName = 'Right', Mandatory = $False)]
         [int] $Right
-    ) 
+    )
 
     $shift = 0
     if ($PSCmdlet.ParameterSetName -eq 'Left')
-    { 
+    {
         $shift = $Left
     }
     else
@@ -16078,7 +16098,7 @@ filter Get-IniContent {
                 $CommentCount = $CommentCount + 1
                 $Name = 'Comment' + $CommentCount
                 $IniObject[$Section][$Name] = $Value
-            } 
+            }
             "(.+?)\s*=(.*)" # Key
             {
                 $Name, $Value = $matches[1..2]
@@ -16164,7 +16184,7 @@ filter Convert-NameToSid {
     )
 
     $ObjectName = $ObjectName -Replace "/","\"
-    
+
     if($ObjectName.Contains("\")) {
         # if we get a DOMAIN\user format, auto convert it
         $Domain = $ObjectName.Split("\")[0]
@@ -16177,7 +16197,7 @@ filter Convert-NameToSid {
     try {
         $Obj = (New-Object System.Security.Principal.NTAccount($Domain, $ObjectName))
         $SID = $Obj.Translate([System.Security.Principal.SecurityIdentifier]).Value
-        
+
         $Out = New-Object PSObject
         $Out | Add-Member Noteproperty 'ObjectName' $ObjectName
         $Out | Add-Member Noteproperty 'SID' $SID
@@ -16265,7 +16285,7 @@ filter Convert-SidToName {
             'S-1-5-32-578'  { 'BUILTIN\Hyper-V Administrators' }
             'S-1-5-32-579'  { 'BUILTIN\Access Control Assistance Operators' }
             'S-1-5-32-580'  { 'BUILTIN\Access Control Assistance Operators' }
-            Default { 
+            Default {
                 $Obj = (New-Object System.Security.Principal.SecurityIdentifier($SID2))
                 $Obj.Translate( [System.Security.Principal.NTAccount]).Value
             }
@@ -16351,7 +16371,7 @@ filter Convert-ADName {
     try {
         Invoke-Method $Translate "Init" (1, $Domain)
     }
-    catch [System.Management.Automation.MethodInvocationException] { 
+    catch [System.Management.Automation.MethodInvocationException] {
         Write-Verbose "Error with translate init in Convert-ADName: $_"
     }
 
@@ -16367,7 +16387,7 @@ filter Convert-ADName {
 }
 
 function ConvertFrom-UACValue {
-    
+
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$True, ValueFromPipeline=$True)]
@@ -16418,7 +16438,7 @@ function ConvertFrom-UACValue {
         }
         else {
             #Write-Warning "Invalid object input for -Value : $Value"
-            return $Null 
+            return $Null
         }
 
         if($ShowAll) {
@@ -16465,7 +16485,7 @@ filter Get-Proxy {
                 #Write-Warning "Error connecting to AutoConfigURL : $AutoConfigURL"
             }
         }
-        
+
         if($ProxyServer -or $AutoConfigUrl) {
 
             $Properties = @{
@@ -16473,7 +16493,7 @@ filter Get-Proxy {
                 'AutoConfigURL' = $AutoConfigURL
                 'Wpad' = $Wpad
             }
-            
+
             New-Object -TypeName PSObject -Property $Properties
         }
         else {
@@ -16493,7 +16513,7 @@ function Request-SPNTicket {
         [Alias('ServicePrincipalName')]
         [String[]]
         $SPN,
-        
+
         [Alias('EncryptedPart')]
         [Switch]
         $EncPart
@@ -16756,7 +16776,7 @@ filter Get-DomainSearcher {
         [String]
         $ADSprefix,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -17108,7 +17128,7 @@ filter Get-ThisThingDomain {
     )
 
     if($Credential) {
-        
+
         Write-Verbose "Using alternate credentials for Get-ThisThingDomain"
 
         if(!$Domain) {
@@ -17116,9 +17136,9 @@ filter Get-ThisThingDomain {
             $Domain = $Credential.GetNetworkCredential().Domain
             Write-Verbose "Extracted domain '$Domain' from -Credential"
         }
-   
+
         $DomainContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
-        
+
         try {
             [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($DomainContext)
         }
@@ -17153,7 +17173,7 @@ filter Get-ThisThingForest {
     )
 
     if($Credential) {
-        
+
         Write-Verbose "Using alternate credentials for Get-ThisThingForest"
 
         if(!$Forest) {
@@ -17161,9 +17181,9 @@ filter Get-ThisThingForest {
             $Forest = $Credential.GetNetworkCredential().Domain
             Write-Verbose "Extracted domain '$Forest' from -Credential"
         }
-   
+
         $ForestContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Forest', $Forest, $Credential.UserName, $Credential.GetNetworkCredential().Password)
-        
+
         try {
             $ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($ForestContext)
         }
@@ -17214,7 +17234,7 @@ filter Get-ThisThingForestDomain {
     }
 }
 
-filter Get-ThisThingForestCatalog {  
+filter Get-ThisThingForestCatalog {
     param(
         [Parameter(ValueFromPipeline=$True)]
         [String]
@@ -17290,7 +17310,7 @@ function Get-ThisThingUser {
         [Switch]
         $AllowDelegation,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -17410,7 +17430,7 @@ function Add-NetUser {
         }
     }
     else {
-        
+
         Write-Verbose "Creating user $UserName to with password '$Password' on $ComputerName"
 
         # if it's not a domain add, it's a local machine add
@@ -17493,7 +17513,7 @@ function Add-NetGroupUser {
                     return $Null
                 }
                 # get the full principal context
-                $Context = New-Object -TypeName System.DirectoryServices.AccountManagement.PrincipalContext -ArgumentList $CT, $DomainObject            
+                $Context = New-Object -TypeName System.DirectoryServices.AccountManagement.PrincipalContext -ArgumentList $CT, $DomainObject
             }
             else {
                 # otherwise, get the local machine context
@@ -17524,11 +17544,11 @@ function Get-UserProperty {
 
         [String]
         $Domain,
-        
+
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -17566,14 +17586,14 @@ filter Find-UserField {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
         [Management.Automation.PSCredential]
         $Credential
     )
- 
+
     Get-ThisThingUser -ADSpath $ADSpath -Domain $Domain -DomainController $DomainController -Credential $Credential -Filter "($SearchField=*$SearchTerm*)" -PageSize $PageSize | Select-Object samaccountname,$SearchField
 }
 
@@ -17617,14 +17637,14 @@ filter Get-UserEvent {
         $Arguments = @{
             'ComputerName' = $ComputerName;
             'FilterHashTable' = @{ LogName = 'Security'; ID=$ID; StartTime=$DateStart};
-            'ErrorAction' = 'SilentlyContinue';            
+            'ErrorAction' = 'SilentlyContinue';
         }
     }
 
     # grab all events matching our filter for the specified host
     Get-WinEvent @Arguments | ForEach-Object {
 
-        if($ID -contains 4624) {    
+        if($ID -contains 4624) {
             # first parse and check the logon event type. This could be later adapted and tested for RDP logons (type 10)
             if($_.message -match '(?s)(?<=Logon Type:).*?(?=(Impersonation Level:|New Logon:))') {
                 if($Matches) {
@@ -17747,13 +17767,13 @@ function Get-ObjectAcl {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
 
     begin {
-        $Searcher = Get-DomainSearcher -Domain $Domain -DomainController $DomainController -ADSpath $ADSpath -ADSprefix $ADSprefix -PageSize $PageSize 
+        $Searcher = Get-DomainSearcher -Domain $Domain -DomainController $DomainController -ADSpath $ADSpath -ADSprefix $ADSprefix -PageSize $PageSize
 
         # get a GUID -> name mapping
         if($ResolveGUIDs) {
@@ -17766,12 +17786,12 @@ function Get-ObjectAcl {
         if ($Searcher) {
 
             if($SamAccountName) {
-                $Searcher.filter="(&(samaccountname=$SamAccountName)(name=$Name)(distinguishedname=$DistinguishedName)$Filter)"  
+                $Searcher.filter="(&(samaccountname=$SamAccountName)(name=$Name)(distinguishedname=$DistinguishedName)$Filter)"
             }
             else {
-                $Searcher.filter="(&(name=$Name)(distinguishedname=$DistinguishedName)$Filter)"  
+                $Searcher.filter="(&(name=$Name)(distinguishedname=$DistinguishedName)$Filter)"
             }
-  
+
             try {
                 $Results = $Searcher.FindAll()
                 $Results | Where-Object {$_} | ForEach-Object {
@@ -17788,7 +17808,7 @@ function Get-ObjectAcl {
                             else {
                                 $S = $Null
                             }
-                            
+
                             $_ | Add-Member NoteProperty 'ObjectSID' $S
                             $_
                         }
@@ -17881,7 +17901,7 @@ function Add-ObjectAcl {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -17894,7 +17914,7 @@ function Add-ObjectAcl {
         }
         else {
             $Principal = Get-ADObjectMod -Domain $Domain -DomainController $DomainController -Name $PrincipalName -SamAccountName $PrincipalSamAccountName -PageSize $PageSize
-            
+
             if(!$Principal) {
                 throw "Error resolving principal"
             }
@@ -17910,12 +17930,12 @@ function Add-ObjectAcl {
         if ($Searcher) {
 
             if($TargetSamAccountName) {
-                $Searcher.filter="(&(samaccountname=$TargetSamAccountName)(name=$TargetName)(distinguishedname=$TargetDistinguishedName)$TargetFilter)"  
+                $Searcher.filter="(&(samaccountname=$TargetSamAccountName)(name=$TargetName)(distinguishedname=$TargetDistinguishedName)$TargetFilter)"
             }
             else {
-                $Searcher.filter="(&(name=$TargetName)(distinguishedname=$TargetDistinguishedName)$TargetFilter)"  
+                $Searcher.filter="(&(name=$TargetName)(distinguishedname=$TargetDistinguishedName)$TargetFilter)"
             }
-  
+
             try {
                 $Results = $Searcher.FindAll()
                 $Results | Where-Object {$_} | ForEach-Object {
@@ -18016,7 +18036,7 @@ function Invoke-ACLScanner {
         [Switch]
         $ResolveGUIDs,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -18049,7 +18069,7 @@ filter Get-GUIDMap {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -18139,7 +18159,7 @@ function Get-ThisThingComputer {
         [Switch]
         $Unconstrained,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18245,7 +18265,7 @@ function Get-ADObjectMod {
         [Switch]
         $ReturnRaw,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18336,7 +18356,7 @@ function Set-ADObject {
         [Switch]
         $ClearValue,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18356,11 +18376,11 @@ function Set-ADObject {
     }
     # splat the appropriate arguments to Get-ADObjectMod
     $RawObject = Get-ADObjectMod -ReturnRaw @Arguments
-    
+
     try {
         # get the modifiable object for this search result
         $Entry = $RawObject.GetDirectoryEntry()
-        
+
         if($ClearValue) {
             Write-Verbose "Clearing value"
             $Entry.$PropertyName.clear()
@@ -18371,9 +18391,9 @@ function Set-ADObject {
             $TypeName = $Entry.$PropertyName[0].GetType().name
 
             # UAC value references- https://support.microsoft.com/en-us/kb/305144
-            $PropertyValue = $($Entry.$PropertyName) -bxor $PropertyXorValue 
-            $Entry.$PropertyName = $PropertyValue -as $TypeName       
-            $Entry.commitchanges()     
+            $PropertyValue = $($Entry.$PropertyName) -bxor $PropertyXorValue
+            $Entry.$PropertyName = $PropertyValue -as $TypeName
+            $Entry.commitchanges()
         }
 
         else {
@@ -18467,7 +18487,7 @@ function Get-ComputerProperty {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18507,7 +18527,7 @@ function Find-ComputerField {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18542,7 +18562,7 @@ function Get-ThisThingOU {
         [Switch]
         $FullData,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18572,7 +18592,7 @@ function Get-ThisThingOU {
                         $OU.PSObject.TypeNames.Add('PowerView.OU')
                         $OU
                     }
-                    else { 
+                    else {
                         # otherwise just returning the ADS paths of the OUs
                         $_.properties.adspath
                     }
@@ -18609,7 +18629,7 @@ function Get-ThisThingSite {
         [Switch]
         $FullData,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18630,7 +18650,7 @@ function Get-ThisThingSite {
             else {
                 $SiteSearcher.filter="(&(objectCategory=site)(name=$SiteName))"
             }
-            
+
             try {
                 $Results = $SiteSearcher.FindAll()
                 $Results | Where-Object {$_} | ForEach-Object {
@@ -18674,7 +18694,7 @@ function Get-ThisThingSubnet {
         [Switch]
         $FullData,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18903,7 +18923,7 @@ function Get-ThisThingGroupMember {
         [Switch]
         $UseMatchingRule,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -18994,7 +19014,7 @@ function Get-ThisThingGroupMember {
                             $Top = $Bottom + 1499
                             $MemberRange="member;range=$Bottom-$Top"
                             $Bottom += 1500
-                            
+
                             $GroupSearcher.PropertiesToLoad.Clear()
                             [void]$GroupSearcher.PropertiesToLoad.Add("$MemberRange")
                             [void]$GroupSearcher.PropertiesToLoad.Add("samaccountname")
@@ -19004,7 +19024,7 @@ function Get-ThisThingGroupMember {
                                 $Members += $Result.Properties.item($RangedProperty)
                                 $GroupFoundName = $Result.properties.item("samaccountname")[0]
 
-                                if ($Members.count -eq 0) { 
+                                if ($Members.count -eq 0) {
                                     $Finished = $True
                                 }
                             }
@@ -19025,7 +19045,7 @@ function Get-ThisThingGroupMember {
                 # if we're doing the LDAP_MATCHING_RULE_IN_CHAIN recursion
                 if ($Recurse -and $UseMatchingRule) {
                     $Properties = $_.Properties
-                } 
+                }
                 else {
                     if($TargetDomainController) {
                         $Result = [adsi]"LDAP://$TargetDomainController/$_"
@@ -19094,7 +19114,7 @@ function Get-ThisThingGroupMember {
                     if ($Properties.samaccountname) {
                         # forest users have the samAccountName set
                         $MemberName = $Properties.samaccountname[0]
-                    } 
+                    }
                     else {
                         # external trust users have a SID, so convert it
                         try {
@@ -19142,7 +19162,7 @@ function Get-ThisThingFileServer {
         [String[]]
         $TargetUsers,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -19199,7 +19219,7 @@ function Get-DFSshare {
         [String]
         $ADSpath,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -19453,7 +19473,7 @@ function Get-DFSshare {
             [String]
             $ADSpath,
 
-            [ValidateRange(1,10000)] 
+            [ValidateRange(1,10000)]
             [Int]
             $PageSize = 200,
 
@@ -19681,11 +19701,11 @@ function Get-ThisThingGPO {
 
         [String]
         $DomainController,
-        
+
         [String]
         $ADSpath,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -19707,7 +19727,7 @@ function Get-ThisThingGPO {
                 if(!$Computers) {
                     throw "Computer $ComputerName in domain '$Domain' not found! Try a fully qualified host name"
                 }
-                
+
                 # get the given computer's OU
                 $ComputerOUs = @()
                 ForEach($Computer in $Computers) {
@@ -19720,12 +19740,12 @@ function Get-ThisThingGPO {
                         }
                     }
                 }
-                
+
                 Write-Verbose "ComputerOUs: $ComputerOUs"
 
                 # find all the GPOs linked to the computer's OU
                 ForEach($ComputerOU in $ComputerOUs) {
-                    $GPONames += Get-ThisThingOU -Domain $Domain -DomainController $DomainController -ADSpath $ComputerOU -FullData -PageSize $PageSize | ForEach-Object { 
+                    $GPONames += Get-ThisThingOU -Domain $Domain -DomainController $DomainController -ADSpath $ComputerOU -FullData -PageSize $PageSize | ForEach-Object {
                         # get any GPO links
                         write-verbose "blah: $($_.name)"
                         $_.gplink.split("][") | ForEach-Object {
@@ -19735,7 +19755,7 @@ function Get-ThisThingGPO {
                         }
                     }
                 }
-                
+
                 Write-Verbose "GPONames: $GPONames"
 
                 # find any GPOs linked to the site for the given computer
@@ -19866,7 +19886,7 @@ function New-GPOImmediateTask {
         [Parameter(ParameterSetName = 'Remove')]
         [String]
         $DomainController,
-        
+
         [Parameter(ParameterSetName = 'Create')]
         [Parameter(ParameterSetName = 'Remove')]
         [String]
@@ -19882,7 +19902,7 @@ function New-GPOImmediateTask {
         $Remove,
 
         [Parameter(ParameterSetName = 'Create')]
-        [Parameter(ParameterSetName = 'Remove')]        
+        [Parameter(ParameterSetName = 'Remove')]
         [Management.Automation.PSCredential]
         $Credential
     )
@@ -19896,8 +19916,8 @@ function New-GPOImmediateTask {
     }
 
     # eunmerate the specified GPO(s)
-    $GPOs = Get-ThisThingGPO -GPOname $GPOname -DisplayName $GPODisplayName -Domain $Domain -DomainController $DomainController -ADSpath $ADSpath -Credential $Credential 
-    
+    $GPOs = Get-ThisThingGPO -GPOname $GPOname -DisplayName $GPODisplayName -Domain $Domain -DomainController $DomainController -ADSpath $ADSpath -Credential $Credential
+
     if(!$GPOs) {
         Write-Warning 'No GPO found.'
         return
@@ -19935,7 +19955,7 @@ function New-GPOImmediateTask {
                 if (!$Force -and !$psCmdlet.ShouldContinue('Do you want to continue?',"Creating schtask at $TaskPath\ScheduledTasks.xml")) {
                     return
                 }
-                
+
                 # create the folder if it doesn't exist
                 $Null = New-Item -ItemType Directory -Force -Path $TaskPath
 
@@ -19987,7 +20007,7 @@ function Get-ThisThingGPOGroup {
         [Switch]
         $UsePSDrive,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -20149,11 +20169,11 @@ function Find-GPOLocation {
 
         [String]
         $LocalGroup = 'Administrators',
-        
+
         [Switch]
         $UsePSDrive,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -20163,7 +20183,7 @@ function Find-GPOLocation {
         $User = Get-ThisThingUser -UserName $UserName -Domain $Domain -DomainController $DomainController -PageSize $PageSize | Select-Object -First 1
         $UserSid = $User.objectsid
 
-        if(-not $UserSid) {    
+        if(-not $UserSid) {
             Throw "User '$UserName' not found!"
         }
 
@@ -20176,7 +20196,7 @@ function Find-GPOLocation {
         $Group = Get-ThisThingGroup -GroupName $GroupName -Domain $Domain -DomainController $DomainController -FullData -PageSize $PageSize | Select-Object -First 1
         $GroupSid = $Group.objectsid
 
-        if(-not $GroupSid) {    
+        if(-not $GroupSid) {
             Throw "Group '$GroupName' not found!"
         }
 
@@ -20202,7 +20222,7 @@ function Find-GPOLocation {
         throw "LocalGroup must be 'Administrators', 'RDP', or a 'S-1-5-X' SID format."
     }
 
-    # if we're not listing all relationships, use the tokenGroups approach from Get-ThisThingGroup to 
+    # if we're not listing all relationships, use the tokenGroups approach from Get-ThisThingGroup to
     # get all effective security SIDs this object is a part of
     if($TargetSIDs[0] -and ($TargetSIDs[0] -ne '*')) {
         $TargetSIDs += Get-ThisThingGroup -Domain $Domain -DomainController $DomainController -PageSize $PageSize -UserName $ObjectSamAccountName -RawSids
@@ -20237,7 +20257,7 @@ function Find-GPOLocation {
                 }
             }
         }
-        # if the group is a 'memberof' the group we're looking for, check GroupSID against the targt SIDs 
+        # if the group is a 'memberof' the group we're looking for, check GroupSID against the targt SIDs
         if( ($GPOgroup.GroupMemberOf -contains $TargetLocalSID) ) {
             if( ($TargetSIDs[0] -eq '*') -or ($TargetSIDs -Contains $GPOgroup.GroupSID) ) {
                 $GPOgroup
@@ -20257,7 +20277,7 @@ function Find-GPOLocation {
         else {
             $GPOMembers = $_.GroupSID
         }
-        
+
         $Filters = $_.Filters
 
         if(-not $TargetObject) {
@@ -20360,13 +20380,13 @@ function Find-GPOComputerAdmin {
         [Switch]
         $UsePSDrive,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
 
     process {
-    
+
         if(!$ComputerName -and !$OUName) {
             Throw "-ComputerName or -OUName must be provided"
         }
@@ -20379,7 +20399,7 @@ function Find-GPOComputerAdmin {
             if(!$Computers) {
                 throw "Computer $ComputerName in domain '$Domain' not found! Try a fully qualified host name"
             }
-            
+
             $TargetOUs = @()
             ForEach($Computer in $Computers) {
                 # extract all OUs a computer is a part of
@@ -20425,7 +20445,7 @@ function Find-GPOComputerAdmin {
 
         $TargetOUs | Where-Object {$_} | ForEach-Object {
 
-            $GPOLinks = Get-ThisThingOU -Domain $Domain -DomainController $DomainController -ADSpath $_ -FullData -PageSize $PageSize | ForEach-Object { 
+            $GPOLinks = Get-ThisThingOU -Domain $Domain -DomainController $DomainController -ADSpath $_ -FullData -PageSize $PageSize | ForEach-Object {
                 # and then get any GPO links
                 if($_.gplink) {
                     $_.gplink.split("][") | ForEach-Object {
@@ -20521,7 +20541,7 @@ function Find-GPOComputerAdmin {
                         $GPOComputerAdmin | Add-Member Noteproperty 'GPOGuid' $GPOGroup.GPOName
                         $GPOComputerAdmin | Add-Member Noteproperty 'GPOPath' $GPOGroup.GPOPath
                         $GPOComputerAdmin | Add-Member Noteproperty 'GPOType' $GPOTypep
-                        $GPOComputerAdmin 
+                        $GPOComputerAdmin
                     }
                 }
             }
@@ -20552,7 +20572,7 @@ function Get-DomainPolicy {
     if($Source -eq "Domain") {
         # query the given domain for the default domain policy object
         $GPO = Get-ThisThingGPO -Domain $Domain -DomainController $DomainController -GPOname "{31B2F340-016D-11D2-945F-00C04FB984F9}"
-        
+
         if($GPO) {
             # grab the GptTmpl.inf file and parse it
             $GptTmplPath = $GPO.gpcfilesyspath + "\MACHINE\Microsoft\Windows NT\SecEdit\GptTmpl.inf"
@@ -20594,8 +20614,8 @@ function Get-DomainPolicy {
 
                                 $Sids = $_.Value | ForEach-Object {
                                     try {
-                                        if($_ -isnot [System.Array]) { 
-                                            Convert-SidToName $_ 
+                                        if($_ -isnot [System.Array]) {
+                                            Convert-SidToName $_
                                         }
                                         else {
                                             $_ | ForEach-Object { Convert-SidToName $_ }
@@ -20962,33 +20982,33 @@ filter Get-MySMBShare {
             $Shares | Add-Member Noteproperty 'ComputerName' $Computer
             $Offset = $NewIntPtr.ToInt64()
             $Offset += $Increment
-            
+
             # Get ip address of host
             $targethostname = $Shares.ComputerName
             $ComputerIpAddress = [System.Net.Dns]::GetHostAddresses("$targethostname") | select IPAddressToString -first 1 -ExpandProperty IPAddressToString
-            
+
             $ShareObject = New-Object -TypeName PSObject
             $ShareObject | Add-Member NoteProperty "ComputerName" $Shares.ComputerName
             $ShareObject | Add-Member NoteProperty "IpAddress" $ComputerIpAddress
-            $ShareObject | Add-Member NoteProperty "ShareName" $Shares.shi1_netname 
+            $ShareObject | Add-Member NoteProperty "ShareName" $Shares.shi1_netname
             $ShareObject | Add-Member NoteProperty "ShareDesc" $Shares.shi1_remark
             $ShareObject | Add-Member NoteProperty "Sharetype" $Shares.shi1_type
 
-            $ComputerName = $Shares.ComputerName  
-            $ShareName = $Shares.shi1_netname 
+            $ComputerName = $Shares.ComputerName
+            $ShareName = $Shares.shi1_netname
             $ShareType = $Shares.shi1_type
-            $ShareDesc = $Shares.shi1_remark  
+            $ShareDesc = $Shares.shi1_remark
 
             # Check access
             try{
                 $TargetPath = "\\$ComputerName\$ShareName"
-                $Null = [IO.Directory]::GetFiles($TargetPath)                                   
+                $Null = [IO.Directory]::GetFiles($TargetPath)
                 Write-Verbose "$Computer : ACCESSIBLE! - Share: \\$computerName\$ShareName  Desc: $ShareDesc Type:$ShareType"
-                $ShareObject | Add-Member NoteProperty "ShareAccess" "Yes"    
-                $ShareObject 
+                $ShareObject | Add-Member NoteProperty "ShareAccess" "Yes"
+                $ShareObject
             }catch{
-                Write-Verbose "$Computer : NOT ACCESSIBLE - Share: \\$computerName\$ShareName Desc: $ShareDesc Type:$ShareType"                
-                $ShareObject | Add-Member NoteProperty "ShareAccess" "No" 
+                Write-Verbose "$Computer : NOT ACCESSIBLE - Share: \\$computerName\$ShareName Desc: $ShareDesc Type:$ShareType"
+                $ShareObject | Add-Member NoteProperty "ShareAccess" "No"
                 $ShareObject
             }
         }
@@ -21065,14 +21085,14 @@ function Find-InterestingFile {
     .EXAMPLE
 
         PS C:\> Find-InterestingFile -Path C:\Backup\
-        
+
         Returns any files on the local path C:\Backup\ that have the default
         search term set in the title.
 
     .EXAMPLE
 
         PS C:\> Find-InterestingFile -Path \\WINDOWS7\Users\ -Terms salaries,email -OutFile out.csv
-        
+
         Returns any files on the remote path \\WINDOWS7\Users\ that have 'salaries'
         or 'email' in the title, and writes the results out to a csv file
         named 'out.csv'
@@ -21085,10 +21105,10 @@ function Find-InterestingFile {
         search term set in the title and were accessed within the last week.
 
     .LINK
-        
+
         http://www.harmj0y.net/blog/redteaming/file-server-triage-on-red-team-engagements/
 #>
-    
+
     param(
         [Parameter(ValueFromPipeline=$True)]
         [String]
@@ -21160,7 +21180,7 @@ function Find-InterestingFile {
             $FilePath = $Parts[-1]
 
             $RandDrive = ("abcdefghijklmnopqrstuvwxyz".ToCharArray() | Get-Random -Count 7) -join ''
-            
+
             Write-Verbose "Mounting path '$Path' using a temp PSDrive at $RandDrive"
 
             try {
@@ -21249,7 +21269,7 @@ function Invoke-ThreadedFunction {
         $ScriptParameters,
 
         [Int]
-        [ValidateRange(1,100)] 
+        [ValidateRange(1,100)]
         $Threads = 20,
 
         [Switch]
@@ -21417,11 +21437,11 @@ function Invoke-ShareFinder {
 
         [String]
         $DomainController,
- 
+
         [Switch]
         $SearchForest,
 
-        [ValidateRange(1,100)] 
+        [ValidateRange(1,100)]
         [Int]
         $Threads
     )
@@ -21454,7 +21474,7 @@ function Invoke-ShareFinder {
             $ComputerName = Get-Content -Path $ComputerFile
         }
 
-        if(!$ComputerName) { 
+        if(!$ComputerName) {
             [array]$ComputerName = @()
 
             if($Domain) {
@@ -21468,12 +21488,12 @@ function Invoke-ShareFinder {
                 # use the local domain
                 $TargetDomains = @( (Get-ThisThingDomain).name )
             }
-                
+
             ForEach ($Domain in $TargetDomains) {
                 Write-Verbose "[*] Querying domain $Domain for hosts"
                 $ComputerName += Get-ThisThingComputer -Domain $Domain -DomainController $DomainController -Filter $ComputerFilter -ADSpath $ComputerADSpath
             }
-        
+
             # remove any null target hosts, uniquify the list and shuffle it
             $ComputerName = $ComputerName | Where-Object { $_ } | Sort-Object -Unique | Sort-Object { Get-Random }
             if($($ComputerName.count) -eq 0) {
@@ -21550,7 +21570,7 @@ function Invoke-ShareFinder {
                 'CheckAdmin' = $CheckAdmin
             }
 
-            # kick off the threaded script block + arguments 
+            # kick off the threaded script block + arguments
             Invoke-ThreadedFunction -ComputerName $ComputerName -ScriptBlock $HostEnumBlock -ScriptParameters $ScriptParams -Threads $Threads
         }
 
@@ -21575,7 +21595,7 @@ function Invoke-ShareFinder {
                 Invoke-Command -ScriptBlock $HostEnumBlock -ArgumentList $Computer, $False, $CheckShareAccess, $ExcludedShares, $CheckAdmin
             }
         }
-        
+
     }
 }
 
@@ -21611,7 +21631,7 @@ function Invoke-FileFinder {
 
         [Alias('Terms')]
         [String[]]
-        $SearchTerms, 
+        $SearchTerms,
 
         [ValidateScript({Test-Path -Path $_ })]
         [String]
@@ -21661,14 +21681,14 @@ function Invoke-FileFinder {
 
         [String]
         $DomainController,
-        
+
         [Switch]
         $SearchForest,
 
         [Switch]
         $SearchSYSVOL,
 
-        [ValidateRange(1,100)] 
+        [ValidateRange(1,100)]
         [Int]
         $Threads,
 
@@ -21867,7 +21887,7 @@ function Invoke-FileFinder {
                 'UsePSDrive' = $UsePSDrive
             }
 
-            # kick off the threaded script block + arguments 
+            # kick off the threaded script block + arguments
             if($Shares) {
                 # pass the shares as the hosts so the threaded function code doesn't have to be hacked up
                 Invoke-ThreadedFunction -ComputerName $Shares -ScriptBlock $HostEnumBlock -ScriptParameters $ScriptParams -Threads $Threads
@@ -21899,7 +21919,7 @@ function Invoke-FileFinder {
 
                 Write-Verbose "[*] Enumerating server $_ ($Counter of $($ComputerName.count))"
 
-                Invoke-Command -ScriptBlock $HostEnumBlock -ArgumentList $_, $False, $ExcludedShares, $SearchTerms, $ExcludeFolders, $OfficeDocs, $ExcludeHidden, $FreshEXEs, $CheckWriteAccess, $OutFile, $UsePSDrive                
+                Invoke-Command -ScriptBlock $HostEnumBlock -ArgumentList $_, $False, $ExcludedShares, $SearchTerms, $ExcludeFolders, $OfficeDocs, $ExcludeHidden, $FreshEXEs, $CheckWriteAccess, $OutFile, $UsePSDrive
             }
         }
     }
@@ -21925,7 +21945,7 @@ function Get-ThisThingDomainTrust {
         [Switch]
         $LDAP,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -21973,7 +21993,7 @@ function Get-ThisThingDomainTrust {
                 $Results | Where-Object {$_} | ForEach-Object {
                     $Props = $_.Properties
                     $DomainTrust = New-Object PSObject
-                    
+
                     $TrustAttrib = @()
                     $TrustAttrib += $TrustAttributes.Keys | Where-Object { $Props.trustattributes[0] -band $_ } | ForEach-Object { $TrustAttributes[$_] }
 
@@ -22122,7 +22142,7 @@ function Find-ForeignUser {
         [Switch]
         $Recurse,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -22139,7 +22159,7 @@ function Find-ForeignUser {
             [String]
             $DomainController,
 
-            [ValidateRange(1,10000)] 
+            [ValidateRange(1,10000)]
             [Int]
             $PageSize = 200
         )
@@ -22157,9 +22177,9 @@ function Find-ForeignUser {
             ForEach ($Membership in $_.memberof) {
                 $Index = $Membership.IndexOf("DC=")
                 if($Index) {
-                    
+
                     $GroupDomain = $($Membership.substring($Index)) -replace 'DC=','' -replace ',','.'
-                    
+
                     if ($GroupDomain.CompareTo($Domain)) {
                         # if the group domain doesn't match the user domain, output
                         $GroupName = $Membership.split(",")[0].split("=")[1]
@@ -22216,7 +22236,7 @@ function Find-ForeignGroup {
         [Switch]
         $Recurse,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200
     )
@@ -22232,7 +22252,7 @@ function Find-ForeignGroup {
             [String]
             $DomainController,
 
-            [ValidateRange(1,10000)] 
+            [ValidateRange(1,10000)]
             [Int]
             $PageSize = 200
         )
@@ -22245,18 +22265,18 @@ function Find-ForeignGroup {
         Write-Verbose "DomainDN: $DomainDN"
 
         # standard group names to ignore
-        $ExcludeGroups = @("Users", "Domain Users", "Guests")
+        $ExcludeGroups = @($UsersGroup, $DomainUsers, $GuestsGroup)
 
         # get all the groupnames for the given domain
         Get-ThisThingGroup -GroupName $GroupName -Filter '(member=*)' -Domain $Domain -DomainController $DomainController -FullData -PageSize $PageSize | Where-Object {
             # exclude common large groups
             -not ($ExcludeGroups -contains $_.samaccountname) } | ForEach-Object {
-                
+
                 $GroupName = $_.samAccountName
 
                 $_.member | ForEach-Object {
                     # filter for foreign SIDs in the cn field for users in another domain,
-                    #   or if the DN doesn't end with the proper DN for the queried domain  
+                    #   or if the DN doesn't end with the proper DN for the queried domain
                     if (($_ -match 'CN=S-1-5-21.*-.*') -or ($DomainDN -ne ($_.substring($_.IndexOf("DC="))))) {
 
                         $UserDomain = $_.subString($_.IndexOf("DC=")) -replace 'DC=','' -replace ',','.'
@@ -22342,7 +22362,7 @@ function Invoke-MapDomainTrust {
         [String]
         $DomainController,
 
-        [ValidateRange(1,10000)] 
+        [ValidateRange(1,10000)]
         [Int]
         $PageSize = 200,
 
@@ -22366,7 +22386,7 @@ function Invoke-MapDomainTrust {
 
         # if we haven't seen this domain before
         if ($Domain -and ($Domain.Trim() -ne "") -and (-not $SeenDomains.ContainsKey($Domain))) {
-            
+
             Write-Verbose "Enumerating trusts for domain '$Domain'"
 
             # mark it as seen in our list
@@ -23105,12 +23125,12 @@ function Invoke-Parallel
     }
 }
 
-Function Invoke-Ping 
+Function Invoke-Ping
 {
 <#
 .SYNOPSIS
     Ping or test connectivity to systems in parallel
-    
+
 .DESCRIPTION
     Ping or test connectivity to systems in parallel
 
@@ -23156,7 +23176,7 @@ Function Invoke-Ping
 
 .EXAMPLE
     $Responding = $Computers | Invoke-Ping -Quiet
-    
+
     # Create a list of computers that successfully responded to Test-Connection
 
 .LINK
@@ -23169,19 +23189,19 @@ Function Invoke-Ping
     [cmdletbinding(DefaultParameterSetName='Ping')]
     param(
         [Parameter( ValueFromPipeline=$true,
-                    ValueFromPipelineByPropertyName=$true, 
+                    ValueFromPipelineByPropertyName=$true,
                     Position=0)]
         [string[]]$ComputerName,
-        
+
         [Parameter( ParameterSetName='Detail')]
         [validateset("*","WSMan","RemoteReg","RPC","RDP","SMB")]
         [string[]]$Detail,
-        
+
         [Parameter(ParameterSetName='Ping')]
         [switch]$Quiet,
-        
+
         [int]$Timeout = 20,
-        
+
         [int]$Throttle = 100,
 
         [switch]$NoCloseOnTimeout
@@ -23192,7 +23212,7 @@ Function Invoke-Ping
         #http://gallery.technet.microsoft.com/Run-Parallel-Parallel-377fd430
         function Invoke-Parallel {
             [cmdletbinding(DefaultParameterSetName='ScriptBlock')]
-            Param (   
+            Param (
                 [Parameter(Mandatory=$false,position=0,ParameterSetName='ScriptBlock')]
                     [System.Management.Automation.ScriptBlock]$ScriptBlock,
 
@@ -23201,7 +23221,7 @@ Function Invoke-Ping
                     $ScriptFile,
 
                 [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-                [Alias('CN','__Server','IPAddress','Server','ComputerName')]    
+                [Alias('CN','__Server','IPAddress','Server','ComputerName')]
                     [PSObject]$InputObject,
 
                     [PSObject]$Parameter,
@@ -23225,9 +23245,9 @@ Function Invoke-Ping
 
 			        [switch] $Quiet = $false
             )
-    
+
             Begin {
-                
+
                 #No max queue specified?  Estimate one.
                 #We use the script scope to resolve an odd PowerShell 2 issue where MaxQueue isn't seen later in the function
                 if( -not $PSBoundParameters.ContainsKey('MaxQueue') )
@@ -23238,7 +23258,7 @@ Function Invoke-Ping
                 else
                 {
                     $script:MaxQueue = $MaxQueue
-                }               
+                }
 
                 #If they want to import variables or modules, create a clean runspace, get loaded items, use those to exclude items
                 if ($ImportVariables -or $ImportModules)
@@ -23252,7 +23272,7 @@ Function Invoke-Ping
                         #Get variables in this clean runspace
                         #Called last to get vars like $? into session
                         $Variables = Get-Variable | Select -ExpandProperty Name
-                
+
                         #Return a hashtable where we can access each.
                         @{
                             Variables = $Variables
@@ -23260,31 +23280,31 @@ Function Invoke-Ping
                             Snapins = $Snapins
                         }
                     }).invoke()[0]
-            
+
                     if ($ImportVariables) {
                         #Exclude common parameters, bound parameters, and automatic variables
                         Function _temp {[cmdletbinding()] param() }
                         $VariablesToExclude = @( (Get-Command _temp | Select -ExpandProperty parameters).Keys + $PSBoundParameters.Keys + $StandardUserEnv.Variables )
                         Write-Verbose "Excluding variables $( ($VariablesToExclude | sort ) -join ", ")"
 
-                        # we don't use 'Get-Variable -Exclude', because it uses regexps. 
-                        # One of the veriables that we pass is '$?'. 
+                        # we don't use 'Get-Variable -Exclude', because it uses regexps.
+                        # One of the veriables that we pass is '$?'.
                         # There could be other variables with such problems.
                         # Scope 2 required if we move to a real module
-                        $UserVariables = @( Get-Variable | Where { -not ($VariablesToExclude -contains $_.Name) } ) 
+                        $UserVariables = @( Get-Variable | Where { -not ($VariablesToExclude -contains $_.Name) } )
                         Write-Verbose "Found variables to import: $( ($UserVariables | Select -expandproperty Name | Sort ) -join ", " | Out-String).`n"
 
                     }
 
-                    if ($ImportModules) 
+                    if ($ImportModules)
                     {
                         $UserModules = @( Get-Module | Where {$StandardUserEnv.Modules -notcontains $_.Name -and (Test-Path $_.Path -ErrorAction SilentlyContinue)} | Select -ExpandProperty Path )
-                        $UserSnapins = @( Get-PSSnapin | Select -ExpandProperty Name | Where {$StandardUserEnv.Snapins -notcontains $_ } ) 
+                        $UserSnapins = @( Get-PSSnapin | Select -ExpandProperty Name | Where {$StandardUserEnv.Snapins -notcontains $_ } )
                     }
                 }
 
                 #region functions
-            
+
                     Function Get-RunspaceData {
                         [cmdletbinding()]
                         param( [switch]$Wait )
@@ -23303,9 +23323,9 @@ Function Invoke-Ping
 							        -PercentComplete $( Try { $script:completedCount / $totalCount * 100 } Catch {0} )
 					        }
 
-                            #run through each runspace.           
+                            #run through each runspace.
                             Foreach($runspace in $runspaces) {
-                    
+
                                 #get the duration - inaccurate
                                 $currentdate = Get-Date
                                 $runtime = $currentdate - $runspace.startTime
@@ -23319,12 +23339,12 @@ Function Invoke-Ping
 
                                 #If runspace completed, end invoke, dispose, recycle, counter++
                                 If ($runspace.Runspace.isCompleted) {
-                            
+
                                     $script:completedCount++
-                        
+
                                     #check if there were errors
                                     if($runspace.powershell.Streams.Error.Count -gt 0) {
-                                
+
                                         #set the logging info and move the file to completed
                                         $log.status = "CompletedWithErrors"
                                         Write-Verbose ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1]
@@ -23333,7 +23353,7 @@ Function Invoke-Ping
                                         }
                                     }
                                     else {
-                                
+
                                         #add logging details and cleanup
                                         $log.status = "Completed"
                                         Write-Verbose ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1]
@@ -23349,10 +23369,10 @@ Function Invoke-Ping
 
                                 #If runtime exceeds max, dispose the runspace
                                 ElseIf ( $runspaceTimeout -ne 0 -and $runtime.totalseconds -gt $runspaceTimeout) {
-                            
+
                                     $script:completedCount++
                                     $timedOutTasks = $true
-                            
+
 							        #add logging details and cleanup
                                     $log.status = "TimedOut"
                                     Write-Verbose ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1]
@@ -23365,8 +23385,8 @@ Function Invoke-Ping
                                     $completedCount++
 
                                 }
-                   
-                                #If runspace isn't null set more to true  
+
+                                #If runspace isn't null set more to true
                                 ElseIf ($runspace.Runspace -ne $null ) {
                                     $log = $null
                                     $more = $true
@@ -23384,12 +23404,12 @@ Function Invoke-Ping
 
                         #Loop again only if -wait parameter and there are more runspaces to process
                         } while ($more -and $PSBoundParameters['Wait'])
-                
+
                     #End of runspace function
                     }
 
                 #endregion functions
-        
+
                 #region Init
 
                     if($PSCmdlet.ParameterSetName -eq 'ScriptFile')
@@ -23406,15 +23426,15 @@ Function Invoke-Ping
                         }
 
                         $UsingVariableData = $Null
-                
+
 
                         # This code enables $Using support through the AST.
                         # This is entirely from  Boe Prox, and his https://github.com/proxb/PoshRSJob module; all credit to Boe!
-                
+
                         if($PSVersionTable.PSVersion.Major -gt 2)
                         {
                             #Extract using references
-                            $UsingVariables = $ScriptBlock.ast.FindAll({$args[0] -is [System.Management.Automation.Language.UsingExpressionAst]},$True)    
+                            $UsingVariables = $ScriptBlock.ast.FindAll({$args[0] -is [System.Management.Automation.Language.UsingExpressionAst]},$True)
 
                             If ($UsingVariables)
                             {
@@ -23425,7 +23445,7 @@ Function Invoke-Ping
                                 }
 
                                 $UsingVar = $UsingVariables | Group Parent | ForEach {$_.Group | Select -First 1}
-        
+
                                 #Extract the name, value, and create replacements for each
                                 $UsingVariableData = ForEach ($Var in $UsingVar) {
                                     Try
@@ -23445,12 +23465,12 @@ Function Invoke-Ping
                                         Write-Error "$($Var.SubExpression.Extent.Text) is not a valid Using: variable!"
                                     }
                                 }
-    
+
                                 $NewParams = $UsingVariableData.NewName -join ', '
                                 $Tuple = [Tuple]::Create($list, $NewParams)
                                 $bindingFlags = [Reflection.BindingFlags]"Default,NonPublic,Instance"
                                 $GetWithInputHandlingForInvokeCommandImpl = ($ScriptBlock.ast.gettype().GetMethod('GetWithInputHandlingForInvokeCommandImpl',$bindingFlags))
-        
+
                                 $StringScriptBlock = $GetWithInputHandlingForInvokeCommandImpl.Invoke($ScriptBlock.ast,@($Tuple))
 
                                 $ScriptBlock = [scriptblock]::Create($StringScriptBlock)
@@ -23458,7 +23478,7 @@ Function Invoke-Ping
                                 Write-Verbose $StringScriptBlock
                             }
                         }
-                
+
                         $ScriptBlock = $ExecutionContext.InvokeCommand.NewScriptBlock("param($($ParamsToAdd -Join ", "))`r`n" + $Scriptblock.ToString())
                     }
                     else
@@ -23501,11 +23521,11 @@ Function Invoke-Ping
 
                     #Create runspace pool
                     $runspacepool = [runspacefactory]::CreateRunspacePool(1, $Throttle, $sessionstate, $Host)
-                    $runspacepool.Open() 
+                    $runspacepool.Open()
 
                     Write-Verbose "Creating empty collection to hold runspace jobs"
-                    $Script:runspaces = New-Object System.Collections.ArrayList        
-        
+                    $Script:runspaces = New-Object System.Collections.ArrayList
+
                     #If inputObject is bound get a total count and set bound to true
                     $global:__bound = $false
                     $allObjects = @()
@@ -23538,7 +23558,7 @@ Function Invoke-Ping
             }
 
             End {
-        
+
                 #Use Try/Finally to catch Ctrl+C and clean up.
                 Try
                 {
@@ -23548,12 +23568,12 @@ Function Invoke-Ping
                     $startedCount = 0
 
                     foreach($object in $allObjects){
-        
+
                         #region add scripts to runspace pool
-                    
+
                             #Create the powershell instance, set verbose if needed, supply the scriptblock and parameters
                             $powershell = [powershell]::Create()
-                    
+
                             if ($VerbosePreference -eq 'Continue')
                             {
                                 [void]$PowerShell.AddScript({$VerbosePreference = 'Continue'})
@@ -23577,13 +23597,13 @@ Function Invoke-Ping
 
                             #Add the runspace into the powershell instance
                             $powershell.RunspacePool = $runspacepool
-    
+
                             #Create a temporary collection for each runspace
                             $temp = "" | Select-Object PowerShell, StartTime, object, Runspace
                             $temp.PowerShell = $powershell
                             $temp.StartTime = Get-Date
                             $temp.object = $object
-    
+
                             #Save the handle output when calling BeginInvoke() that will be used later to end the runspace
                             $temp.Runspace = $powershell.BeginInvoke()
                             $startedCount++
@@ -23591,7 +23611,7 @@ Function Invoke-Ping
                             #Add the temp tracking info to $runspaces collection
                             Write-Verbose ( "Adding {0} to collection at {1}" -f $temp.object, $temp.starttime.tostring() )
                             $runspaces.Add($temp) | Out-Null
-            
+
                             #loop through existing runspaces one time
                             if($ShowRunpaceErrors){
                                 Get-RunspaceData
@@ -23609,16 +23629,16 @@ Function Invoke-Ping
                                     Write-Verbose "$($runspaces.count) items running - exceeded $Script:MaxQueue limit."
                                 }
                                 $firstRun = $false
-                    
+
                                 #run get-runspace data and sleep for a short while
                                 Get-RunspaceData
                                 Start-Sleep -Milliseconds $sleepTimer
-                    
+
                             }
 
                         #endregion add scripts to runspace pool
                     }
-                     
+
                     Write-Verbose ( "Finish processing the remaining runspace jobs: {0}" -f ( @($runspaces | Where {$_.Runspace -ne $Null}).Count) )
                     Get-RunspaceData -wait
 
@@ -23637,12 +23657,12 @@ Function Invoke-Ping
 
                     #collect garbage
                     [gc]::Collect()
-                }       
+                }
             }
         }
 
         Write-Verbose "PSBoundParameters = $($PSBoundParameters | Out-String)"
-        
+
         $bound = $PSBoundParameters.keys -contains "ComputerName"
         if(-not $bound)
         {
@@ -23683,7 +23703,7 @@ Function Invoke-Ping
         }
 
         Invoke-Parallel @splat -ScriptBlock {
-        
+
             $computer = $_.trim()
             $detail = $parameter[0]
             $quiet = $parameter[1]
@@ -23792,12 +23812,12 @@ Function Invoke-Ping
 	                                if($failed -eq 0){
 	                                    foreach($ip in $ips)
 	                                    {
-	    
+
 		                                    $rst = New-Object -TypeName PSObject -Property $Hash | Select -Property $props
 	                                        $rst.name = $name
 		                                    $rst.ip = $ip
 		                                    $rst.domain = $domain
-		            
+
                                             if($RDP -or $All)
                                             {
                                                 ####RDP Check (firewall may block rest so do before ping
@@ -23825,7 +23845,7 @@ Function Invoke-Ping
 	                                    {
 	                                        Write-verbose "PING:  $((New-TimeSpan $dt ($dt = get-date)).totalseconds)"
 			                                $rst.ping = $true
-			    
+
                                             if($WSMAN -or $All)
                                             {
                                                 try{############wsman
@@ -23869,7 +23889,7 @@ Function Invoke-Ping
                                             if($RPC -or $All)
                                             {
 			                                    try ######### wmi
-			                                    {	
+			                                    {
 				                                    $w = [wmi] ''
 				                                    $w.psbase.options.timeout = 15000000
 				                                    $w.path = "\\$Name\root\cimv2:Win32_ComputerSystem.Name='$Name'"
@@ -23888,7 +23908,7 @@ Function Invoke-Ping
 
                                                 #Use set location and resulting errors.  push and pop current location
                     	                        try ######### C$
-			                                    {	
+			                                    {
                                                     $path = "\\$name\c$"
 				                                    Push-Location -Path $path -ErrorAction stop
 				                                    $rst.SMB = $true
@@ -23912,7 +23932,7 @@ Function Invoke-Ping
 			                                $rst.rpc = $false
                                             $rst.smb = $false
 		                                }
-		                                $results += $rst	
+		                                $results += $rst
 	                                }
                                 }
 	                            Write-Verbose "Time for $($Name): $((New-TimeSpan $cdt ($dt)).totalseconds)"
@@ -23926,7 +23946,7 @@ Function Invoke-Ping
                                 return $results
                             }
                         }
-                    
+
                     #Build up parameters for Test-Server and run it
                         $TestServerParams = @{
                             ComputerName = $Computer
@@ -23934,7 +23954,7 @@ Function Invoke-Ping
                         }
 
                         if($detail -eq "*"){
-                            $detail = "WSMan","RemoteReg","RPC","RDP","SMB" 
+                            $detail = "WSMan","RemoteReg","RPC","RDP","SMB"
                         }
 
                         $detail | Select -Unique | Foreach-Object { $TestServerParams.add($_,$True) }
@@ -24014,23 +24034,23 @@ function checkSubnet ([string]$addr1, [string]$addr2)
     # Separate the network address and lenght
     $network1, [int]$subnetlen1 = $addr1.Split('/')
     $network2, [int]$subnetlen2 = $addr2.Split('/')
- 
- 
+
+
     #Convert network address to binary
     [uint32] $unetwork1 = NetworkToBinary $network1
- 
+
     [uint32] $unetwork2 = NetworkToBinary $network2
- 
- 
+
+
     #Check if subnet length exists and is less then 32(/32 is host, single ip so no calculation needed) if so convert to binary
     if($subnetlen1 -lt 32){
         [uint32] $mask1 = SubToBinary $subnetlen1
     }
- 
+
     if($subnetlen2 -lt 32){
         [uint32] $mask2 = SubToBinary $subnetlen2
     }
- 
+
     #Compare the results
     if($mask1 -and $mask2){
         # If both inputs are subnets check which is smaller and check if it belongs in the larger one
@@ -24050,11 +24070,11 @@ function checkSubnet ([string]$addr1, [string]$addr2)
         CheckNetworkToNetwork $unetwork1 $unetwork2
     }
 }
- 
+
 function CheckNetworkToSubnet ([uint32]$un2, [uint32]$ma2, [uint32]$un1)
 {
     $ReturnArray = "" | Select-Object -Property Condition,Direction
- 
+
     if($un2 -eq ($ma2 -band $un1)){
         $ReturnArray.Condition = $True
         $ReturnArray.Direction = "Addr1ToAddr2"
@@ -24065,11 +24085,11 @@ function CheckNetworkToSubnet ([uint32]$un2, [uint32]$ma2, [uint32]$un1)
         return $ReturnArray
     }
 }
- 
+
 function CheckSubnetToNetwork ([uint32]$un1, [uint32]$ma1, [uint32]$un2)
 {
     $ReturnArray = "" | Select-Object -Property Condition,Direction
- 
+
     if($un1 -eq ($ma1 -band $un2)){
         $ReturnArray.Condition = $True
         $ReturnArray.Direction = "Addr2ToAddr1"
@@ -24080,11 +24100,11 @@ function CheckSubnetToNetwork ([uint32]$un1, [uint32]$ma1, [uint32]$un2)
         return $ReturnArray
     }
 }
- 
+
 function CheckNetworkToNetwork ([uint32]$un1, [uint32]$un2)
 {
     $ReturnArray = "" | Select-Object -Property Condition,Direction
- 
+
     if($un1 -eq $un2){
         $ReturnArray.Condition = $True
         $ReturnArray.Direction = "Addr1ToAddr2"
@@ -24095,12 +24115,12 @@ function CheckNetworkToNetwork ([uint32]$un1, [uint32]$un2)
         return $ReturnArray
     }
 }
- 
+
 function SubToBinary ([int]$sub)
 {
     return ((-bnot [uint32]0) -shl (32 - $sub))
 }
- 
+
 function NetworkToBinary ($network)
 {
     $a = [uint32[]]$network.split('.')
@@ -24384,7 +24404,7 @@ function Get-PwWordPressConfig {
         Write-Error "Username or Password not found in the configuration file."
     }
 }
-#Get-PwWordPressConfig -FilePath 'C:\tools\Sample Configuration Files\configs\wp-config.php' -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+#Get-PwWordPressConfig -FilePath 'C:\tools\Sample Configuration Files\configs\wp-config.php' -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -24444,7 +24464,7 @@ function Get-PwWinSCPConfig {
     # Return the result object
     return $result
 }
-# Get-PwWinSCPConfig -FilePath "C:\tools\Sample Configuration Files\configs\WinSCP.ini"  -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwWinSCPConfig -FilePath "C:\tools\Sample Configuration Files\configs\WinSCP.ini"  -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -24459,7 +24479,7 @@ function Get-PwVnc {
     )
 
     # Set vnc inipath
-    $VncIniPath = $FilePath 
+    $VncIniPath = $FilePath
 
     # Define the fixed DES key used by VNC
     $desKey = [byte[]](0x23, 0x52, 0x6A, 0x3B, 0x58, 0x92, 0x67, 0x34)
@@ -24524,7 +24544,7 @@ function Get-PwVnc {
 		        KeyFilePath  = "NA"
     }
 }
-# Get-PwVnc -FilePath "C:\tools\Sample Configuration Files\configs\vnc.ini"  -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwVnc -FilePath "C:\tools\Sample Configuration Files\configs\vnc.ini"  -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -24546,8 +24566,8 @@ function Get-PwUnattendFile {
     $credentials = @()
 
     # Define namespaces used in the XML file
-    $namespace = @{ 
-        "unattend" = "urn:schemas-microsoft-com:unattend" 
+    $namespace = @{
+        "unattend" = "urn:schemas-microsoft-com:unattend"
         "wcm" = "http://schemas.microsoft.com/WMIConfig/2002/State"
     }
 
@@ -24557,7 +24577,7 @@ function Get-PwUnattendFile {
             [string]$passwordValue,
             [bool]$isPlainText
         )
-        
+
         if ($isPlainText -eq $false) {
             try {
                 # Decode Base64 password
@@ -24574,8 +24594,8 @@ function Get-PwUnattendFile {
     }
 
     # Parse AutoLogon credentials
-    $autoLogon = $xmlContent.unattend.settings.component | Where-Object { 
-        $_.name -eq "Microsoft-Windows-Shell-Setup" -and $_.AutoLogon -ne $null 
+    $autoLogon = $xmlContent.unattend.settings.component | Where-Object {
+        $_.name -eq "Microsoft-Windows-Shell-Setup" -and $_.AutoLogon -ne $null
     }
     if ($autoLogon) {
         $username = $autoLogon.AutoLogon.Username
@@ -24654,7 +24674,7 @@ function Get-PwTomcatUsers {
     )
 
     # Set file
-    $TomcatConfigFile = $FilePath 
+    $TomcatConfigFile = $FilePath
 
     # Load the XML file
     [xml]$xml = Get-Content -Path $TomcatConfigFile
@@ -24694,7 +24714,7 @@ function Get-PwTomcatUsers {
     # Display the list of users as a table
     return $usersList
 }
-# Get-PwTomcatUsers -FilePath "C:\tools\Sample Configuration Files\configs\tomcat-users.xml" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwTomcatUsers -FilePath "C:\tools\Sample Configuration Files\configs\tomcat-users.xml" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -24792,7 +24812,7 @@ function Get-PwTnsOra {
     # Output the results as a list of objects
     return $credentialsList
 }
-# Get-PwTnsOra  -FilePath "C:\tools\Sample Configuration Files\configs\tnsnames.ora" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwTnsOra  -FilePath "C:\tools\Sample Configuration Files\configs\tnsnames.ora" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -24813,7 +24833,7 @@ function Get-PwSysprepFile {
     }
 
     # Initialize an empty hashtable to store credentials
-    $credentials = @{ 
+    $credentials = @{
         AdminPassword        = $null
         JoinDomain           = $null
         DomainAdmin          = $null
@@ -24900,8 +24920,8 @@ function Get-PwStandalone {
     )
 
     # Set path
-    $ConfigPath = $FilePath 
-    
+    $ConfigPath = $FilePath
+
     # Load the XML config
     [xml]$configXml = Get-Content -Path $ConfigPath
 
@@ -24976,7 +24996,7 @@ function Get-PwStandalone {
     # Return the list of both objects
     return $results
 }
-# Get-PwStandalone -FilePath  "C:\tools\Sample Configuration Files\configs\standalone.xml" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwStandalone -FilePath  "C:\tools\Sample Configuration Files\configs\standalone.xml" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -25056,7 +25076,7 @@ function Get-PwSssdConfig {
 		        KeyFilePath  = "NA"
     }
 }
-# Get-PwSssdConfig -FilePath "C:\tools\Sample Configuration Files\configs\sssd.conf" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwSssdConfig -FilePath "C:\tools\Sample Configuration Files\configs\sssd.conf" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -25124,7 +25144,7 @@ function Get-PwSmbConf {
 		        KeyFilePath  = "NA"
     }
 }
-# Get-PwSmbConf -FilePath "C:\tools\Sample Configuration Files\configs\smb.conf" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwSmbConf -FilePath "C:\tools\Sample Configuration Files\configs\smb.conf" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -25149,7 +25169,7 @@ function Get-PwSiteManagerConfig {
 
 
     # Set path
-    $xmlFilePath = $FilePath  
+    $xmlFilePath = $FilePath
 
     # Check if the file exists
     if (-not (Test-Path $xmlFilePath)) {
@@ -25242,7 +25262,7 @@ function Get-PwShadow {
 
         # Create an object to store the extracted information
         $userObject = [PSCustomObject]@{
-      
+
                 ComputerName = $ComputerName
                 ShareName    = $ShareName
                 UncFilePath  = $UncFilePath
@@ -25258,7 +25278,7 @@ function Get-PwShadow {
                 Password     = "NA"
                 PasswordEnc  = $passwordHash
 		        KeyFilePath  = "NA"
-               
+
         }
 
         # Add the object to the array
@@ -25268,7 +25288,7 @@ function Get-PwShadow {
     # Output the array of credentials
     return $credentials
 }
-# Get-GetPwShadow -FilePath "C:\tools\Sample Configuration Files\configs\shadow" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-GetPwShadow -FilePath "C:\tools\Sample Configuration Files\configs\shadow" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -25376,7 +25396,7 @@ function Get-PwIniFile {
     # Output the credentials as PowerShell objects
     return $credentials
 }
-# Get-PwIniFile -FilePath "C:\tools\Sample Configuration Files\configs\setting.ini" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt' 
+# Get-PwIniFile -FilePath "C:\tools\Sample Configuration Files\configs\setting.ini" -ComputerName 'computer' -ShareName 'sharename' -UncFilePath '\\computer\sharename\file.txt' -FileName 'file.txt'
 
 
 # Author: Scott Sutherland, NetSPI (@_nullbind / nullbind)
@@ -25818,7 +25838,7 @@ function Get-PwMachineConfig {
     )
 
     # Set path
-    $configFilePath = $FilePath 
+    $configFilePath = $FilePath
 
     # Load the config file as XML
     [xml]$configXml = Get-Content $configFilePath
@@ -25871,7 +25891,7 @@ function Get-PwMachineConfig {
             [string]$key,
             [string]$value
         )
-        
+
         if ($credentialPairs[$name]) {
             $credentialPairs[$name][$key] = $value
         } else {
@@ -26305,7 +26325,7 @@ function Get-PwContextXML {
     )
 
     # Set file path
-    $contextXmlPath = $FilePath 
+    $contextXmlPath = $FilePath
 
     # Check if the file exists
     if (-Not (Test-Path $contextXmlPath)) {
@@ -26497,8 +26517,8 @@ function Get-PwBootstrapConfig {
                 TargetPort   = "NA"
 		        Database     = "NA"
 		        Domain       = "NA"
-                Username     = $Username 
-                Password     = $matches[1].Trim() 
+                Username     = $Username
+                Password     = $matches[1].Trim()
                 PasswordEnc  = "NA"
 		        KeyFilePath  = "NA"
             }
@@ -26606,7 +26626,7 @@ function Get-PwAppconfig {
 
     # Set filepath
     $configFilePath = $FilePath
-     
+
     # Load the config file as XML
     [xml]$configXml = Get-Content $configFilePath
 
@@ -26658,7 +26678,7 @@ function Get-PwAppconfig {
             [string]$key,
             [string]$value
         )
-        
+
         if ($credentialPairs[$name]) {
             $credentialPairs[$name][$key] = $value
         } else {
@@ -26880,7 +26900,7 @@ function Get-PwGPP {
     )
 
     # Set path
-    $InputFilePath = $FilePath 
+    $InputFilePath = $FilePath
 
     # ----------------------------------------------------------------
     # Function to decrypt cpassword
@@ -26888,9 +26908,9 @@ function Get-PwGPP {
     function Get-DecryptedCpassword {
         [CmdletBinding()]
         Param (
-            [string] $Cpassword 
+            [string] $Cpassword
         )
-        
+
         try {
             # Append padding
             $Mod = ($Cpassword.length % 4)
@@ -26916,7 +26936,7 @@ function Get-PwGPP {
     # Setup data table to store GPP Information
     # ----------------------------------------------------------------
     if ($InputFilePath) {
-        $dtCredentials = New-Object System.Data.DataTable         
+        $dtCredentials = New-Object System.Data.DataTable
         $null = $dtCredentials.Columns.Add("ComputerName", [string])
         $null = $dtCredentials.Columns.Add("ShareName", [string])
         $null = $dtCredentials.Columns.Add("UncFilePath", [string])
@@ -26930,7 +26950,7 @@ function Get-PwGPP {
         $null = $dtCredentials.Columns.Add("Username", [string])
         $null = $dtCredentials.Columns.Add("Password", [string])
         $null = $dtCredentials.Columns.Add("PasswordEnc", [string])
-        $null = $dtCredentials.Columns.Add("KeyFilePath", [string])               
+        $null = $dtCredentials.Columns.Add("KeyFilePath", [string])
 
         # ----------------------------------------------------------------
         # Find, parse, decrypt, and display results from XML files
@@ -26944,7 +26964,7 @@ function Get-PwGPP {
 
             # Read the file content as a string
             $fileContentString = Get-Content -Path "$FileFullName" -Raw
-            
+
             try {
                 # Attempt to load the XML content
                 [xml]$FileContent = [xml]$fileContentString
@@ -26952,7 +26972,7 @@ function Get-PwGPP {
                 Write-Error "Failed to parse XML in file '$FileFullName'. Error: $_"
                 return
             }
-            
+
             # Process Drives.xml
             if ($FileName -eq "Drives.xml") {
                 $FileContent.Drives.Drive | ForEach-Object {
@@ -26960,7 +26980,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = ""             
+                    [string]$NewName = ""
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -26977,7 +26997,7 @@ function Get-PwGPP {
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
                     ) | Out-Null
-    
+
                 }
             }
 
@@ -26988,7 +27008,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = $_.Properties.newname        
+                    [string]$NewName = $_.Properties.newname
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -27004,7 +27024,7 @@ function Get-PwGPP {
                         $Password,        # For "Password"
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
-                    ) | Out-Null     
+                    ) | Out-Null
                 }
             }
 
@@ -27015,7 +27035,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = ""         
+                    [string]$NewName = ""
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -27031,7 +27051,7 @@ function Get-PwGPP {
                         $Password,        # For "Password"
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
-                    ) | Out-Null      
+                    ) | Out-Null
                 }
             }
 
@@ -27042,7 +27062,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = ""         
+                    [string]$NewName = ""
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -27058,7 +27078,7 @@ function Get-PwGPP {
                         $Password,        # For "Password"
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
-                    ) | Out-Null   
+                    ) | Out-Null
                 }
             }
 
@@ -27069,7 +27089,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = ""         
+                    [string]$NewName = ""
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -27085,7 +27105,7 @@ function Get-PwGPP {
                         $Password,        # For "Password"
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
-                    ) | Out-Null     
+                    ) | Out-Null
                 }
             }
 
@@ -27096,7 +27116,7 @@ function Get-PwGPP {
                     [string]$CPassword = $_.Properties.cpassword
                     [string]$Password = Get-DecryptedCpassword $CPassword
                     [datetime]$Changed = $_.Changed
-                    [string]$NewName = ""         
+                    [string]$NewName = ""
                     $dtCredentials.Rows.Add(
                         $ComputerName,    # For "ComputerName"
                         $ShareName,       # For "ShareName"
@@ -27112,7 +27132,7 @@ function Get-PwGPP {
                         $Password,        # For "Password"
                         $CPassword,       # For "PasswordEnc"
                         "NA"              # For "KeyFilePath"
-                    ) | Out-Null      
+                    ) | Out-Null
                 }
             }
         }
@@ -27134,7 +27154,7 @@ function Get-PwGPP {
             [Parameter(Mandatory=$true)]
             [string]$Password
         )
-        
+
         # Create a new AES .NET Crypto Object
         $AesObject = New-Object System.Security.Cryptography.AesCryptoServiceProvider
         [Byte[]] $AesKey = @(0x4e,0x99,0x06,0xe8,0xfc,0xb6,0x6c,0xc9,0xfa,0xf4,0x93,0x10,0x62,0x0f,0xfe,0xe8,0xf4,0x96,0xe8,0x06,0xcc,0x05,0x79,0x90,0x20,0x9b,0x09,0xa4,0x33,0xb6,0x6c,0x1b)
@@ -27142,7 +27162,7 @@ function Get-PwGPP {
         $AesObject.IV = $AesIV
         $AesObject.Key = $AesKey
         $EncryptorObject = $AesObject.CreateEncryptor()
-        
+
         # Convert password to byte array and encrypt
         [Byte[]] $InputBytes = [System.Text.Encoding]::Unicode.GetBytes($Password)
         [Byte[]] $EncryptedBytes = $EncryptorObject.TransformFinalBlock($InputBytes, 0, $InputBytes.Length)
@@ -27390,7 +27410,7 @@ function Get-PrivateKeyFilePath {
                 Username     = "NA"
                 Password     = "NA"
                 PasswordEnc  = "NA"
-		KeyFilePath  = $FilePath 
+		KeyFilePath  = $FilePath
     }
 
     return $result
@@ -27407,7 +27427,7 @@ function  Get-PwCiscoConfig {
         [string]$FilePath                # Required
     )
 
-    # Cisco Type 7 encryption key 
+    # Cisco Type 7 encryption key
     $xlat = @(
         0x64, 0x73, 0x66, 0x64, 0x3b, 0x6b, 0x66, 0x6f, 0x41, 0x2c, 0x2e, 0x69, 0x79, 0x65, 0x77, 0x72, 0x6b, 0x6c, 0x64,
         0x4a, 0x4b, 0x44, 0x48, 0x53, 0x55, 0x42, 0x73, 0x67, 0x76, 0x63, 0x61, 0x36, 0x39, 0x38, 0x33, 0x34, 0x6e, 0x63,
@@ -27575,7 +27595,7 @@ function  Get-PwCiscoConfig {
 
 <# Cisco Configuration Bonus Functions - PowerShell Type 7 Encoder/Decoder
 
-# Cisco Type 7 encryption key 
+# Cisco Type 7 encryption key
 $xlat = @(
     0x64, 0x73, 0x66, 0x64, 0x3b, 0x6b, 0x66, 0x6f, 0x41, 0x2c, 0x2e, 0x69, 0x79, 0x65, 0x77, 0x72, 0x6b, 0x6c, 0x64,
     0x4a, 0x4b, 0x44, 0x48, 0x53, 0x55, 0x42, 0x73, 0x67, 0x76, 0x63, 0x61, 0x36, 0x39, 0x38, 0x33, 0x34, 0x6e, 0x63,
@@ -27811,7 +27831,7 @@ function Get-PwRemmina {
         PasswordEnc  = "NA"
         KeyFilePath  = "NA"
     }
-    
+
     $sshSettings = @{
         ComputerName = $ComputerName
         ShareName    = $ShareName
@@ -28033,8 +28053,8 @@ function Get-PwGitCredentials {
                 Database     = "NA"
                 Domain       = "NA"
                 Username     = $username
-                Password     = $passwordEnc       
-                PasswordEnc  = "NA"  
+                Password     = $passwordEnc
+                PasswordEnc  = "NA"
                 KeyFilePath  = "NA"
             }
         }
@@ -28196,7 +28216,7 @@ function Invoke-LLMRequest {
 	        PS C:\> Invoke-LLMRequest -apikey "your_api_key" -endpoint "https://api.example.com/analyze" -text "Sample text to analyze"
             .EXAMPLE
 	        PS C:\> Invoke-LLMRequest -SimpleOutput -apikey "your_api_key" -endpoint "https://api.example.com/analyze" -text "Sample text to analyze"
-            .EXAMPLE   
+            .EXAMPLE
             Invoke-LLMRequest -SimpleOutput  -apikey "your_api_key" -endpoint "https://api.example.com/analyze" -text "What is this image?" -ImagePath "c:\temp\thing1.png"
             PS C:\temp\test> Import-Module Invoke-HuntSMBShares.ps1
 	#>
@@ -28210,7 +28230,7 @@ function Invoke-LLMRequest {
         [string]$endpoint,
 
         [Parameter(Mandatory=$true)]
-        [string]$text, 
+        [string]$text,
 
         [Parameter()]
         [string]$ImagePath,
@@ -28236,7 +28256,7 @@ function Invoke-LLMRequest {
             "text" = $text
         }
     }
-    
+
     if ($ImagePath) {
         try {
             $encoded_image = [Convert]::ToBase64String([IO.File]::ReadAllBytes($ImagePath))
@@ -28313,7 +28333,7 @@ function Invoke-FingerPrintShare {
             .PARAMETER FilePath
             Optional. This is a csv file with the columns 'ShareName' and 'FileList' that includes the file names found in the share.
             .PARAMETER DataTable
-            Optional. This is a DataTable with the columns 'ShareName' and 'FileList' that includes the file names found in the share.             
+            Optional. This is a DataTable with the columns 'ShareName' and 'FileList' that includes the file names found in the share.
             .PARAMETER OutputFile
             Optional. This should be the full path to a file name that he results will be written to.
             .PARAMETER MakeLog
@@ -28321,15 +28341,15 @@ function Invoke-FingerPrintShare {
             .PARAMETER FolderGroup
             Optional. This include a folder group hash for the share that can be used to cross reference and update other records.
             .EXAMPLE
-	        PS C:\> Invoke-LLMRequest -Verbose -FilePath "c:\temp\blah.csv" -apikey "your_api_key" -endpoint "https://api.example.com/analyze" 
-            .EXAMPLE   
-            PS C:\> Invoke-LLMRequest -Verbose -ShareName "sccm" -FileList "variables.dat" -apikey "your_api_key" -endpoint "https://api.example.com/analyze" 
-            .EXAMPLE   
-            PS C:\> Invoke-LLMRequest -Verbose -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze" 
-            .EXAMPLE   
-            PS C:\> Invoke-LLMRequest -Verbose -OutputFile 'c:\temp\fpsoutput.csv' -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze" 
-            .EXAMPLE   
-            PS C:\> Invoke-LLMRequest -MakeLog -Verbose -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze"                        
+	        PS C:\> Invoke-LLMRequest -Verbose -FilePath "c:\temp\blah.csv" -apikey "your_api_key" -endpoint "https://api.example.com/analyze"
+            .EXAMPLE
+            PS C:\> Invoke-LLMRequest -Verbose -ShareName "sccm" -FileList "variables.dat" -apikey "your_api_key" -endpoint "https://api.example.com/analyze"
+            .EXAMPLE
+            PS C:\> Invoke-LLMRequest -Verbose -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze"
+            .EXAMPLE
+            PS C:\> Invoke-LLMRequest -Verbose -OutputFile 'c:\temp\fpsoutput.csv' -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze"
+            .EXAMPLE
+            PS C:\> Invoke-LLMRequest -MakeLog -Verbose -DataTable $exampleTable -apikey "your_api_key" -endpoint "https://api.example.com/analyze"
 	#>
     [CmdletBinding()]
     param (
@@ -28376,7 +28396,7 @@ function Invoke-FingerPrintShare {
     # Verify the file path exists
     If($FilePath){
 
-        if(Test-Path $FilePath){ 
+        if(Test-Path $FilePath){
                 # Write-Verbose "The csv file path exists."
         }else{
                 Write-Verbose " [x] The $FilePath did not exist."
@@ -28387,8 +28407,8 @@ function Invoke-FingerPrintShare {
 
     # Create table for master list
     $TargetList = New-Object System.Data.DataTable
-    $null = $TargetList.Columns.Add("ShareName") 
-    $null = $TargetList.Columns.Add("FileList") 
+    $null = $TargetList.Columns.Add("ShareName")
+    $null = $TargetList.Columns.Add("FileList")
 
     # Parse file path if provided
     If($FilePath){
@@ -28399,9 +28419,9 @@ function Invoke-FingerPrintShare {
         }else{
             Write-Verbose "Importing $CsvFileDataCount records from the provided file."
             Write-Verbose " - $FilePath"
-            $CsvFileData | 
-            foreach{ 
-                 
+            $CsvFileData |
+            foreach{
+
                 # Create a new row for the TargetList DataTable
                 $newRow = $TargetList.NewRow()
                 $newRow["ShareName"] = $_.ShareName
@@ -28445,12 +28465,12 @@ function Invoke-FingerPrintShare {
 
         # Add the new row to the DataTable
         $null = $TargetList.Rows.Add($newRow)
-    }        
+    }
 
     # Verify records exist
     $TargetListCount      = $TargetList | measure | select count -ExpandProperty count
     $TargetListCountTrack = 0
-    if($TargetListCount -gt 0){        
+    if($TargetListCount -gt 0){
         Write-Verbose "$TargetListCount records will be processed."
     }else{
         Write-Verbose "No records were found for processing."
@@ -28463,8 +28483,8 @@ function Invoke-FingerPrintShare {
     $Results = $TargetList |
     foreach {
         $ShareNamesFormatted = $_.ShareName
-        $FileListFormatted   = $_.FileList   
-        
+        $FileListFormatted   = $_.FileList
+
         # Define the prompt
         $MyPrompt = @"
 You will be provided with a share name and a list of file names. Your task is to:
@@ -28472,14 +28492,14 @@ You will be provided with a share name and a list of file names. Your task is to
 1. Analyze the provided share name to determine it is related to a known application.  Please ensure your only return a application guess if you know of an existing application or operating system by name. Do not make things up or refer generic product categories.
 2. Analyze all provided file names to determine if one or more are related to a known application or operating system. Make sure to take into analyze file names, file name prefixes, and file extensions. Run the analysis 5 times on the backend and select the one that is most accurate.
 3. Define a confidence score ranging from 1 to 5, where 5 represents very high confidence.
-4. If any identified applications have a confidence score above 3, return the top one application and it's confidence score. 
+4. If any identified applications have a confidence score above 3, return the top one application and it's confidence score.
 5. If no application has a confidence score above 3, then don't return anything."
 6. For each identified application where the confidence score is above 3, return the following information in XML format:
 - Share Name
 - Application Name
 - Confidence Score
 - A list of the top 10 most relevant files that have been comma seperated on one line.
-- A two-sentence justification of the match. Include the justification based on the share name in the first sentance, the justification based on the top 5 file names in the second, and link to a real and relevant application page at the end. 
+- A two-sentence justification of the match. Include the justification based on the share name in the first sentance, the justification based on the top 5 file names in the second, and link to a real and relevant application page at the end.
 Ensure the output is formatted as XML. Please only return the XML formatted response with nothing else. Please DO NOT wrap the XML response with any comments or labeling. For example, do not include "```xml". Please do not wrap responses in nested "{}".
 
 Please ensure the xml follows the structure below:
@@ -28493,17 +28513,17 @@ If no link can be found to a real and relevant application page, don't return th
 
 Input:
 
-Share Name: 
+Share Name:
 $ShareNamesFormatted
 
-File Names: 
+File Names:
 $FileListFormatted
 "@
 
         # Send request
-        Try{    
-            $TargetListCountTrack = $TargetListCountTrack +1       
-            Write-Verbose "($TargetListCountTrack/$TargetListCount) Sending request for $ShareNamesFormatted share name. "            
+        Try{
+            $TargetListCountTrack = $TargetListCountTrack +1
+            Write-Verbose "($TargetListCountTrack/$TargetListCount) Sending request for $ShareNamesFormatted share name. "
             $LLMResponse           = Invoke-LLMRequest -Verbose:$false -Text $MyPrompt -APIKEY $ApiKey -Endpoint $Endpoint
             [xml]$Fingerprint      = $LLMResponse.choices[0].message.content
         }catch{
@@ -28532,7 +28552,7 @@ $FileListFormatted
             $FingerprintObj | Add-Member -MemberType NoteProperty -Name "CompletionTokens"  -Value $LLMResponse.usage.completion_tokens
             $FingerprintObj | Add-Member -MemberType NoteProperty -Name "TotalTokens"       -Value $LLMResponse.usage.total_tokens
             $FingerprintObj | Add-Member -MemberType NoteProperty -Name "FolderGroup"       -Value $FolderGroup
-        
+
             return $FingerprintObj
         } else {
             Write-Verbose "No valid fingerprint data returned."
@@ -28540,7 +28560,7 @@ $FileListFormatted
     } | where ShareName -NotLike ""
 
     # Return results
-    $Results 
+    $Results
 
     # Write results to file
     if($OutputFile){
@@ -28552,11 +28572,11 @@ $FileListFormatted
         }
     }
 
-    # Calculate total tokens used 
+    # Calculate total tokens used
     $TokensTotalPrompt     = 0
     $TokensTotalCompletion = 0
     $TokensTotalTotal      = 0
-    $Results | 
+    $Results |
     foreach {
         $TokensTotalPrompt     += $_.PromptTokens
         $TokensTotalCompletion += $_.CompletionTokens
@@ -28596,9 +28616,37 @@ $FileListFormatted
             Write-Verbose "Could not write $OutputDirectory\LlmRequest.log."
         }
     }
-    
-    # Status user 
+
+    # Status user
     Write-Verbose "All done."
 }
 
 #endregion LLMFunctions
+
+#region InternationalFunctions
+
+# Returns a lookup table for localised identity (user, group, ...) names
+# Use $Returnvalue.<Language>.<US-EN-Name> to get the localised name
+# E.g. $Returnvalue.DE.Everyone to get 'Jeder'
+function New-IdentityNames {
+    @{
+        DE = @{
+            AuthenticatedUsers = 'Authentifizierte Benutzer'
+            DomainComputers = 'Domänencomputer'
+            DomainUsers = 'Domänen-Benutzer'
+            Everyone = 'Jeder'
+            Guests = 'Gäste'
+            Users = 'Benutzer'
+        }
+        EN = @{
+            AuthenticatedUsers = 'Authenticated Users'
+            DomainComputers = 'Domain Computers'
+            DomainUsers = 'Domain Users'
+            Everyone = 'Everyone'
+            Guests = 'Guests'
+            Users = 'Users'
+        }
+    }
+}
+
+#endregion
