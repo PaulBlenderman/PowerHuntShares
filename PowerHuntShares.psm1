@@ -13,6 +13,9 @@ function Invoke-HuntSMBShares
             .SYNOPSIS
             This function can be used to inventory to SMB shares on the current Active Directory domain and identify potentially high risk exposures.
 			It will automatically generate csv files and html summary report.
+
+            The module requires the user's regional settings to be set to US English (en-US).
+            You will need to at least temporarily change your settings, e.g. using "Set-Culture en-US".
             .PARAMETER Threads
             Number of concurrent tasks to run at once.
             .PARAMETER Output Directory
@@ -259,6 +262,13 @@ function Invoke-HuntSMBShares
         $StartTime = Get-Date
         $StopWatch =  [system.diagnostics.stopwatch]::StartNew()
         $Time =  Get-Date -UFormat "%m/%d/%Y %R"
+
+        # The module relies on timestamps in US string format heavily :-(
+        $Culture = Get-Culture | Select-Object -ExpandProperty Name
+        if ($Culture -ne 'en-US') {
+            Write-Error "The module requires the user's regional settings to be set to US English (en-US)."
+            return
+        }
 
         # Get names of well-known identities
         $IdentityNames = New-IdentityNames
