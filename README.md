@@ -1,4 +1,47 @@
-# PowerHuntShares v2
+# PowerHuntShares v2 "International"
+
+This is a fork of the original PowerHuntShares project by Scott Sutherland located in
+[github.com/NetSPI/PowerHuntShares](https://github.com/NetSPI/PowerHuntShares/).
+
+This fork only exists to add support for other languages,
+maybe for other localisations/regional settings and for including the not-so-uninteresting SYSVOL share.
+My intention is that these will turn into pull requests towards the original project.
+I have no intention to maintain this fork beyond that point.
+
+Paul Blenderman\
+Secorvo Security Consulting GmbH\
+September 2025\
+[www.secorvo.de](https://www.secorvo.de/)\
+[linkedin.com/in/paul-blenderman](https://www.linkedin.com/in/paul-blenderman/)
+
+## Other languages
+The original module uses names of Windows and AD identities such as 'Everyone' and 'Domain Users' as hard-coded strings in multiple places.
+Ideally it would work with SIDs only and leave translation to their names up to Windows when writing it CSV files and the HTML report.
+In a first simple step,
+I replaced all string literals with variables and added command line switches to assign the proper localised literals to those variables.
+I only added support for the German localisation.
+It should be utterly simple now to add further languages,
+ideally as pull requests to the original project by contributors.
+This fix is not perfect! Not all computers in a domain may always use the same OS language.
+In Germany e.g. it is not uncommon for servers to use English and workstations to use German.
+
+## Other regional settings
+The module relies heavily on timestamps in the form of string variables in US date format (MM/dd/yyyy).
+Ideally it would use datetime objects instead and do conversion to the localised date/time format only when writing CSV files and the HTML report.
+My first attempt to fix the module's dependency on the US date format in a more clumsy way was unsuccessful.
+For now, the script only checks the "locale" and if it is not en-US,
+informs the user and aborts execution.
+
+## Including SYSVOL in the reports
+The original goal of the PowerHuntShares project was to find data that unintentionally was shares too widely.
+It was a natural decision to exclude Active Directory's SYSVOL share as it is readable to all Authenticated Users by default.
+But the project has been extended with further functions like searching for 'interesting' files containing secrets.
+It is our experience that those should definitely also be looked for on the SYSVOL share.
+I therefore plan a `-IncludeSysvol` parameter.
+This is still pending.
+Please bear with me.
+
+# Original README of the PowerHuntShares project
 
 PowerHuntShares is PowerShell tool designed to help cybersecurity teams and penetration testers better identify, understand, attack, and remediate SMB shares in the Active Directory environments they protect. Every hacker has a story about abusing SMB shares, but it’s an attack surface that cybersecurity teams still struggle to defend. This project aims to provide an open proof-of-concept tool for creating a comprehensive share inventory, leveraging statistics, charts, graphs, and language models to contextualize shares, summarize relationships, assess risks, and prioritize remediation.
 
@@ -34,17 +77,17 @@ Below is some additional background:<br>
 * Authenticated Users contains Domain Users on domain joined systems. That's why Domain Users can access a share when the share permissions have been assigned to "BUILTIN\Users".
 * Domain Users is a direct reference
 * Domain Users can also create up to 10 computer accounts by default that get placed in the Domain Computers group
-* Domain Users that have local administrative access to a domain joined computer can also impersonate the computer account. 
+* Domain Users that have local administrative access to a domain joined computer can also impersonate the computer account.
 
 Please Note: Share permissions can be overruled by NTFS permissions. Also, be aware that testing excluded share names containing the following keywords: <pre>print$, prnproc$, printer, netlogon,and sysvol</pre>
 
 <strong>High Risk Shares</strong><br>
-In the context of this report, high risk shares have been defined as shares that provide unauthorized remote access to a system or application. 
+In the context of this report, high risk shares have been defined as shares that provide unauthorized remote access to a system or application.
 By default, that includes the shares <pre> wwwroot, inetpub, c$, and admin$   </pre>
 However, additional exposures may exist that are not called out beyond that.
 
 # Setup Commands
-Below is a list of commands that can be used to load PowerHuntShares into your current PowerShell session. Please note that one of these will have to be run each time you run PowerShell is run.  It is not persistent. 
+Below is a list of commands that can be used to load PowerHuntShares into your current PowerShell session. Please note that one of these will have to be run each time you run PowerShell is run.  It is not persistent.
 <pre>
 # Bypass execution policy restrictions
 Set-ExecutionPolicy -Scope Process Bypass
@@ -66,42 +109,42 @@ IEX(New-Object System.Net.WebClient).DownloadString("https://raw.githubuserconte
 Important Note: All commands should be run as an unprivileged domain user.
 <pre>
 .EXAMPLE 1: Run from a domain computer. Performs Active Directory computer discovery by default.
-PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -OutputDirectory c:\temp\test 
+PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -OutputDirectory c:\temp\test
 
 .EXAMPLE 2: Run from a domain computer with alternative domain credentials. Performs Active Directory computer discovery by default.
 PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -OutputDirectory c:\temp\test -Credentials domain\user
 
 .EXAMPLE 3: Run from a domain computer as current user. Target hosts in a file. One per line.
-PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -OutputDirectory c:\temp\test  -HostList c:\temp\hosts.txt      
+PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -OutputDirectory c:\temp\test  -HostList c:\temp\hosts.txt
 
 .EXAMPLE 4: Run from a non-domain computer with credential. Performs Active Directory computer discovery by default.
 C:\temp\test> runas /netonly /user:domain\user PowerShell.exe
 PS C:\temp\test> Import-Module PowerHuntShares.psm1
-PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -Credential domain\user 
+PS C:\temp\test> Invoke-HuntSMBShares -Threads 100 -RunSpaceTimeOut 10 -OutputDirectory c:\folder\ -DomainController 10.1.1.1 -Credential domain\user
 
 ===============================================================
 PowerHuntShares
 ===============================================================
- This function automates the following tasks:     
+ This function automates the following tasks:
 
  o Determine current computer's domain
- o Enumerate domain computers        
- o Filter for computers that respond to ping reqeusts          
- o Filter for computers that have TCP 445 open and accessible  
- o Enumerate SMB shares 
- o Enumerate SMB share permissions   
- o Identify shares with potentially excessive privielges       
- o Identify shares that provide reads & write access           
+ o Enumerate domain computers
+ o Filter for computers that respond to ping reqeusts
+ o Filter for computers that have TCP 445 open and accessible
+ o Enumerate SMB shares
+ o Enumerate SMB share permissions
+ o Identify shares with potentially excessive privielges
+ o Identify shares that provide reads & write access
  o Identify shares thare are high risk
- o Identify common share owners, names, & directory listings   
+ o Identify common share owners, names, & directory listings
  o Generate creation, last written, & last accessed timelines
- o Generate html summary report and detailed csv files         
+ o Generate html summary report and detailed csv files
 
- Note: This can take hours to run in large environments.       
+ Note: This can take hours to run in large environments.
 ---------------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 ---------------------------------------------------------------
-SHARE DISCOVERY      
+SHARE DISCOVERY
 ---------------------------------------------------------------
 [*][03/01/2021 09:35] Scan Start
 [*][03/01/2021 09:35] Output Directory: c:\temp\smbshares\SmbShareHunt-03012021093504
@@ -123,7 +166,7 @@ SHARE DISCOVERY
 [*][03/01/2021 09:37] - 33 potentially excessive privileges were found across 12 systems..
 [*][03/01/2021 09:37] Scan Complete
 ---------------------------------------------------------------
-SHARE ANALYSIS      
+SHARE ANALYSIS
 ---------------------------------------------------------------
 [*][03/01/2021 09:37] Analysis Start
 [*][03/01/2021 09:37] - 14 shares can be read across 12 systems.
@@ -138,13 +181,13 @@ SHARE ANALYSIS
 [*][03/01/2021 09:37] - Identified shares modified in last 90 days.
 [*][03/01/2021 09:37] Analysis Complete
 ---------------------------------------------------------------
-SHARE REPORT SUMMARY      
+SHARE REPORT SUMMARY
 ---------------------------------------------------------------
 [*][03/01/2021 09:37] Domain: demo.local
 [*][03/01/2021 09:37] Start time: 03/01/2021 09:35:04
 [*][03/01/2021 09:37] End time: 03/01/2021 09:37:27
 [*][03/01/2021 09:37] Run time: 00:02:23.2759086
-[*][03/01/2021 09:37] 
+[*][03/01/2021 09:37]
 [*][03/01/2021 09:37] COMPUTER SUMMARY
 [*][03/01/2021 09:37] - 245 domain computers found.
 [*][03/01/2021 09:37] - 55 (22.45%) domain computers responded to ping.
@@ -154,7 +197,7 @@ SHARE REPORT SUMMARY
 [*][03/01/2021 09:37] - 12 (4.90%) domain computers had shares that allowed READ access.
 [*][03/01/2021 09:37] - 1 (0.41%) domain computers had shares that allowed WRITE access.
 [*][03/01/2021 09:37] - 0 (0.00%) domain computers had shares that are HIGH RISK.
-[*][03/01/2021 09:37] 
+[*][03/01/2021 09:37]
 [*][03/01/2021 09:37] SHARE SUMMARY
 [*][03/01/2021 09:37] - 217 shares were found. We expect a minimum of 98 shares
 [*][03/01/2021 09:37]   because 49 systems had open ports and there are typically two default shares.
@@ -163,7 +206,7 @@ SHARE REPORT SUMMARY
 [*][03/01/2021 09:37] - 14 (6.45%) shares across 12 systems allowed READ access.
 [*][03/01/2021 09:37] - 1 (0.46%) shares across 1 systems allowed WRITE access.
 [*][03/01/2021 09:37] - 0 (0.00%) shares across 0 systems are considered HIGH RISK.
-[*][03/01/2021 09:37] 
+[*][03/01/2021 09:37]
 [*][03/01/2021 09:37] SHARE ACL SUMMARY
 [*][03/01/2021 09:37] - 374 ACLs were found.
 [*][03/01/2021 09:37] - 374 (100.00%) ACLs were associated with non-default shares.
@@ -171,7 +214,7 @@ SHARE REPORT SUMMARY
 [*][03/01/2021 09:37] - 32 (8.56%) ACLs were found that allowed READ access.
 [*][03/01/2021 09:37] - 1 (0.27%) ACLs were found that allowed WRITE access.
 [*][03/01/2021 09:37] - 0 (0.00%) ACLs were found that are associated with HIGH RISK share names.
-[*][03/01/2021 09:37] 
+[*][03/01/2021 09:37]
 [*][03/01/2021 09:37] - The 5 most common share names are:
 [*][03/01/2021 09:37] - 9 of 14 (64.29%) discovered shares are associated with the top 5 share names.
 [*][03/01/2021 09:37]   - 4 backup
@@ -199,7 +242,7 @@ SHARE REPORT SUMMARY
 # Credits
 <strong>Author</strong><Br>
 Scott Sutherland (@_nullbind)<Br>
-           
+
 <strong>Open-Source Code Used</strong> <Br>
 These individuals wrote open source code that was used as part of this project. A big thank you goes out them and their work!<br>
 |Name|Site|
@@ -217,16 +260,16 @@ Todos
 * Update code to avoid defender
 * Password extraction functions current return a "valid" record when the fields are found in the file, but the have blank values. Also, some directories appear to be treated as files.
 * ACLs associated with Builtin\Users sometimes shows up as LocalSystem under undefined conditions, and as a result, doesnt show up in the Excessive Privileges export. - Thanks Sam!
- 
+
 **Pending Features**
 * Add powerhuntshares version to html report output
 * Add options to opt out of interesting file enumeration and secrets parsing.
 * Add ability to specify additional groups to target
 * Add file content search.
 * Add DontExcludePrintShares option
-* Add auto targeting of groups that contain a large % of the user population; over 70% (make configurable). Add as option. 
+* Add auto targeting of groups that contain a large % of the user population; over 70% (make configurable). Add as option.
 * Add configuration fid:
- netlogon and sysvol you may get access denied when using windows 10 unless the setting below is configured. Automat a check for this, and attempt to modify if privs are at correct level. gpedit.msc, go to Computer -> Administrative Templates -> Network -> Network Provider -> Hardened UNC Paths, enable the policy and click "Show" button. Enter your server name (* for all servers) into "Value name" and enter the folowing text "RequireMutualAuthentication=0,RequireIntegrity=0,RequirePrivacy=0" wihtout quotes into the "Value" field. 
+ netlogon and sysvol you may get access denied when using windows 10 unless the setting below is configured. Automat a check for this, and attempt to modify if privs are at correct level. gpedit.msc, go to Computer -> Administrative Templates -> Network -> Network Provider -> Hardened UNC Paths, enable the policy and click "Show" button. Enter your server name (* for all servers) into "Value name" and enter the folowing text "RequireMutualAuthentication=0,RequireIntegrity=0,RequirePrivacy=0" wihtout quotes into the "Value" field.
 * Add active sessions data to help identify potential owners/users of share.
 * Pull spns and computer description/spn account descriptions to help identify owner/business unit.
 * Create bloodhound import file / edge (highrisk share)
@@ -237,15 +280,3 @@ Todos
 * add depth, file/directory flag
 * So. Many. Other. Things.
 </pre>
- 
-
-
-  
-
-
-
-
-
-
-
-
